@@ -2,27 +2,33 @@
 Catalyst: The high-performance builder's engine.
 """
 import asyncio
-import time
 from core.engine import Orchestrator
 
-async def mock_io_task(name, delay):
-    await asyncio.sleep(delay)
-    return f"{name} done"
+async def task_a():
+    print("[A] Building project core...")
+    await asyncio.sleep(1)
+    return "Core Ready"
 
-def mock_cpu_task(name, n):
-    res = sum(i * i for i in range(n))
-    return res
+async def task_b():
+    print("[B] Running internal diagnostics...")
+    await asyncio.sleep(0.5)
+    return "Diagnostics Pass"
+
+async def task_c():
+    print("[C] Finalizing deployment...")
+    await asyncio.sleep(1)
+    return "Deployed"
 
 async def main():
     engine = Orchestrator()
     
-    # Adding tasks
-    engine.add_task("io_intensive_1", mock_io_task, "Task A", 1.5)
-    engine.add_task("io_intensive_2", mock_io_task, "Task B", 0.5)
-    engine.add_task("cpu_intensive_1", mock_cpu_task, "Task C", 10**6)
+    # Define complex workflow
+    engine.add_task("build_core", task_a)
+    engine.add_task("run_tests", task_b, depends_on=["build_core"])
+    engine.add_task("deploy_app", task_c, depends_on=["run_tests"])
     
-    print("✨ [Catalyst] Initializing parallel workflow...")
-    duration = await engine.run_all()
+    print("✨ [Catalyst] Initializing dependency-aware workflow...")
+    duration = await engine.run_sequential_layers()
     
     engine.report()
     print(f"Total Workflow Time: {duration:.4f}s")
