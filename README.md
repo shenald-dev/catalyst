@@ -24,7 +24,7 @@ engine = Orchestrator()
 engine.load_plugins()
 
 engine.add_task("pre_flight", plugin="shell", command="echo 'Hello Catalyst'")
-await engine.run_all()
+await engine.run()
 ```
 
 ---
