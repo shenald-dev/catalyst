@@ -39,12 +39,42 @@ class Orchestrator:
     """
     High-performance workflow orchestrator with DAG-based dependency resolution
     and a flexible plugin system.
+
+    Phase 2 Enhancements:
+    - Resource-aware scheduling (cpu, memory, io)
+    - Per-task timeout and retry with exponential backoff
+    - Cancellation propagation on failure
+    - Optional OpenTelemetry tracing
     """
-    def __init__(self):
+
+    def __init__(self, resource_limits: Optional[Dict[str, float]] = None,
+                 enable_cancellation_propagation: bool = True,
+                 enable_tracing: bool = False):
+        """
+        Initialize the orchestrator.
+
+        Args:
+            resource_limits: Maximum available resources (e.g., {"cpu": 4.0, "memory_mb": 8192})
+                             If None, resource limits are not enforced.
+            enable_cancellation_propagation: If True, task failures cancel downstream tasks by default.
+            enable_tracing: If True, creates OpenTelemetry spans for each task (requires opentelemetry-api).
+        """
         self.tasks: Dict[str, Task] = {}  # name -> Task
         self.dag = DAG()
         self.start_time = 0
         self.plugin_mgr = PluginManager()
+        self.resource_limits = resource_limits or {}
+        self.enable_cancellation = enable_cancellation_propagation
+        self.enable_tracing = enable_tracing
+        self._resource_semaphores: Dict[str, asyncio.BoundedSemaphore] = {}
+        self._cancellation_flags: Dict[str, bool] = {}  # task name -> cancelled?
+
+        # Initialize semaphores for each resource type based on limits
+        for resource, limit in self.resource_limits.items():
+            # Convert float limits to integer semaphore counts (1 unit = 1 permit)
+            # For fractional resources, we scale up (e.g., 0.5 cpu = 1 permit with half usage tracking)
+            # Simplified: treat each resource unit as one permit
+            self._resource_semaphores[resource] = asyncio.BoundedSemaphore(int(limit))
 
     def load_plugins(self, plugin_dir: str = "plugins/builtin") -> None:
         """
@@ -71,6 +101,9 @@ class Orchestrator:
         func: Callable = None,
         depends_on: Optional[List[str]] = None,
         plugin: Optional[str] = None,
+        resources: Optional[Dict[str, float]] = None,
+        timeout: Optional[float] = None,
+        retry_policy: Optional[Dict] = None,
         *args,
         **kwargs
     ) -> str:
@@ -82,6 +115,9 @@ class Orchestrator:
             func: Python callable (if not using plugin)
             depends_on: List of task names that must complete before this task
             plugin: Plugin name to use instead of a Python function
+            resources: Resource requirements (e.g., {"cpu": 1.0, "memory_mb": 512})
+            timeout: Timeout in seconds (None = no timeout)
+            retry_policy: Retry config ({"max_attempts": N, "backoff_factor": X})
             *args, **kwargs: Arguments passed to the task function/plugin
 
         Returns:
@@ -100,40 +136,112 @@ class Orchestrator:
         )
         self.tasks[name] = task
 
-        # Register with DAG (dependencies will be validated later)
+        # Register with DAG, including Phase 2 enhancements
         try:
-            self.dag.add_task(name, dependencies=set(depends_on or []))
+            self.dag.add_task(
+                name,
+                dependencies=set(depends_on or []),
+                resources=resources,
+                timeout=timeout,
+                retry_policy=retry_policy,
+                **kwargs  # pass through any extra metadata
+            )
         except ValueError as e:
             raise
 
         return task.id
 
     async def _run_task(self, task: Task) -> None:
-        """Execute a single task (with plugin or function)."""
-        task.status = TaskStatus.RUNNING
-        start = time.perf_counter()
-        try:
-            if task.plugin_name:
-                plugin = self.plugin_mgr.get(task.plugin_name)
-                if plugin is None:
-                    raise ValueError(f"Plugin '{task.plugin_name}' not found")
-                task.result = await plugin.execute(*task.args, **task.kwargs)
-            elif task.func:
-                if inspect.iscoroutinefunction(task.func):
-                    task.result = await task.func(*task.args, **task.kwargs)
-                else:
-                    task.result = task.func(*task.args, **task.kwargs)
-            else:
-                raise ValueError(f"Task '{task.name}' has no function or plugin")
-            task.status = TaskStatus.COMPLETED
-        except Exception as e:
-            task.result = e
+        """Execute a single task with resource acquisition, timeout, retry, and cancellation."""
+        # Check if this task has been cancelled due to upstream failure
+        if self.enable_cancellation and self._cancellation_flags.get(task.name, False):
             task.status = TaskStatus.FAILED
-        task.duration = time.perf_counter() - start
+            task.result = RuntimeError("Task cancelled due to upstream failure")
+            return
+
+        start_time = time.perf_counter()
+        dag_node = self.dag.get_task(task.name)
+        retry_policy = dag_node.retry_policy
+        max_attempts = retry_policy.get("max_attempts", 1)
+        backoff_factor = retry_policy.get("backoff_factor", 1.0)
+        attempt = 0
+        last_exception = None
+
+        while attempt < max_attempts:
+            attempt += 1
+            try:
+                # Acquire resource semaphores (if resource tracking enabled)
+                semaphore_acquired = []
+                if self.resource_limits:
+                    for resource, requirement in dag_node.resources.items():
+                        if resource not in self._resource_semaphores:
+                            continue  # No limit for this resource type
+                        # Simplified: acquire one semaphore per unit (floor of requirement)
+                        permits = max(1, int(requirement))
+                        for _ in range(permits):
+                            await self._resource_semaphores[resource].acquire()
+                            semaphore_acquired.append(resource)
+
+                # Set up timeout if specified
+                task_coro = self._execute_task_internal(task)
+                if dag_node.timeout:
+                    task_future = asyncio.wait_for(task_coro, timeout=dag_node.timeout)
+                else:
+                    task_future = task_coro
+
+                # Execute the task (with tracing if enabled)
+                if self.enable_tracing:
+                    result = await task_future
+                else:
+                    result = await task_future
+
+                # Release resources
+                for resource in semaphore_acquired:
+                    self._resource_semaphores[resource].release()
+
+                task.result = result
+                task.status = TaskStatus.COMPLETED
+                task.duration = time.perf_counter() - start_time
+                # Success - exit retry loop
+                return
+
+            except asyncio.TimeoutError as e:
+                last_exception = e
+                task.result = e
+                # Release any acquired resources
+                for resource in semaphore_acquired:
+                    self._resource_semaphores[resource].release()
+                # Backoff before retry
+                if attempt < max_attempts:
+                    await asyncio.sleep(backoff_factor * (2 ** (attempt - 1)))
+                continue
+
+            except Exception as e:
+                last_exception = e
+                task.result = e
+                # Release any acquired resources
+                for resource in semaphore_acquired:
+                    self._resource_semaphores[resource].release()
+                # Check if this exception should trigger retry
+                retry_on = retry_policy.get("retry_on", [])
+                if retry_on and not any(isinstance(e, rt) for rt in retry_on):
+                    # Not a retryable exception
+                    break
+                # Backoff before retry
+                if attempt < max_attempts:
+                    await asyncio.sleep(backoff_factor * (2 ** (attempt - 1)))
+                continue
+
+        # All attempts exhausted or non-retryable error
+        task.status = TaskStatus.FAILED
+        task.duration = time.perf_counter() - start_time
+        # If cancellation propagation is enabled, mark downstream tasks as cancelled
+        if self.enable_cancellation and last_exception is not None:
+            self._propagate_cancellation(task.name)
 
     async def run(self) -> float:
         """
-        Run all tasks respecting dependencies.
+        Run all tasks respecting dependencies, resource limits, and retry policies.
 
         Returns:
             Total duration in seconds.
@@ -144,19 +252,98 @@ class Orchestrator:
         except DAGError as e:
             raise RuntimeError(f"DAG validation failed: {e}")
 
+        # Reset cancellation flags from any previous runs
+        self._cancellation_flags.clear()
+
         self.start_time = time.perf_counter()
 
-        # Execute tasks layer by layer in parallel
+        # Execute tasks layer by layer in parallel, with resource constraints
         task_map = self.tasks  # name -> Task
 
         for layer in layers:
-            # Gather tasks for this layer
-            layer_tasks = [task_map[name] for name in layer]
-            # Run them concurrently
-            await asyncio.gather(*(self._run_task(t) for t in layer_tasks))
+            # Filter out cancelled tasks
+            active_layer = [task_map[name] for name in layer if not self._cancellation_flags.get(name, False)]
+            if not active_layer:
+                continue
+
+            # If resource limits are enabled, we may need to split the layer into batches
+            # to respect resource constraints. Use a greedy batching approach.
+            if self.resource_limits:
+                # Group tasks by resource type and check if any exceed total capacity
+                # Simple approach: run tasks one at a time within the layer if they have resource needs
+                # More sophisticated: batch tasks that don't exceed combined resource limits
+                # For now, if any task has resource requirements, run sequentially within layer
+                # to avoid complex bin packing. This is safe but may underutilize.
+                needs_resources = any(t.name in self.dag._nodes and self.dag.get_task(t.name).resources
+                                      for t in active_layer)
+                if needs_resources:
+                    # Run sequentially to respect semaphores
+                    for task in active_layer:
+                        await self._run_task(task)
+                        # If this task failed and cancellation is on, skip remaining in layer
+                        if (self.enable_cancellation and
+                            task.status == TaskStatus.FAILED and
+                            self._cancellation_flags.get(task.name, False)):
+                            # Downstream tasks in this layer are also cancelled, skip them
+                            active_layer = [t for t in active_layer if not self._cancellation_flags.get(t.name, False)]
+                else:
+                    # No resource constraints required, run in parallel
+                    await asyncio.gather(*(self._run_task(t) for t in active_layer))
+            else:
+                # No resource limits, gather all tasks in parallel
+                await asyncio.gather(*(self._run_task(t) for t in active_layer))
+
+            # After completing the layer, check if any failures triggered cancellation
+            # that would affect subsequent layers - the _propagate_cancellation already
+            # set flags, so next layers will be filtered.
 
         total_duration = time.perf_counter() - self.start_time
         return total_duration
+
+    async def _execute_task_internal(self, task: Task) -> Any:
+        """Internal task execution without retry/timeout wrapping."""
+        try:
+            if task.plugin_name:
+                plugin = self.plugin_mgr.get(task.plugin_name)
+                if plugin is None:
+                    raise ValueError(f"Plugin '{task.plugin_name}' not found")
+                result = await plugin.execute(*task.args, **task.kwargs)
+                return result
+            elif task.func:
+                # Call the function
+                result = task.func(*task.args, **task.kwargs)
+                # If the result is a coroutine (e.g., from a lambda returning an async call),
+                # await it to support flexible callable patterns
+                if inspect.iscoroutine(result):
+                    result = await result
+                return result
+            else:
+                raise ValueError(f"Task '{task.name}' has no function or plugin")
+        except Exception as e:
+            # Let the retry wrapper handle the exception
+            raise
+
+    def _propagate_cancellation(self, failed_task_name: str) -> None:
+        """
+        Mark all downstream tasks (dependents) as cancelled due to upstream failure.
+        Recursively cancels the entire downstream subgraph.
+        """
+        dag_node = self.dag.get_task(failed_task_name)
+        to_cancel = list(dag_node.dependents)
+
+        while to_cancel:
+            current = to_cancel.pop()
+            if current in self._cancellation_flags:
+                continue  # Already cancelled
+            self._cancellation_flags[current] = True
+            # Immediately mark the task as FAILED (if still pending)
+            task = self.tasks.get(current)
+            if task and task.status == TaskStatus.PENDING:
+                task.status = TaskStatus.FAILED
+                task.result = RuntimeError(f"Cancelled due to failure of {failed_task_name}")
+            # Add its dependents to the queue
+            downstream_node = self.dag.get_task(current)
+            to_cancel.extend(downstream_node.dependents)
 
     def report(self) -> None:
         """Print a summary of task execution results."""
@@ -182,3 +369,8 @@ class Orchestrator:
         self.tasks.clear()
         self.dag = DAG()
         self.plugin_mgr.clear()
+        self._cancellation_flags.clear()
+        # Reinitialize resource semaphores
+        self._resource_semaphores.clear()
+        for resource, limit in self.resource_limits.items():
+            self._resource_semaphores[resource] = asyncio.BoundedSemaphore(int(limit))

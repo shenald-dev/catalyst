@@ -35,7 +35,13 @@ class TaskNode:
     name: str
     dependencies: Set[str] = field(default_factory=set)  # immediate predecessors (parents)
     dependents: Set[str] = field(default_factory=set)    # immediate successors (children)
-    metadata: Dict = field(default_factory=dict)         # arbitrary metadata (duration, priority, etc.)
+
+    # Phase 2: Enhanced task configuration
+    resources: Dict[str, float] = field(default_factory=dict)  # resource requirements (cpu, memory_mb, io_weight)
+    timeout: Optional[float] = None  # timeout in seconds, None = no timeout
+    retry_policy: Dict = field(default_factory=dict)  # retry config: max_attempts, backoff_factor, retry_on
+
+    metadata: Dict = field(default_factory=dict)  # arbitrary additional metadata
 
     def __post_init__(self):
         if not isinstance(self.dependencies, set):
@@ -60,20 +66,34 @@ class DAG:
     def __init__(self):
         self._nodes: Dict[str, TaskNode] = {}
 
-    def add_task(self, name: str, dependencies: Optional[Set[str]] = None, **metadata):
+    def add_task(self, name: str, dependencies: Optional[Set[str]] = None,
+                 resources: Optional[Dict[str, float]] = None,
+                 timeout: Optional[float] = None,
+                 retry_policy: Optional[Dict] = None,
+                 **metadata):
         """
         Add a task to the DAG.
 
         Args:
             name: Unique task identifier
             dependencies: Set of task names that must complete before this task
-            **metadata: Additional data (duration, priority, etc.)
+            resources: Resource requirements (e.g., {"cpu": 1.0, "memory_mb": 512})
+            timeout: Timeout in seconds (None = no timeout)
+            retry_policy: Retry configuration (e.g., {"max_attempts": 3, "backoff_factor": 2.0})
+            **metadata: Additional arbitrary data (duration, priority, etc.)
         """
         if name in self._nodes:
             raise ValueError(f"Task '{name}' already exists in DAG")
 
         deps = set(dependencies) if dependencies else set()
-        node = TaskNode(name=name, dependencies=deps, metadata=metadata)
+        node = TaskNode(
+            name=name,
+            dependencies=deps,
+            resources=resources or {},
+            timeout=timeout,
+            retry_policy=retry_policy or {},
+            metadata=metadata
+        )
         self._nodes[name] = node
 
         # For each existing dependency, add this node to that dependency's dependents
