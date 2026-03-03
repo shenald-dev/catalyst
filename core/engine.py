@@ -374,3 +374,100 @@ class Orchestrator:
         self._resource_semaphores.clear()
         for resource, limit in self.resource_limits.items():
             self._resource_semaphores[resource] = asyncio.BoundedSemaphore(int(limit))
+
+    def load_yaml(self, path: str) -> None:
+        """
+        Load a workflow definition from a YAML file and register tasks.
+
+        Args:
+            path: Path to a YAML workflow file.
+
+        The YAML format supports the following task keys:
+          - name (required)
+          - plugin: plugin name to use
+          - func: Python callable reference (e.g., 'module:func' or 'module.submodule.func')
+          - depends_on: list of task names
+          - resources: dict of resource requirements (cpu, memory_mb, etc.)
+          - timeout: float seconds
+          - retry_policy: dict (max_attempts, backoff_factor, retry_on)
+          - args: list of positional arguments
+          - kwargs: dict of keyword arguments
+          Any additional keys are passed as kwargs to the task.
+        """
+        try:
+            import yaml
+        except ImportError as e:
+            raise ImportError(
+                "PyYAML is required for YAML loading. Install with 'pip install pyyaml'"
+            ) from e
+
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+
+        if not isinstance(data, dict):
+            raise ValueError("YAML root must be a mapping")
+        tasks_data = data.get('tasks', [])
+        if not isinstance(tasks_data, list):
+            raise ValueError("'tasks' section must be a list")
+
+        for task_def in tasks_data:
+            if not isinstance(task_def, dict):
+                raise ValueError("Each task entry must be a mapping")
+            name = task_def.pop('name', None)
+            if not name:
+                raise ValueError("Task missing required 'name' field")
+
+            plugin = task_def.pop('plugin', None)
+            func = task_def.pop('func', None)
+            depends_on = task_def.pop('depends_on', []) or []
+            resources = task_def.pop('resources', None)
+            timeout = task_def.pop('timeout', None)
+            retry_policy = task_def.pop('retry_policy', None)
+            args = task_def.pop('args', [])
+            kwargs = task_def.pop('kwargs', {})
+
+            # Resolve function string references to callables
+            if func and isinstance(func, str):
+                func = self._resolve_function_ref(func)
+
+            # Merge any remaining keys into kwargs (for plugin-specific config)
+            kwargs = {**kwargs, **task_def}
+
+            self.add_task(
+                name,
+                func=func,
+                depends_on=depends_on,
+                plugin=plugin,
+                resources=resources,
+                timeout=timeout,
+                retry_policy=retry_policy,
+                *args,
+                **kwargs
+            )
+
+    def _resolve_function_ref(self, ref: str) -> Callable:
+        """
+        Resolve a string reference like 'module:func' or 'module.submodule.func' to a callable.
+        """
+        if ':' in ref:
+            module_name, attr = ref.split(':', 1)
+        elif '.' in ref:
+            parts = ref.rsplit('.', 1)
+            if len(parts) == 2:
+                module_name, attr = parts
+            else:
+                module_name = ref
+                attr = None
+        else:
+            module_name = ref
+            attr = None
+
+        try:
+            module = importlib.import_module(module_name)
+            if attr:
+                obj = getattr(module, attr)
+            else:
+                obj = module
+            return obj
+        except Exception as e:
+            raise ImportError(f"Could not import '{ref}': {e}") from e

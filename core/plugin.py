@@ -8,6 +8,7 @@ Provides:
 """
 
 import asyncio
+import inspect
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
@@ -111,6 +112,19 @@ class PluginManager:
         """
         if plugin_class:
             plugin = plugin_class()
+            if name:
+                plugin.name = name
+            self.register(plugin)
+            return plugin
+
+        # Auto-discover a Plugin subclass in the module
+        plugin_cls = None
+        for _, obj in inspect.getmembers(module):
+            if inspect.isclass(obj) and issubclass(obj, Plugin) and obj is not Plugin:
+                plugin_cls = obj
+                break
+        if plugin_cls:
+            plugin = plugin_cls()
             if name:
                 plugin.name = name
             self.register(plugin)
