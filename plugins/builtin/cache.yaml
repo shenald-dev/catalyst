@@ -1,0 +1,10 @@
+# Cache Plugin Manifest
+
+[plugin]
+name = "cache"
+version = "0.2.0"
+description = "Cache layer with Redis or in-memory backend"
+dependencies = ["redis"]
+
+[config]
+defaults = { backend = "memory", host = "localhost", port = 6379, db = 0, namespace = "catalyst" }

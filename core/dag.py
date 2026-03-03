@@ -344,3 +344,64 @@ class DAG:
 
     def __len__(self):
         return len(self._nodes)
+
+    # --- Serialization (msgspec-accelerated) ---
+    def to_dict(self) -> dict:
+        """Serialize DAG to a plain Python dict (for JSON/msgpack)."""
+        return {
+            "nodes": {
+                name: {
+                    "dependencies": list(node.dependencies),
+                    "dependents": list(node.dependents),
+                    "resources": node.resources,
+                    "timeout": node.timeout,
+                    "retry_policy": node.retry_policy,
+                    "metadata": node.metadata,
+                }
+                for name, node in self._nodes.items()
+            }
+        }
+
+    def from_dict(self, data: dict) -> None:
+        """Deserialize DAG from a dict (as produced by to_dict)."""
+        self._nodes.clear()
+        nodes_data = data.get("nodes", {})
+        for name, nd in nodes_data.items():
+            node = TaskNode(
+                name=name,
+                dependencies=set(nd.get("dependencies", [])),
+                dependents=set(nd.get("dependents", [])),
+                resources=nd.get("resources", {}),
+                timeout=nd.get("timeout"),
+                retry_policy=nd.get("retry_policy", {}),
+                metadata=nd.get("metadata", {}),
+            )
+            self._nodes[name] = node
+
+    def serialize(self) -> bytes:
+        """
+        Serialize DAG to bytes using msgpack (msgspec) if available,
+        otherwise JSON. Returns bytes.
+        """
+        data = self.to_dict()
+        try:
+            import msgspec
+            return msgspec.msgpack.encode(data)
+        except ImportError:
+            import json
+            return json.dumps(data).encode('utf-8')
+
+    @classmethod
+    def deserialize(cls, blob: bytes) -> 'DAG':
+        """
+        Deserialize DAG from bytes produced by serialize().
+        """
+        dag = cls()
+        try:
+            import msgspec
+            data = msgspec.msgpack.decode(blob)
+        except ImportError:
+            import json
+            data = json.loads(blob.decode('utf-8'))
+        dag.from_dict(data)
+        return dag

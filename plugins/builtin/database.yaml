@@ -1,0 +1,11 @@
+# Database Plugin Manifest
+
+[plugin]
+name = "database"
+version = "0.2.0"
+description = "SQL execution with connection pooling (SQLite/PostgreSQL)"
+dependencies = ["aiosqlite", "asyncpg"]
+
+[config]
+# The plugin class accepts these __init__ parameters
+defaults = { driver = "sqlite", database = ":memory:", pool_size = 5 }

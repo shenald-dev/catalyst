@@ -59,7 +59,8 @@ class Orchestrator:
     def __init__(self, resource_limits: Optional[Dict[str, float]] = None,
                  enable_cancellation_propagation: bool = True,
                  enable_tracing: bool = False,
-                 use_uvloop: bool = False):
+                 use_uvloop: bool = False,
+                 tracer_provider = None):
         """
         Initialize the orchestrator.
 
@@ -69,6 +70,7 @@ class Orchestrator:
             enable_cancellation_propagation: If True, task failures cancel downstream tasks by default.
             enable_tracing: If True, creates OpenTelemetry spans for each task (requires opentelemetry-api).
             use_uvloop: If True, uses uvloop for a faster event loop (requires uvloop installed).
+            tracer_provider: Optional OpenTelemetry tracer provider; if None, uses global provider.
         """
         if use_uvloop:
             _maybe_use_uvloop()
@@ -79,8 +81,17 @@ class Orchestrator:
         self.resource_limits = resource_limits or {}
         self.enable_cancellation = enable_cancellation_propagation
         self.enable_tracing = enable_tracing
+        self._tracer = None
+        if enable_tracing:
+            try:
+                from opentelemetry import trace
+                self._tracer = trace.get_tracer(__name__, tracer_provider=tracer_provider)
+            except ImportError:
+                self.enable_tracing = False  # degrade gracefully
         self._resource_semaphores: Dict[str, asyncio.BoundedSemaphore] = {}
         self._cancellation_flags: Dict[str, bool] = {}  # task name -> cancelled?
+        # Initialize plugin manager with caching for performance
+        self.plugin_mgr = PluginManager(cache_size=128)
 
         # Initialize semaphores for each resource type based on limits
         for resource, limit in self.resource_limits.items():
@@ -270,27 +281,58 @@ class Orchestrator:
 
         self.start_time = time.perf_counter()
 
-        # Execute tasks layer by layer in parallel using structured concurrency.
-        # Resource semaphores within tasks enforce limits.
-        task_map = self.tasks  # name -> Task
+        # Tracing: create top-level span for this orchestration run
+        span_ctx = None
+        if self.enable_tracing and self._tracer:
+            span_ctx = self._tracer.start_as_current_span(
+                "orchestrator.run",
+                attributes={
+                    "orchestrator.tasks_count": len(self.tasks),
+                    "orchestrator.layers_count": len(layers),
+                }
+            )
+            span_ctx.__enter__()
 
-        for layer in layers:
-            # Filter out cancelled tasks
-            active_layer = [task_map[name] for name in layer if not self._cancellation_flags.get(name, False)]
-            if not active_layer:
-                continue
+        try:
+            # Execute tasks layer by layer in parallel using structured concurrency.
+            # Resource semaphores within tasks enforce limits.
+            task_map = self.tasks  # name -> Task
 
-            # Run all tasks in this layer concurrently with TaskGroup for better cancellation
-            async with asyncio.TaskGroup() as tg:
-                for task in active_layer:
-                    tg.create_task(self._run_task(task))
+            for layer_idx, layer in enumerate(layers):
+                # Filter out cancelled tasks
+                active_layer = [task_map[name] for name in layer if not self._cancellation_flags.get(name, False)]
+                if not active_layer:
+                    continue
 
-        total_duration = time.perf_counter() - self.start_time
-        return total_duration
+                # Run all tasks in this layer concurrently with TaskGroup for better cancellation
+                async with asyncio.TaskGroup() as tg:
+                    for task in active_layer:
+                        tg.create_task(self._run_task(task))
+
+            total_duration = time.perf_counter() - self.start_time
+            return total_duration
+        finally:
+            if span_ctx is not None:
+                span_ctx.__exit__(None, None, None)
 
     async def _execute_task_internal(self, task: Task) -> Any:
         """Internal task execution without retry/timeout wrapping."""
         try:
+            # Tracing: create span for this task execution
+            span_ctx = None
+            if self.enable_tracing and self._tracer:
+                span_ctx = self._tracer.start_as_current_span(
+                    f"task.execute.{task.name}",
+                    attributes={
+                        "task.name": task.name,
+                        "task.plugin": task.plugin_name or "function",
+                        "task.dependencies": ",".join(task.depends_on) if task.depends_on else "",
+                    }
+                )
+                span_ctx.__enter__()
+            else:
+                span_ctx = None
+
             if task.plugin_name:
                 plugin = self.plugin_mgr.get(task.plugin_name)
                 if plugin is None:
@@ -307,9 +349,13 @@ class Orchestrator:
                 return result
             else:
                 raise ValueError(f"Task '{task.name}' has no function or plugin")
+
         except Exception as e:
             # Let the retry wrapper handle the exception
             raise
+        finally:
+            if span_ctx is not None:
+                span_ctx.__exit__(None, None, None)
 
     def _propagate_cancellation(self, failed_task_name: str) -> None:
         """

@@ -8,17 +8,22 @@ Catalyst is an intentional, high-performance task engine designed to handle comp
 
 Build with speed, build with intent. Catalyst is the result of deep-diving into systems design to create a tool that handles the "heavy lifting" of workflow automation without the boilerplate.
 
-## 🛠️ Features (v0.3 - Phase 2)
+## 🛠️ Features (v0.4 - Phase 3)
 
 - **Parallel Execution:** Native asyncio concurrency with layer-based execution.
-- **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, and critical path analysis.
+- **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, DOT export.
 - **Resource-Aware Scheduling:** Limit CPU, memory, or custom resources with semaphore-based gating.
 - **Robust Error Handling:** Per-task timeouts, configurable retry policies (exponential backoff, exception filters).
 - **Cancellation Propagation:** Optional fail-fast for downstream tasks when upstream fails.
 - **Declarative Workflows:** Load entire pipelines from YAML files with `Orchestrator.load_yaml()`.
-- **Plugin Ecosystem:** Auto-discovery of Plugin subclasses; built-in plugins include `shell` and `http` (HTTP requests).
+- **Observability:** Optional OpenTelemetry tracing (`enable_tracing=True`) for per-task spans and latency insights.
+- **High-Performance Serialization:** msgspec-accelerated DAG serialization (fallback to JSON).
+- **Plugin Ecosystem:**
+  - Auto-discovery of Plugin subclasses.
+  - Plugin manifest format (YAML) for metadata, dependencies, and config validation.
+  - LRU-cached plugin lookups for minimal overhead.
+  - Built-in plugins: `shell`, `http`, and new `database`, `cache`, `notify`.
 - **Minimalist Core:** No required external dependencies; optional PyYAML for YAML support.
-- **Observability Ready:** Optional OpenTelemetry integration via `enable_tracing=True` (requires opentelemetry packages).
 
 ## 🚀 Quick Start
 
@@ -105,6 +110,22 @@ class MyPlugin(Plugin):
 ```
 
 Place the plugin in `plugins/builtin/` and it will be auto-discovered when `engine.load_plugins()` is called.
+
+### Plugin Manifests
+
+For packaged plugins, provide a `plugin.yaml` alongside the module to declare metadata:
+
+```yaml
+plugin:
+  name: "database"
+  version: "0.2.0"
+  description: "SQL execution with pooling"
+  dependencies: ["aiosqlite", "asyncpg"]
+config:
+  defaults: { driver: "sqlite", database: ":memory:", pool_size: 5 }
+```
+
+The manifest enables dependency checks and config validation via Pydantic (if installed).
 
 ---
 

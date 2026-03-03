@@ -3,6 +3,23 @@
 PyYAML>=5.4
 
 [optional]
-# Optional dependencies for enhanced features
-# opentelemetry-api>=1.0.0; for tracing support
-# opentelemetry-sdk>=1.0.0; for tracing support
+# Observability
+opentelemetry-api>=1.0.0
+opentelemetry-sdk>=1.0.0
+
+# Performance
+msgspec>=0.18.0
+
+# Validation
+pydantic>=2.0.0
+
+# Database plugin
+sqlalchemy>=2.0.0
+
+# Cache plugin
+redis>=4.0.0
+pymemcache>=4.0.0
+
+# Notify plugin
+aiohttp>=3.8.0
+aiosmtplib>=3.0.0

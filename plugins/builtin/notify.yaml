@@ -1,0 +1,17 @@
+# Notify Plugin Manifest
+
+[plugin]
+name = "notify"
+version = "0.2.0"
+description = "Notification dispatcher (webhooks, email)"
+dependencies = ["aiohttp", "aiosmtplib"]
+
+[config]
+defaults = {
+  webhook_url = "",
+  smtp_host = "",
+  smtp_port = 587,
+  smtp_user = "",
+  smtp_password = "",
+  from_addr = ""
+}

@@ -10,7 +10,8 @@ Provides:
 import asyncio
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type, List
+import yaml
 
 
 class Plugin(ABC):
@@ -58,11 +59,95 @@ class Plugin(ABC):
         pass
 
 
+# --- Plugin Manifest System ---
+
+class PluginManifest:
+    """
+    Represents a plugin manifest (pyproject.toml style).
+
+    Fields:
+      - plugin.name (required)
+      - plugin.version
+      - plugin.description
+      - plugin.dependencies (list of Python packages)
+      - config.schema (optional Pydantic model path)
+      - config.defaults (dict)
+    """
+    def __init__(self, name: str, version: str = "0.1.0", description: str = "",
+                 dependencies: List[str] = None, config_schema: Optional[str] = None,
+                 config_defaults: Dict = None):
+        self.name = name
+        self.version = version
+        self.description = description
+        self.dependencies = dependencies or []
+        self.config_schema = config_schema
+        self.config_defaults = config_defaults or {}
+
+    @classmethod
+    def from_toml(cls, path: str) -> 'PluginManifest':
+        """Load a manifest from a YAML file."""
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+        plugin_section = data.get('plugin', {})
+        config_section = data.get('config', {})
+        return cls(
+            name=plugin_section['name'],
+            version=plugin_section.get('version', '0.1.0'),
+            description=plugin_section.get('description', ''),
+            dependencies=plugin_section.get('dependencies', []),
+            config_schema=config_section.get('schema'),
+            config_defaults=config_section.get('defaults', {})
+        )
+
+    def validate_dependencies(self) -> List[str]:
+        """
+        Check if required dependencies are installed.
+
+        Returns:
+            List of missing package names.
+        """
+        missing = []
+        for dep in self.dependencies:
+            # Simple check: try import
+            pkg_name = dep.split('>')[0].split('=')[0].split('<')[0].strip()
+            try:
+                __import__(pkg_name)
+            except ImportError:
+                missing.append(dep)
+        return missing
+
+    def to_dict(self) -> dict:
+        return {
+            'plugin': {
+                'name': self.name,
+                'version': self.version,
+                'description': self.description,
+                'dependencies': self.dependencies,
+            },
+            'config': {
+                'schema': self.config_schema,
+                'defaults': self.config_defaults,
+            }
+        }
+
+
 class PluginManager:
     """Manages plugin registration, lookup, and lifecycle."""
 
-    def __init__(self):
+    def __init__(self, cache_size: int = 128):
+        """
+        Initialize plugin manager.
+
+        Args:
+            cache_size: Size of LRU cache for plugin lookups (0 to disable).
+        """
         self._plugins: Dict[str, Plugin] = {}
+        self._cache_size = cache_size
+        self._get_cache = {}
+        if cache_size > 0:
+            # Simple FIFO cache (LRU would be better but keep minimal)
+            self._cache_order = []
+            self._get_cache = {}
 
     def register(self, plugin: Plugin) -> None:
         """
@@ -79,6 +164,14 @@ class PluginManager:
         if plugin.name in self._plugins:
             raise ValueError(f"Plugin '{plugin.name}' is already registered")
         self._plugins[plugin.name] = plugin
+        # Invalidate cache entry if present
+        if hasattr(self, '_get_cache') and plugin.name in self._get_cache:
+            self._get_cache.pop(plugin.name, None)
+            if hasattr(self, '_cache_order'):
+                try:
+                    self._cache_order.remove(plugin.name)
+                except ValueError:
+                    pass
         try:
             plugin.on_load()
             # Perform a health check after loading
@@ -106,10 +199,42 @@ class PluginManager:
         if name in self._plugins:
             self._plugins[name].on_unload()
             del self._plugins[name]
+            # Invalidate cache
+            if hasattr(self, '_get_cache') and name in self._get_cache:
+                self._get_cache.pop(name, None)
+                if hasattr(self, '_cache_order'):
+                    try:
+                        self._cache_order.remove(name)
+                    except ValueError:
+                        pass
 
     def get(self, name: str) -> Optional[Plugin]:
-        """Retrieve a plugin by name, or None if not found."""
-        return self._plugins.get(name)
+        """Retrieve a plugin by name, or None if not found. Uses cache if enabled."""
+        if self._cache_size <= 0:
+            return self._plugins.get(name)
+
+        # Check cache first
+        if name in self._get_cache:
+            # Move to end (most recent) if using order tracking
+            if self._cache_size > 0 and hasattr(self, '_cache_order'):
+                try:
+                    self._cache_order.remove(name)
+                except ValueError:
+                    pass
+                self._cache_order.append(name)
+            return self._get_cache[name]
+
+        # Cache miss: fetch from source
+        plugin = self._plugins.get(name)
+        if plugin is not None:
+            # Insert into cache
+            if len(self._cache_order) >= self._cache_size:
+                # Evict oldest
+                oldest = self._cache_order.pop(0)
+                self._get_cache.pop(oldest, None)
+            self._cache_order.append(name)
+            self._get_cache[name] = plugin
+        return plugin
 
     def list_plugins(self) -> list:
         """Return list of registered plugin names."""
@@ -119,6 +244,11 @@ class PluginManager:
         """Unregister all plugins."""
         for name in list(self._plugins.keys()):
             self.unregister(name)
+        # Clear cache fully
+        if hasattr(self, '_get_cache'):
+            self._get_cache.clear()
+        if hasattr(self, '_cache_order'):
+            self._cache_order.clear()
 
     def load_from_module(self, module, plugin_class=None, name: str = None):
         """
@@ -183,3 +313,47 @@ class PluginManager:
         adapter = ModuleAdapter(module, name or module.__name__.split('.')[-1])
         self.register(adapter)
         return adapter
+
+    def load_manifest(self, manifest_path: str, plugin_cls: Type[Plugin]) -> Plugin:
+        """
+        Load a plugin from a manifest and a Plugin subclass.
+
+        Args:
+            manifest_path: Path to the plugin's manifest TOML file.
+            plugin_cls: The Plugin subclass to instantiate.
+
+        Returns:
+            The registered plugin instance.
+
+        The manifest provides metadata and config defaults. The plugin_cls
+        should accept config values via __init__ or a configure() method.
+        """
+        manifest = PluginManifest.from_toml(manifest_path)
+
+        # Check dependencies
+        missing = manifest.validate_dependencies()
+        if missing:
+            import warnings
+            warnings.warn(
+                f"Plugin '{manifest.name}' missing dependencies: {', '.join(missing)}",
+                RuntimeWarning
+            )
+
+        # Instantiate plugin, passing config defaults
+        try:
+            # Try to pass config via constructor if it accepts **kwargs
+            plugin = plugin_cls(**manifest.config_defaults)
+        except TypeError:
+            # Maybe plugin has a configure method
+            plugin = plugin_cls()
+            if hasattr(plugin, 'configure'):
+                plugin.configure(**manifest.config_defaults)
+            # Otherwise ignore defaults
+        # Override name from manifest
+        plugin.name = manifest.name
+        plugin.version = manifest.version
+        if not plugin.description:
+            plugin.description = manifest.description
+
+        self.register(plugin)
+        return plugin
