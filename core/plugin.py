@@ -32,6 +32,18 @@ class Plugin(ABC):
         """Called when the plugin is unloaded."""
         pass
 
+    def health_check(self) -> bool:
+        """
+        Perform a quick health check to verify the plugin is functional.
+
+        Returns:
+            True if healthy, False otherwise.
+
+        Plugins can override this to test external dependencies
+        (e.g., database connectivity, API availability).
+        """
+        return True
+
     @abstractmethod
     async def execute(self, *args, **kwargs) -> Any:
         """Perform the plugin's primary functionality."""
@@ -69,7 +81,18 @@ class PluginManager:
         self._plugins[plugin.name] = plugin
         try:
             plugin.on_load()
-        except Exception as e:
+            # Perform a health check after loading
+            try:
+                healthy = plugin.health_check()
+                if not healthy:
+                    # Log a warning but continue; plugin is usable but may have issues
+                    import warnings
+                    warnings.warn(f"Plugin '{plugin.name}' health check reported unhealthy state", RuntimeWarning)
+            except Exception as e:
+                # Health check itself failed; treat as load failure
+                del self._plugins[plugin.name]
+                raise RuntimeError(f"Plugin '{plugin.name}' health check failed: {e}") from e
+        except Exception:
             # Unregister if on_load fails to keep consistency
             del self._plugins[plugin.name]
             raise

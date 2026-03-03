@@ -143,34 +143,40 @@ class DAG:
                         f"Task '{name}' depends on unknown task '{dep}'"
                     )
 
-        # Detect cycles using DFS with parent tracking
-        visited = set()
-        rec_stack = set()
-        parent: Dict[str, str] = {}  # child -> parent in DFS tree
+        # Detect cycles using iterative DFS with parent tracking (avoid recursion limits)
+        # State: 0=unvisited, 1=visiting (in stack), 2=visited
+        state: Dict[str, int] = {name: 0 for name in self._nodes}
+        parent: Dict[str, str] = {}
 
-        def dfs(u: str) -> bool:
-            visited.add(u)
-            rec_stack.add(u)
-            for v in self._nodes[u].dependents:
-                if v not in visited:
-                    parent[v] = u
-                    if not dfs(v):
-                        return False
-                elif v in rec_stack:
-                    # Found cycle: reconstruct path from v to u then back to v
-                    cycle = self._reconstruct_cycle(parent, u, v)
-                    raise CyclicDependencyError(
-                        f"Cyclic dependency detected: {' -> '.join(cycle)}"
-                    )
-            rec_stack.remove(u)
-            return True
+        for start_node in self._nodes:
+            if state[start_node] != 0:
+                continue
+            # Initialize DFS from this node
+            state[start_node] = 1
+            parent[start_node] = None
+            stack = [(start_node, iter(self._nodes[start_node].dependents))]
 
-        for node_name in self._nodes:
-            if node_name not in visited:
-                parent.clear()
-                parent[node_name] = None  # root marker
-                if not dfs(node_name):
-                    return False
+            while stack:
+                current, neighbors_iter = stack[-1]
+                try:
+                    neighbor = next(neighbors_iter)
+                    if state[neighbor] == 0:
+                        # Visit neighbor
+                        state[neighbor] = 1
+                        parent[neighbor] = current
+                        stack.append((neighbor, iter(self._nodes[neighbor].dependents)))
+                    elif state[neighbor] == 1:
+                        # Cycle detected: neighbor is in current DFS path
+                        cycle = self._reconstruct_cycle(parent, current, neighbor)
+                        raise CyclicDependencyError(
+                            f"Cyclic dependency detected: {' -> '.join(cycle)}"
+                        )
+                    # else state[neighbor] == 2: already fully visited, ignore
+                except StopIteration:
+                    # All neighbors processed
+                    state[current] = 2
+                    stack.pop()
+
         return True
 
     def _reconstruct_cycle(self, parent: Dict[str, str], u: str, v: str) -> List[str]:

@@ -335,10 +335,11 @@ class Orchestrator:
 
     def report(self) -> None:
         """Print a summary of task execution results."""
-        print(f"\n🚀 [Catalyst] Orchestration Complete")
+        print(f"\n[Catalyst] Orchestration Complete")
         print("-" * 40)
         for t in self.tasks.values():
-            status_icon = "✅" if t.status == TaskStatus.COMPLETED else "❌"
+            # Use plain ASCII status markers for cross-platform compatibility
+            status_icon = "[OK]" if t.status == TaskStatus.COMPLETED else "[ERR]"
             print(f"{status_icon} Task: {t.name:<20} | Status: {t.status.value:<10} | Time: {t.duration:.4f}s")
         print("-" * 40)
 
