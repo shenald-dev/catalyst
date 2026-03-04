@@ -331,6 +331,131 @@ class DAG:
         path.reverse()
         return path
 
+    def is_reachable(self, from_task: str, to_task: str) -> bool:
+        """
+        Check if there is a directed path from `from_task` to `to_task`.
+
+        Args:
+            from_task: Starting task name
+            to_task: Target task name
+
+        Returns:
+            True if reachable, False otherwise.
+
+        Note:
+            Uses iterative DFS; safe for large DAGs modulo stack depth.
+        """
+        if from_task not in self._nodes or to_task not in self._nodes:
+            return False
+        if from_task == to_task:
+            return True
+        stack = [from_task]
+        visited = set()
+        while stack:
+            current = stack.pop()
+            if current == to_task:
+                return True
+            if current in visited:
+                continue
+            visited.add(current)
+            node = self._nodes[current]
+            for child in node.dependents:
+                if child not in visited:
+                    stack.append(child)
+        return False
+
+    def get_ancestors(self, task_name: str) -> Set[str]:
+        """
+        Return the set of all tasks that are direct or indirect dependencies of `task_name`.
+
+        Args:
+            task_name: The task whose ancestors to retrieve.
+
+        Returns:
+            Set of ancestor task names. Empty if task has no dependencies.
+
+        Raises:
+            KeyError: If the task does not exist.
+        """
+        if task_name not in self._nodes:
+            raise KeyError(f"Task '{task_name}' not found")
+        ancestors = set()
+        stack = [task_name]
+        visited = set()
+        while stack:
+            current = stack.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            node = self._nodes[current]
+            for dep in node.dependencies:
+                if dep not in ancestors:
+                    ancestors.add(dep)
+                    stack.append(dep)
+        return ancestors
+
+    def get_descendants(self, task_name: str) -> Set[str]:
+        """
+        Return the set of all tasks that directly or indirectly depend on `task_name`.
+
+        Args:
+            task_name: The task whose descendants to retrieve.
+
+        Returns:
+            Set of descendant task names. Empty if task has no dependents.
+
+        Raises:
+            KeyError: If the task does not exist.
+        """
+        if task_name not in self._nodes:
+            raise KeyError(f"Task '{task_name}' not found")
+        descendants = set()
+        stack = [task_name]
+        visited = set()
+        while stack:
+            current = stack.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            node = self._nodes[current]
+            for child in node.dependents:
+                if child not in descendants:
+                    descendants.add(child)
+                    stack.append(child)
+        return descendants
+
+    def get_depth(self, task_name: str) -> int:
+        """
+        Return the maximum number of edges from any root to `task_name`.
+
+        Roots (tasks with no dependencies) have depth 0.
+        If the DAG is not fully connected and the task is not reachable from any root, returns 0.
+
+        Args:
+            task_name: The task to compute depth for.
+
+        Returns:
+            Integer depth (>= 0).
+
+        Raises:
+            KeyError: If the task does not exist.
+        """
+        if task_name not in self._nodes:
+            raise KeyError(f"Task '{task_name}' not found")
+        # Compute depths via topological order
+        order = self.topological_sort()
+        depths: Dict[str, int] = {}
+        for layer in order:
+            for name in layer:
+                node = self._nodes[name]
+                if not node.dependencies:
+                    depths[name] = 0
+                else:
+                    # take max depth of dependencies
+                    max_parent = max(depths[dep] for dep in node.dependencies)
+                    depths[name] = max_parent + 1
+        return depths.get(task_name, 0)
+
     def size(self) -> int:
         """Number of tasks in the DAG."""
         return len(self._nodes)
