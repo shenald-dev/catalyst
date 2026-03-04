@@ -147,6 +147,10 @@ class Orchestrator:
 
         Each .py file in plugin_dir should define either a Plugin subclass
         or provide a run/execute function. They are wrapped automatically.
+
+        If a corresponding .yaml manifest exists with the same base name,
+        the plugin will be instantiated using the manifest's configuration
+        defaults (unused options are ignored by the plugin constructor).
         """
         if not os.path.exists(plugin_dir):
             return
@@ -156,7 +160,26 @@ class Orchestrator:
                 module_name = f"plugins.builtin.{item[:-3]}"
                 try:
                     module = importlib.import_module(module_name)
-                    self.plugin_mgr.load_from_module(module)
+                    # Find a Plugin subclass in the module, if any
+                    plugin_cls = None
+                    for _, obj in inspect.getmembers(module):
+                        if inspect.isclass(obj) and issubclass(obj, Plugin) and obj is not Plugin:
+                            plugin_cls = obj
+                            break
+                    if plugin_cls:
+                        # Look for a manifest file next to the module
+                        base = item[:-3]
+                        manifest_path = os.path.join(plugin_dir, f"{base}.yaml")
+                        if os.path.exists(manifest_path):
+                            # Load plugin using manifest for config defaults and metadata
+                            # auto_install defaults to False; dependencies must be installed beforehand
+                            self.plugin_mgr.load_manifest(manifest_path, plugin_cls, auto_install=False)
+                        else:
+                            # No manifest; instantiate plugin with no config (use class defaults)
+                            self.plugin_mgr.load_from_module(module, plugin_class=plugin_cls)
+                    else:
+                        # No explicit Plugin subclass; fall back to module adapter (run/execute)
+                        self.plugin_mgr.load_from_module(module)
                 except Exception as e:
                     print(f"Failed to load plugin {module_name}: {e}")
 
@@ -472,6 +495,11 @@ class Orchestrator:
     def get_dag(self) -> DAG:
         """Return the underlying DAG for introspection."""
         return self.dag
+
+    @property
+    def resource_pool(self) -> Dict[str, asyncio.BoundedSemaphore]:
+        """Return the dictionary of resource semaphores for introspection."""
+        return self._resource_semaphores
 
     def validate(self) -> None:
         """Validate DAG structure without running."""

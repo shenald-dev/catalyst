@@ -331,6 +331,25 @@ class DAG:
         path.reverse()
         return path
 
+    def estimated_makespan(self) -> float:
+        """
+        Estimate the total execution time of the DAG assuming ideal resource conditions.
+
+        Returns the sum of durations along the critical path. If tasks lack
+        a 'duration' in metadata, defaults to 1.0 per task.
+
+        This provides a quick lower-bound on the time needed to complete
+        the workflow if resources are unlimited.
+        """
+        path = self.critical_path()
+        if not path:
+            return 0.0
+        total = 0.0
+        for name in path:
+            node = self._nodes[name]
+            total += node.metadata.get('duration', 1.0)
+        return total
+
     def is_reachable(self, from_task: str, to_task: str) -> bool:
         """
         Check if there is a directed path from `from_task` to `to_task`.

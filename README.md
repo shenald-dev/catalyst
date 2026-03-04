@@ -11,7 +11,7 @@ Build with speed, build with intent. Catalyst is the result of deep-diving into 
 ## 🛠️ Features (v0.5 - Phase 4)
 
 - **Parallel Execution:** Native asyncio concurrency with layer-based execution.
-- **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, DOT export.
+- **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, makespan estimation, DOT export.
 - **Graph Introspection:** Query ancestors, descendants, depth, and reachability for any task (enables monitoring and dynamic decisions).
 - **Resource-Aware Scheduling:** Limit CPU, memory, or custom resources with semaphore-based gating.
 - **Robust Error Handling:** Per-task timeouts, configurable retry policies (exponential backoff, exception filters).
@@ -128,7 +128,8 @@ config:
   defaults: { driver: "sqlite", database: ":memory:", pool_size: 5 }
 ```
 
-The manifest enables dependency checks and config validation via Pydantic (if installed).
+The manifest enables dependency checks and config validation via Pydantic (if installed).  
+**Note:** Built-in plugins already include manifest files, and their declared configuration defaults are automatically applied when `engine.load_plugins()` is called.
 
 ---
 

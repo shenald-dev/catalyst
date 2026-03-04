@@ -1,0 +1,28 @@
+# Development and testing dependencies for Catalyst
+# Optional runtime dependencies used by plugins and tests
+
+# High-performance serialization
+msgspec>=0.18.0
+
+# Validation and settings
+pydantic>=2.0.0
+
+# Observability
+opentelemetry-api>=1.0.0
+opentelemetry-sdk>=1.0.0
+
+# HTTP plugin
+aiohttp>=3.8.0
+aiosmtplib>=3.0.0
+
+# Database plugins
+aiosqlite>=0.19.0  # SQLite async support
+asyncpg>=0.29.0    # PostgreSQL async driver
+sqlalchemy>=2.0.0  # ORM (optional)
+
+# Cache plugins
+redis>=4.0.0
+pymemcache>=4.0.0
+
+# Core YAML support (already in requirements.txt but included for dev)
+PyYAML>=5.4
