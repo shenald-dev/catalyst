@@ -8,7 +8,7 @@ Catalyst is an intentional, high-performance task engine designed to handle comp
 
 Build with speed, build with intent. Catalyst is the result of deep-diving into systems design to create a tool that handles the "heavy lifting" of workflow automation without the boilerplate.
 
-## 🛠️ Features (v0.4 - Phase 3)
+## 🛠️ Features (v0.5 - Phase 4)
 
 - **Parallel Execution:** Native asyncio concurrency with layer-based execution.
 - **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, DOT export.
@@ -17,13 +17,15 @@ Build with speed, build with intent. Catalyst is the result of deep-diving into 
 - **Robust Error Handling:** Per-task timeouts, configurable retry policies (exponential backoff, exception filters).
 - **Cancellation Propagation:** Optional fail-fast for downstream tasks when upstream fails.
 - **Declarative Workflows:** Load entire pipelines from YAML files with `Orchestrator.load_yaml()`.
-- **Observability:** Optional OpenTelemetry tracing (`enable_tracing=True`) for per-task spans and latency insights.
+- **Observability:** Optional OpenTelemetry tracing with configurable OTLP exporter for sending spans to observability backends.
 - **High-Performance Serialization:** msgspec-accelerated DAG serialization (fallback to JSON).
+- **Profiling Integration:** On-demand py-spy profiling to identify hot paths and performance bottlenecks (`enable_profiling=True`).
 - **Plugin Ecosystem:**
   - Auto-discovery of Plugin subclasses.
-  - Plugin manifest format (YAML) for metadata, dependencies, and config validation.
+  - Plugin manifest format (YAML) for metadata, dependencies, and config validation via Pydantic.
+  - Automatic dependency resolution: `auto_install=True` triggers `pip install` for missing plugin dependencies.
   - LRU-cached plugin lookups for minimal overhead.
-  - Built-in plugins: `shell`, `http`, and new `database`, `cache`, `notify`.
+  - Built-in plugins: `shell`, upgraded `http` (aiohttp with connection pooling, retries, circuit breaker), `database`, `cache`, `notify`, and new `docker` for container orchestration.
 - **Minimalist Core:** No required external dependencies; optional PyYAML for YAML support.
 
 ## 🚀 Quick Start

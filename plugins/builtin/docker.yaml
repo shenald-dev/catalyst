@@ -1,0 +1,10 @@
+plugin:
+  name: "docker"
+  version: "0.1.0"
+  description: "Container lifecycle management (run, stop, logs, exec, build)"
+  dependencies:
+    - "docker>=6.0.0"
+config:
+  schema: ""
+  defaults:
+    docker_host: ""

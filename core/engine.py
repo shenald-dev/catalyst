@@ -7,6 +7,8 @@ import time
 import uuid
 import importlib
 import os
+import subprocess
+import sys
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Dict, Callable, Any, Optional
@@ -60,7 +62,12 @@ class Orchestrator:
                  enable_cancellation_propagation: bool = True,
                  enable_tracing: bool = False,
                  use_uvloop: bool = False,
-                 tracer_provider = None):
+                 tracer_provider = None,
+                 otlp_endpoint: Optional[str] = None,
+                 otlp_headers: Optional[Dict[str, str]] = None,
+                 otlp_insecure: bool = False,
+                 enable_profiling: bool = False,
+                 profile_output: Optional[str] = None):
         """
         Initialize the orchestrator.
 
@@ -71,6 +78,9 @@ class Orchestrator:
             enable_tracing: If True, creates OpenTelemetry spans for each task (requires opentelemetry-api).
             use_uvloop: If True, uses uvloop for a faster event loop (requires uvloop installed).
             tracer_provider: Optional OpenTelemetry tracer provider; if None, uses global provider.
+            otlp_endpoint: OTLP gRPC endpoint (e.g., "http://localhost:4317"). If set, configures OTLP exporter.
+            otlp_headers: Optional headers for OTLP exporter (e.g., authorization).
+            otlp_insecure: If True, disables TLS for OTLP exporter (useful for local dev).
         """
         if use_uvloop:
             _maybe_use_uvloop()
@@ -82,12 +92,43 @@ class Orchestrator:
         self.enable_cancellation = enable_cancellation_propagation
         self.enable_tracing = enable_tracing
         self._tracer = None
+        self._otlp_exporter = None
         if enable_tracing:
             try:
                 from opentelemetry import trace
-                self._tracer = trace.get_tracer(__name__, tracer_provider=tracer_provider)
+                from opentelemetry.sdk.trace import TracerProvider
+                from opentelemetry.sdk.trace.export import BatchSpanProcessor
+                # If tracer_provider is provided, use it directly
+                if tracer_provider:
+                    self._tracer = trace.get_tracer(__name__, tracer_provider=tracer_provider)
+                else:
+                    # Set up a default TracerProvider with optional OTLP exporter
+                    provider = TracerProvider()
+                    if otlp_endpoint:
+                        try:
+                            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+                            self._otlp_exporter = OTLPSpanExporter(
+                                endpoint=otlp_endpoint,
+                                headers=otlp_headers or {},
+                                insecure=otlp_insecure
+                            )
+                            processor = BatchSpanProcessor(self._otlp_exporter)
+                            provider.add_span_processor(processor)
+                        except ImportError:
+                            # OTLP exporter not available; continue without export
+                            pass
+                    # Set global provider
+                    trace.set_tracer_provider(provider)
+                    self._tracer = trace.get_tracer(__name__)
+                self.enable_tracing = True
             except ImportError:
                 self.enable_tracing = False  # degrade gracefully
+
+        # Profiling integration (py-spy)
+        self.enable_profiling = enable_profiling
+        self.profile_output = profile_output or f"profile-{int(time.time())}.json"
+        self._profile_proc = None
+
         self._resource_semaphores: Dict[str, asyncio.BoundedSemaphore] = {}
         self._cancellation_flags: Dict[str, bool] = {}  # task name -> cancelled?
         # Initialize plugin manager with caching for performance
@@ -281,6 +322,15 @@ class Orchestrator:
 
         self.start_time = time.perf_counter()
 
+        # Profiling: start py-spy if enabled
+        profiling_proc = None
+        if self.enable_profiling:
+            try:
+                profiling_proc = self._start_profiling()
+            except Exception as e:
+                import warnings
+                warnings.warn(f"Failed to start profiling: {e}. Continuing without profiling.")
+
         # Tracing: create top-level span for this orchestration run
         span_ctx = None
         if self.enable_tracing and self._tracer:
@@ -314,6 +364,12 @@ class Orchestrator:
         finally:
             if span_ctx is not None:
                 span_ctx.__exit__(None, None, None)
+            if profiling_proc is not None:
+                try:
+                    profiling_proc.terminate()
+                    profiling_proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    profiling_proc.kill()
 
     async def _execute_task_internal(self, task: Task) -> Any:
         """Internal task execution without retry/timeout wrapping."""
@@ -378,6 +434,28 @@ class Orchestrator:
             # Add its dependents to the queue
             downstream_node = self.dag.get_task(current)
             to_cancel.extend(downstream_node.dependents)
+
+    def _start_profiling(self) -> subprocess.Popen:
+        """
+        Start py-spy as a subprocess to profile the current Python process.
+
+        Returns:
+            subprocess.Popen instance for the profiling process.
+        """
+        # Determine py-spy command: try 'py-spy' then 'python -m py_spy'
+        try:
+            subprocess.run(["py-spy", "--version"], capture_output=True, check=True, timeout=1)
+            cmd = ["py-spy", "record", "-o", self.profile_output, "--pid", str(os.getpid())]
+        except Exception:
+            # Try module invocation
+            cmd = [sys.executable, "-m", "py_spy", "record", "-o", self.profile_output, "--pid", str(os.getpid())]
+        # Start the subprocess; capture output to avoid cluttering console
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return proc
 
     def report(self) -> None:
         """Print a summary of task execution results."""

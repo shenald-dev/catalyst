@@ -9,6 +9,7 @@ Provides:
 
 import asyncio
 import inspect
+import importlib
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Type, List
 import yaml
@@ -290,7 +291,8 @@ class PluginManager:
                 self._mod = mod
                 self.name = name or default_name
                 self.version = getattr(mod, "__version__", "0.0.1")
-                self.description = getattr(mod, "__doc__", "").strip() or "Module adapter"
+                doc = getattr(mod, "__doc__", None) or ""
+                self.description = doc.strip() or "Module adapter"
 
             async def execute(self, *args, **kwargs):
                 if hasattr(self._mod, "run"):
@@ -315,13 +317,45 @@ class PluginManager:
         self.register(adapter)
         return adapter
 
-    def load_manifest(self, manifest_path: str, plugin_cls: Type[Plugin]) -> Plugin:
+    def _load_schema_class(self, schema_path: str):
+        """
+        Import and return a class from a module path string.
+
+        Args:
+            schema_path: Like "plugins.builtin.database_config:DatabaseConfig" or "module.submodule:Model".
+
+        Returns:
+            The imported class.
+        """
+        if ':' in schema_path:
+            module_name, attr_name = schema_path.split(':', 1)
+        elif '.' in schema_path and ' ' not in schema_path:
+            # Heuristic: last dot separates module and class
+            parts = schema_path.rsplit('.', 1)
+            if len(parts) == 2:
+                module_name, attr_name = parts
+            else:
+                module_name = schema_path
+                attr_name = None
+        else:
+            module_name = schema_path
+            attr_name = None
+        module = importlib.import_module(module_name)
+        if attr_name:
+            cls = getattr(module, attr_name)
+        else:
+            # Assume the module itself is the class (unlikely)
+            cls = module
+        return cls
+
+    def load_manifest(self, manifest_path: str, plugin_cls: Type[Plugin], auto_install: bool = False) -> Plugin:
         """
         Load a plugin from a manifest and a Plugin subclass.
 
         Args:
             manifest_path: Path to the plugin's manifest TOML file.
             plugin_cls: The Plugin subclass to instantiate.
+            auto_install: If True, attempt to install missing dependencies via pip.
 
         Returns:
             The registered plugin instance.
@@ -334,11 +368,21 @@ class PluginManager:
         # Check dependencies
         missing = manifest.validate_dependencies()
         if missing:
-            import warnings
-            warnings.warn(
-                f"Plugin '{manifest.name}' missing dependencies: {', '.join(missing)}",
-                RuntimeWarning
-            )
+            if auto_install:
+                # Attempt to install missing dependencies automatically
+                installed = self._auto_install_dependencies(missing)
+                # Re-validate after installation attempt
+                still_missing = manifest.validate_dependencies()
+                if still_missing:
+                    raise RuntimeError(
+                        f"Failed to install dependencies for plugin '{manifest.name}': {', '.join(still_missing)}"
+                    )
+            else:
+                import warnings
+                warnings.warn(
+                    f"Plugin '{manifest.name}' missing dependencies: {', '.join(missing)}",
+                    RuntimeWarning
+                )
 
         # Instantiate plugin, passing config defaults
         try:
@@ -356,5 +400,76 @@ class PluginManager:
         if not plugin.description:
             plugin.description = manifest.description
 
+        # Perform config validation if schema provided
+        if manifest.config_schema:
+            try:
+                # Import Pydantic if available
+                import pydantic
+                from pydantic import ValidationError
+            except ImportError as e:
+                raise ImportError(
+                    f"Plugin '{manifest.name}' specifies a config_schema but Pydantic is not installed. "
+                    "Install pydantic to enable schema validation."
+                ) from e
+            try:
+                schema_cls = self._load_schema_class(manifest.config_schema)
+            except Exception as e:
+                raise ImportError(
+                    f"Failed to import config schema '{manifest.config_schema}' for plugin '{manifest.name}': {e}"
+                ) from e
+            # Merge defaults with any runtime config already set on plugin (if any)
+            # For simplicity, validate against defaults; later runtime config override should also be validated via Plugin.validate
+            try:
+                # If plugin already has a config dict attribute, merge
+                runtime_config = getattr(plugin, 'config', {})
+                combined_config = {**manifest.config_defaults, **runtime_config}
+                validated = schema_cls(**combined_config)
+                # Store validated config back on plugin
+                plugin.config = validated
+                # Also set attributes for convenience
+                plugin.config_dict = validated.dict()
+            except ValidationError as ve:
+                raise ValueError(
+                    f"Configuration validation failed for plugin '{manifest.name}': {ve}"
+                ) from ve
+
         self.register(plugin)
         return plugin
+
+    def _auto_install_dependencies(self, dependencies: List[str]) -> List[str]:
+        """
+        Attempt to install a list of Python packages using pip.
+
+        Args:
+            dependencies: List of package specifiers (e.g., ["aiohttp>=3.0", "pydantic"]).
+
+        Returns:
+            List of packages that were successfully installed.
+
+        Raises:
+            subprocess.CalledProcessError if pip installation fails for any package.
+        """
+        import subprocess
+        import sys
+        installed = []
+        for dep in dependencies:
+            # Check if already available (maybe installed in the meantime)
+            pkg_name = dep.split('>')[0].split('=')[0].split('<')[0].strip()
+            try:
+                __import__(pkg_name)
+                continue  # already available
+            except ImportError:
+                pass
+            # Install using pip
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", dep],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            if result.returncode != 0:
+                raise subprocess.CalledProcessError(
+                    result.returncode, [sys.executable, "-m", "pip", "install", dep], result.stderr
+                )
+            installed.append(dep)
+        return installed
