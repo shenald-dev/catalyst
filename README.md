@@ -12,6 +12,7 @@ Build with speed, build with intent. Catalyst is the result of deep-diving into 
 
 - **Parallel Execution:** Native asyncio concurrency with layer-based execution.
 - **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, DOT export.
+- **Graph Introspection:** Query ancestors, descendants, depth, and reachability for any task (enables monitoring and dynamic decisions).
 - **Resource-Aware Scheduling:** Limit CPU, memory, or custom resources with semaphore-based gating.
 - **Robust Error Handling:** Per-task timeouts, configurable retry policies (exponential backoff, exception filters).
 - **Cancellation Propagation:** Optional fail-fast for downstream tasks when upstream fails.
