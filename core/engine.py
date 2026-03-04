@@ -9,6 +9,7 @@ import importlib
 import os
 import subprocess
 import sys
+import warnings
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Dict, Callable, Any, Optional
@@ -67,7 +68,9 @@ class Orchestrator:
                  otlp_headers: Optional[Dict[str, str]] = None,
                  otlp_insecure: bool = False,
                  enable_profiling: bool = False,
-                 profile_output: Optional[str] = None):
+                 profile_output: Optional[str] = None,
+                 enable_metrics: bool = False,
+                 metrics_port: Optional[int] = None):
         """
         Initialize the orchestrator.
 
@@ -81,6 +84,8 @@ class Orchestrator:
             otlp_endpoint: OTLP gRPC endpoint (e.g., "http://localhost:4317"). If set, configures OTLP exporter.
             otlp_headers: Optional headers for OTLP exporter (e.g., authorization).
             otlp_insecure: If True, disables TLS for OTLP exporter (useful for local dev).
+            enable_metrics: If True, enables Prometheus metrics collection (requires prometheus-client).
+            metrics_port: Optional port number to start an HTTP server exposing /metrics. If None, metrics are only available programmatically.
         """
         if use_uvloop:
             _maybe_use_uvloop()
@@ -128,6 +133,31 @@ class Orchestrator:
         self.enable_profiling = enable_profiling
         self.profile_output = profile_output or f"profile-{int(time.time())}.json"
         self._profile_proc = None
+
+        # Metrics integration (optional)
+        self.enable_metrics = enable_metrics
+        self.metrics_port = metrics_port
+        self._metrics_registry = None
+        self._task_counter = None
+        self._task_duration = None
+        self._dag_size_gauge = None
+        self._active_tasks_gauge = None
+        self._resource_usage_gauges = {}
+        self._metrics_server_thread = None
+        if self.enable_metrics:
+            try:
+                from prometheus_client import Counter, Histogram, Gauge, start_http_server, REGISTRY
+                self._metrics_registry = REGISTRY
+                self._task_counter = Counter('catalyst_tasks_total', 'Total tasks executed', ['name', 'status'], registry=self._metrics_registry)
+                self._task_duration = Histogram('catalyst_task_duration_seconds', 'Task execution duration', ['name'], registry=self._metrics_registry)
+                self._dag_size_gauge = Gauge('catalyst_dag_size', 'Number of tasks in DAG', registry=self._metrics_registry)
+                self._active_tasks_gauge = Gauge('catalyst_active_tasks', 'Number of currently executing tasks', registry=self._metrics_registry)
+                # Resource usage gauges will be created lazily per resource
+                if self.metrics_port is not None:
+                    start_http_server(self.metrics_port, registry=self._metrics_registry)
+            except ImportError:
+                warnings.warn("prometheus-client not installed; metrics collection disabled", RuntimeWarning)
+                self.enable_metrics = False
 
         self._resource_semaphores: Dict[str, asyncio.BoundedSemaphore] = {}
         self._cancellation_flags: Dict[str, bool] = {}  # task name -> cancelled?
@@ -237,6 +267,10 @@ class Orchestrator:
         except ValueError as e:
             raise
 
+        # Update DAG size gauge if metrics enabled
+        if self.enable_metrics and self._dag_size_gauge is not None:
+            self._dag_size_gauge.set(len(self.dag))
+
         return task.id
 
     async def _run_task(self, task: Task) -> None:
@@ -255,77 +289,92 @@ class Orchestrator:
         attempt = 0
         last_exception = None
 
-        while attempt < max_attempts:
-            attempt += 1
-            try:
-                # Acquire resource semaphores (if resource tracking enabled)
-                semaphore_acquired = []
-                if self.resource_limits:
-                    for resource, requirement in dag_node.resources.items():
-                        if resource not in self._resource_semaphores:
-                            continue  # No limit for this resource type
-                        # Simplified: acquire one semaphore per unit (floor of requirement)
-                        permits = max(1, int(requirement))
-                        for _ in range(permits):
-                            await self._resource_semaphores[resource].acquire()
-                            semaphore_acquired.append(resource)
+        if self.enable_metrics and self._active_tasks_gauge is not None:
+            self._active_tasks_gauge.inc()
+        try:
+            while attempt < max_attempts:
+                attempt += 1
+                try:
+                    # Acquire resource semaphores (if resource tracking enabled)
+                    semaphore_acquired = []
+                    if self.resource_limits:
+                        for resource, requirement in dag_node.resources.items():
+                            if resource not in self._resource_semaphores:
+                                continue  # No limit for this resource type
+                            # Simplified: acquire one semaphore per unit (floor of requirement)
+                            permits = max(1, int(requirement))
+                            for _ in range(permits):
+                                await self._resource_semaphores[resource].acquire()
+                                semaphore_acquired.append(resource)
 
-                # Set up timeout if specified
-                task_coro = self._execute_task_internal(task)
-                if dag_node.timeout:
-                    task_future = asyncio.wait_for(task_coro, timeout=dag_node.timeout)
-                else:
-                    task_future = task_coro
+                    # Set up timeout if specified
+                    task_coro = self._execute_task_internal(task)
+                    if dag_node.timeout:
+                        task_future = asyncio.wait_for(task_coro, timeout=dag_node.timeout)
+                    else:
+                        task_future = task_coro
 
-                # Execute the task (with tracing if enabled)
-                if self.enable_tracing:
-                    result = await task_future
-                else:
-                    result = await task_future
+                    # Execute the task (with tracing if enabled)
+                    if self.enable_tracing:
+                        result = await task_future
+                    else:
+                        result = await task_future
 
-                # Release resources
-                for resource in semaphore_acquired:
-                    self._resource_semaphores[resource].release()
+                    # Release resources
+                    for resource in semaphore_acquired:
+                        self._resource_semaphores[resource].release()
 
-                task.result = result
-                task.status = TaskStatus.COMPLETED
-                task.duration = time.perf_counter() - start_time
-                # Success - exit retry loop
-                return
+                    task.result = result
+                    task.status = TaskStatus.COMPLETED
+                    task.duration = time.perf_counter() - start_time
+                    # Record metrics for successful completion
+                    if self.enable_metrics:
+                        if self._task_counter:
+                            self._task_counter.labels(name=task.name, status='completed').inc()
+                        if self._task_duration:
+                            self._task_duration.labels(name=task.name).observe(task.duration)
+                    # Success - exit retry loop
+                    return
 
-            except asyncio.TimeoutError as e:
-                last_exception = e
-                task.result = e
-                # Release any acquired resources
-                for resource in semaphore_acquired:
-                    self._resource_semaphores[resource].release()
-                # Backoff before retry
-                if attempt < max_attempts:
-                    await asyncio.sleep(backoff_factor * (2 ** (attempt - 1)))
-                continue
+                except asyncio.TimeoutError as e:
+                    last_exception = e
+                    task.result = e
+                    # Release any acquired resources
+                    for resource in semaphore_acquired:
+                        self._resource_semaphores[resource].release()
+                    # Backoff before retry
+                    if attempt < max_attempts:
+                        await asyncio.sleep(backoff_factor * (2 ** (attempt - 1)))
+                    continue
 
-            except Exception as e:
-                last_exception = e
-                task.result = e
-                # Release any acquired resources
-                for resource in semaphore_acquired:
-                    self._resource_semaphores[resource].release()
-                # Check if this exception should trigger retry
-                retry_on = retry_policy.get("retry_on", [])
-                if retry_on and not any(isinstance(e, rt) for rt in retry_on):
-                    # Not a retryable exception
-                    break
-                # Backoff before retry
-                if attempt < max_attempts:
-                    await asyncio.sleep(backoff_factor * (2 ** (attempt - 1)))
-                continue
+                except Exception as e:
+                    last_exception = e
+                    task.result = e
+                    # Release any acquired resources
+                    for resource in semaphore_acquired:
+                        self._resource_semaphores[resource].release()
+                    # Check if this exception should trigger retry
+                    retry_on = retry_policy.get("retry_on", [])
+                    if retry_on and not any(isinstance(e, rt) for rt in retry_on):
+                        # Not a retryable exception
+                        break
+                    # Backoff before retry
+                    if attempt < max_attempts:
+                        await asyncio.sleep(backoff_factor * (2 ** (attempt - 1)))
+                    continue
 
-        # All attempts exhausted or non-retryable error
-        task.status = TaskStatus.FAILED
-        task.duration = time.perf_counter() - start_time
-        # If cancellation propagation is enabled, mark downstream tasks as cancelled
-        if self.enable_cancellation and last_exception is not None:
-            self._propagate_cancellation(task.name)
+            # All attempts exhausted or non-retryable error
+            task.status = TaskStatus.FAILED
+            task.duration = time.perf_counter() - start_time
+            # Record metrics for failure
+            if self.enable_metrics and self._task_counter:
+                self._task_counter.labels(name=task.name, status='failed').inc()
+            # If cancellation propagation is enabled, mark downstream tasks as cancelled
+            if self.enable_cancellation and last_exception is not None:
+                self._propagate_cancellation(task.name)
+        finally:
+            if self.enable_metrics and self._active_tasks_gauge is not None:
+                self._active_tasks_gauge.dec()
 
     async def run(self) -> float:
         """
@@ -509,6 +558,8 @@ class Orchestrator:
         """Clear all tasks and DAG state."""
         self.tasks.clear()
         self.dag = DAG()
+        if self.enable_metrics and self._dag_size_gauge is not None:
+            self._dag_size_gauge.set(0)
         await self.plugin_mgr.clear()
         self._cancellation_flags.clear()
         # Reinitialize resource semaphores

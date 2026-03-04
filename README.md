@@ -8,7 +8,7 @@ Catalyst is an intentional, high-performance task engine designed to handle comp
 
 Build with speed, build with intent. Catalyst is the result of deep-diving into systems design to create a tool that handles the "heavy lifting" of workflow automation without the boilerplate.
 
-## 🛠️ Features (v0.5 - Phase 4)
+## 🛠️ Features (v0.6 - Phase 5)
 
 - **Parallel Execution:** Native asyncio concurrency with layer-based execution.
 - **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, makespan estimation, DOT export.
@@ -18,6 +18,7 @@ Build with speed, build with intent. Catalyst is the result of deep-diving into 
 - **Cancellation Propagation:** Optional fail-fast for downstream tasks when upstream fails.
 - **Declarative Workflows:** Load entire pipelines from YAML files with `Orchestrator.load_yaml()`.
 - **Observability:** Optional OpenTelemetry tracing with configurable OTLP exporter for sending spans to observability backends.
+- **Metrics Export:** Optional Prometheus metrics endpoint (`/metrics`) exposing task counts, durations, DAG size, and active tasks.
 - **High-Performance Serialization:** msgspec-accelerated DAG serialization (fallback to JSON).
 - **Profiling Integration:** On-demand py-spy profiling to identify hot paths and performance bottlenecks (`enable_profiling=True`).
 - **Plugin Ecosystem:**
