@@ -29,7 +29,7 @@ class Plugin(ABC):
         """Called when the plugin is loaded by the manager."""
         pass
 
-    def on_unload(self) -> None:
+    async def on_unload(self) -> None:
         """Called when the plugin is unloaded."""
         pass
 
@@ -190,14 +190,15 @@ class PluginManager:
             del self._plugins[plugin.name]
             raise
 
-    def unregister(self, name: str) -> None:
+    async def unregister(self, name: str) -> None:
         """
         Unregister a plugin.
 
-        Calls plugin.on_unload() before removal.
+        Awaits plugin.on_unload() before removal.
         """
         if name in self._plugins:
-            self._plugins[name].on_unload()
+            plugin = self._plugins[name]
+            await plugin.on_unload()
             del self._plugins[name]
             # Invalidate cache
             if hasattr(self, '_get_cache') and name in self._get_cache:
@@ -240,10 +241,10 @@ class PluginManager:
         """Return list of registered plugin names."""
         return list(self._plugins.keys())
 
-    def clear(self) -> None:
+    async def clear(self) -> None:
         """Unregister all plugins."""
         for name in list(self._plugins.keys()):
-            self.unregister(name)
+            await self.unregister(name)
         # Clear cache fully
         if hasattr(self, '_get_cache'):
             self._get_cache.clear()
@@ -307,7 +308,7 @@ class PluginManager:
             def on_load(self):
                 pass
 
-            def on_unload(self):
+            async def on_unload(self):
                 pass
 
         adapter = ModuleAdapter(module, name or module.__name__.split('.')[-1])

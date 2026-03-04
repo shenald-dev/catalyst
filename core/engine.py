@@ -399,11 +399,11 @@ class Orchestrator:
         """Validate DAG structure without running."""
         self.dag.validate()
 
-    def clear(self) -> None:
+    async def clear(self) -> None:
         """Clear all tasks and DAG state."""
         self.tasks.clear()
         self.dag = DAG()
-        self.plugin_mgr.clear()
+        await self.plugin_mgr.clear()
         self._cancellation_flags.clear()
         # Reinitialize resource semaphores
         self._resource_semaphores.clear()
