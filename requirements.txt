@@ -1,8 +1,0 @@
-# Catalyst - High-performance workflow orchestration
-# Core runtime dependencies
-PyYAML>=5.4
-
-[optional]
-# Optional dependencies for enhanced features
-# opentelemetry-api>=1.0.0; for tracing support
-# opentelemetry-sdk>=1.0.0; for tracing support
