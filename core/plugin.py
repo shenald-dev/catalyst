@@ -427,7 +427,7 @@ class PluginManager:
                 # Store validated config back on plugin
                 plugin.config = validated
                 # Also set attributes for convenience
-                plugin.config_dict = validated.dict()
+                plugin.config_dict = validated.model_dump()
             except ValidationError as ve:
                 raise ValueError(
                     f"Configuration validation failed for plugin '{manifest.name}': {ve}"

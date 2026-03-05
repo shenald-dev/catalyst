@@ -27,6 +27,8 @@ Build with speed, build with intent. Catalyst is the result of deep-diving into 
 - **Metrics Export:** Optional Prometheus metrics endpoint (`/metrics`) exposing task counts, durations, DAG size, and active tasks.
 - **High-Performance Serialization:** msgspec-accelerated DAG serialization (fallback to JSON).
 - **Profiling Integration:** On-demand py-spy profiling to identify hot paths and performance bottlenecks (`enable_profiling=True`).
+- **Configuration Management:** Flexible overrides via YAML files, environment variables (`CATALYST_*`), and runtime parameters.
+- **Structured Logging:** Optional JSON log output for production observability (uses `structlog` if available, otherwise custom formatter).
 - **Plugin Ecosystem:**
   - Auto-discovery of Plugin subclasses.
   - Plugin manifest format (YAML) for metadata, dependencies, and config validation via Pydantic.
@@ -89,6 +91,53 @@ engine = Orchestrator(resource_limits={"cpu": 2.0})
 engine.load_yaml("workflow.yaml")
 await engine.run()
 ```
+
+## ⚙️ Configuration
+
+Catalyst supports flexible configuration via multiple sources (lowest precedence first):
+
+1. **Defaults** built into the code.
+2. **YAML configuration file** (`~/.catalyst/config.yaml` or path set by `CATALYST_CONFIG`).
+3. **Environment variables** with prefix `CATALYST_` (e.g., `CATALYST_ENABLE_METRICS=true`).
+4. **Runtime arguments** passed to `Orchestrator.__init__()`.
+
+Available configuration keys:
+
+| Key                     | Type    | Default | Description |
+|-------------------------|---------|---------|-------------|
+| `resource_limits`       | dict    | `{}`    | Resource limits (e.g., `{"cpu": 4.0, "memory_mb": 8192}`) |
+| `enable_cancellation`   | bool    | `True`  | Cancel downstream tasks on upstream failure |
+| `enable_tracing`        | bool    | `False` | Enable OpenTelemetry tracing |
+| `otlp_endpoint`         | str     | `None`  | OTLP gRPC endpoint for traces |
+| `otlp_headers`          | dict    | `{}`    | Headers for OTLP exporter |
+| `otlp_insecure`         | bool    | `False` | Disable TLS for OTLP (dev only) |
+| `enable_metrics`        | bool    | `False` | Enable Prometheus metrics collection |
+| `metrics_port`          | int     | `None`  | Port to expose `/metrics` HTTP endpoint |
+| `enable_profiling`      | bool    | `False` | Enable py-spy profiling |
+| `profile_output`        | str     | `None`  | Output file for profiling data (default: `profile-<timestamp>.json`) |
+| `enable_json_logging`   | bool    | `False` | Enable structured JSON logging |
+| `plugin_dirs`           | list    | `["plugins/builtin"]` | Directories to search for plugins |
+
+**Example YAML config (`~/.catalyst/config.yaml`):**
+
+```yaml
+enable_metrics: true
+metrics_port: 9090
+resource_limits:
+  cpu: 4.0
+  memory_mb: 8192
+enable_json_logging: true
+```
+
+**Example environment variables:**
+
+```bash
+export CATALYST_ENABLE_METRICS=true
+export CATALYST_METRICS_PORT=9090
+export CATALYST_ENABLE_JSON_LOGGING=true
+```
+
+Structured logging (when enabled) emits JSON lines with fields: `timestamp`, `level`, `logger`, `message`, and any extra context. It automatically uses `structlog` if installed; otherwise falls back to standard logging with a custom JSON formatter.
 
 ## 📦 Installation
 

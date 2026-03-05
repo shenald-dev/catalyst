@@ -15,6 +15,11 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Callable, Any, Optional
 from core.dag import DAG, DAGError
 from core.plugin import PluginManager
+from core.config import Config, load_config
+from core.logging import setup_json_logging
+import logging
+
+_log = logging.getLogger(__name__)
 
 
 def _maybe_use_uvloop():
@@ -47,6 +52,9 @@ class Task:
     duration: float = 0.0
 
 
+_UNSET = object()
+
+
 class Orchestrator:
     """
     High-performance workflow orchestrator with DAG-based dependency resolution
@@ -59,20 +67,30 @@ class Orchestrator:
     - Optional OpenTelemetry tracing
     """
 
-    def __init__(self, resource_limits: Optional[Dict[str, float]] = None,
-                 enable_cancellation_propagation: bool = True,
-                 enable_tracing: bool = False,
+    def __init__(self,
+                 resource_limits: Optional[Dict[str, float]] = _UNSET,
+                 enable_cancellation_propagation: bool = _UNSET,
+                 enable_tracing: bool = _UNSET,
                  use_uvloop: bool = False,
-                 tracer_provider = None,
-                 otlp_endpoint: Optional[str] = None,
-                 otlp_headers: Optional[Dict[str, str]] = None,
-                 otlp_insecure: bool = False,
-                 enable_profiling: bool = False,
-                 profile_output: Optional[str] = None,
-                 enable_metrics: bool = False,
-                 metrics_port: Optional[int] = None):
+                 tracer_provider=None,
+                 otlp_endpoint: Optional[str] = _UNSET,
+                 otlp_headers: Optional[Dict[str, str]] = _UNSET,
+                 otlp_insecure: bool = _UNSET,
+                 enable_profiling: bool = _UNSET,
+                 profile_output: Optional[str] = _UNSET,
+                 enable_metrics: bool = _UNSET,
+                 metrics_port: Optional[int] = _UNSET,
+                 enable_json_logging: bool = _UNSET,
+                 config: Optional[Config] = None,
+                 config_path: Optional[str] = None):
         """
         Initialize the orchestrator.
+
+        Configuration can be provided via:
+          - a Config object (`config`),
+          - a config file path (`config_path`),
+          - environment variables (CATALYST_*),
+          - or explicit parameters (which act as overrides).
 
         Args:
             resource_limits: Maximum available resources (e.g., {"cpu": 4.0, "memory_mb": 8192})
@@ -86,57 +104,66 @@ class Orchestrator:
             otlp_insecure: If True, disables TLS for OTLP exporter (useful for local dev).
             enable_metrics: If True, enables Prometheus metrics collection (requires prometheus-client).
             metrics_port: Optional port number to start an HTTP server exposing /metrics. If None, metrics are only available programmatically.
+            config: Pre-loaded Config object to use instead of auto-loading.
+            config_path: Explicit path to YAML config file; defaults to ~/.catalyst/config.yaml or $CATALYST_CONFIG.
         """
         if use_uvloop:
             _maybe_use_uvloop()
-        self.tasks: Dict[str, Task] = {}  # name -> Task
+
+        # Determine effective configuration
+        if config is not None:
+            cfg = config
+        else:
+            # Map passed arguments to config overrides (only those explicitly set)
+            mapping = {
+                'resource_limits': 'resource_limits',
+                'enable_cancellation_propagation': 'enable_cancellation',
+                'enable_tracing': 'enable_tracing',
+                'otlp_endpoint': 'otlp_endpoint',
+                'otlp_headers': 'otlp_headers',
+                'otlp_insecure': 'otlp_insecure',
+                'enable_profiling': 'enable_profiling',
+                'profile_output': 'profile_output',
+                'enable_metrics': 'enable_metrics',
+                'metrics_port': 'metrics_port',
+                'enable_json_logging': 'enable_json_logging',
+            }
+            overrides = {}
+            local_vars = locals()
+            for param, cfg_key in mapping.items():
+                val = local_vars.get(param, _UNSET)
+                if val is not _UNSET:
+                    overrides[cfg_key] = val
+            cfg = load_config(config_path=config_path, runtime_overrides=overrides)
+
+        # Apply configuration
+        self.resource_limits = cfg.resource_limits or {}
+        self.enable_cancellation = cfg.enable_cancellation
+        self.enable_tracing = cfg.enable_tracing
+        self.otlp_endpoint = cfg.otlp_endpoint
+        self.otlp_headers = cfg.otlp_headers
+        self.otlp_insecure = cfg.otlp_insecure
+        self.enable_metrics = cfg.enable_metrics
+        self.metrics_port = cfg.metrics_port
+        self.enable_profiling = cfg.enable_profiling
+        self.profile_output = cfg.profile_output or f"profile-{int(time.time())}.json"
+        self.enable_json_logging = cfg.enable_json_logging
+
+        # Configure structured logging if requested
+        if self.enable_json_logging:
+            try:
+                setup_json_logging(level=logging.INFO)
+                _log.info("JSON logging enabled", context="orchestrator_init")
+            except Exception as e:
+                warnings.warn(f"Failed to setup JSON logging: {e}", RuntimeWarning)
+
+        # Core state
+        self.tasks: Dict[str, Task] = {}
         self.dag = DAG()
         self.start_time = 0
-        self.plugin_mgr = PluginManager()
-        self.resource_limits = resource_limits or {}
-        self.enable_cancellation = enable_cancellation_propagation
-        self.enable_tracing = enable_tracing
         self._tracer = None
         self._otlp_exporter = None
-        if enable_tracing:
-            try:
-                from opentelemetry import trace
-                from opentelemetry.sdk.trace import TracerProvider
-                from opentelemetry.sdk.trace.export import BatchSpanProcessor
-                # If tracer_provider is provided, use it directly
-                if tracer_provider:
-                    self._tracer = trace.get_tracer(__name__, tracer_provider=tracer_provider)
-                else:
-                    # Set up a default TracerProvider with optional OTLP exporter
-                    provider = TracerProvider()
-                    if otlp_endpoint:
-                        try:
-                            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-                            self._otlp_exporter = OTLPSpanExporter(
-                                endpoint=otlp_endpoint,
-                                headers=otlp_headers or {},
-                                insecure=otlp_insecure
-                            )
-                            processor = BatchSpanProcessor(self._otlp_exporter)
-                            provider.add_span_processor(processor)
-                        except ImportError:
-                            # OTLP exporter not available; continue without export
-                            pass
-                    # Set global provider
-                    trace.set_tracer_provider(provider)
-                    self._tracer = trace.get_tracer(__name__)
-                self.enable_tracing = True
-            except ImportError:
-                self.enable_tracing = False  # degrade gracefully
-
-        # Profiling integration (py-spy)
-        self.enable_profiling = enable_profiling
-        self.profile_output = profile_output or f"profile-{int(time.time())}.json"
         self._profile_proc = None
-
-        # Metrics integration (optional)
-        self.enable_metrics = enable_metrics
-        self.metrics_port = metrics_port
         self._metrics_registry = None
         self._task_counter = None
         self._task_duration = None
@@ -144,6 +171,39 @@ class Orchestrator:
         self._active_tasks_gauge = None
         self._resource_usage_gauges = {}
         self._metrics_server_thread = None
+        self._resource_semaphores: Dict[str, asyncio.BoundedSemaphore] = {}
+        self._cancellation_flags: Dict[str, bool] = {}
+        self.plugin_mgr = PluginManager(cache_size=128)
+
+        # Tracing setup
+        if self.enable_tracing:
+            try:
+                from opentelemetry import trace
+                from opentelemetry.sdk.trace import TracerProvider
+                from opentelemetry.sdk.trace.export import BatchSpanProcessor
+                if tracer_provider:
+                    self._tracer = trace.get_tracer(__name__, tracer_provider=tracer_provider)
+                else:
+                    provider = TracerProvider()
+                    if self.otlp_endpoint:
+                        try:
+                            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+                            self._otlp_exporter = OTLPSpanExporter(
+                                endpoint=self.otlp_endpoint,
+                                headers=self.otlp_headers or {},
+                                insecure=self.otlp_insecure
+                            )
+                            processor = BatchSpanProcessor(self._otlp_exporter)
+                            provider.add_span_processor(processor)
+                        except ImportError:
+                            pass
+                    trace.set_tracer_provider(provider)
+                    self._tracer = trace.get_tracer(__name__)
+                self.enable_tracing = True
+            except ImportError:
+                self.enable_tracing = False
+
+        # Metrics setup
         if self.enable_metrics:
             try:
                 from prometheus_client import Counter, Histogram, Gauge, start_http_server, REGISTRY
@@ -152,23 +212,16 @@ class Orchestrator:
                 self._task_duration = Histogram('catalyst_task_duration_seconds', 'Task execution duration', ['name'], registry=self._metrics_registry)
                 self._dag_size_gauge = Gauge('catalyst_dag_size', 'Number of tasks in DAG', registry=self._metrics_registry)
                 self._active_tasks_gauge = Gauge('catalyst_active_tasks', 'Number of currently executing tasks', registry=self._metrics_registry)
-                # Resource usage gauges will be created lazily per resource
                 if self.metrics_port is not None:
                     start_http_server(self.metrics_port, registry=self._metrics_registry)
+                    if self.enable_json_logging:
+                        _log.info("Metrics server started", port=self.metrics_port)
             except ImportError:
                 warnings.warn("prometheus-client not installed; metrics collection disabled", RuntimeWarning)
                 self.enable_metrics = False
 
-        self._resource_semaphores: Dict[str, asyncio.BoundedSemaphore] = {}
-        self._cancellation_flags: Dict[str, bool] = {}  # task name -> cancelled?
-        # Initialize plugin manager with caching for performance
-        self.plugin_mgr = PluginManager(cache_size=128)
-
-        # Initialize semaphores for each resource type based on limits
+        # Initialize resource semaphores
         for resource, limit in self.resource_limits.items():
-            # Convert float limits to integer semaphore counts (1 unit = 1 permit)
-            # For fractional resources, we scale up (e.g., 0.5 cpu = 1 permit with half usage tracking)
-            # Simplified: treat each resource unit as one permit
             self._resource_semaphores[resource] = asyncio.BoundedSemaphore(int(limit))
 
     def load_plugins(self, plugin_dir: str = "plugins/builtin") -> None:
@@ -212,6 +265,9 @@ class Orchestrator:
                         self.plugin_mgr.load_from_module(module)
                 except Exception as e:
                     print(f"Failed to load plugin {module_name}: {e}")
+
+        if self.enable_json_logging:
+            _log.info("Plugins loaded", plugin_dir=plugin_dir, plugins=self.plugin_mgr.list_plugins())
 
     def add_task(
         self,
@@ -279,9 +335,14 @@ class Orchestrator:
         if self.enable_cancellation and self._cancellation_flags.get(task.name, False):
             task.status = TaskStatus.FAILED
             task.result = RuntimeError("Task cancelled due to upstream failure")
+            if self.enable_json_logging:
+                _log.error("Task cancelled", task_name=task.name, reason="upstream_failure")
             return
 
         start_time = time.perf_counter()
+        if self.enable_json_logging:
+            _log.info("Task started", task_name=task.name, start_time=start_time, dependencies=task.depends_on)
+
         dag_node = self.dag.get_task(task.name)
         retry_policy = dag_node.retry_policy
         max_attempts = retry_policy.get("max_attempts", 1)
@@ -333,6 +394,8 @@ class Orchestrator:
                             self._task_counter.labels(name=task.name, status='completed').inc()
                         if self._task_duration:
                             self._task_duration.labels(name=task.name).observe(task.duration)
+                    if self.enable_json_logging:
+                        _log.info("Task completed", task_name=task.name, duration=task.duration, attempts=attempt)
                     # Success - exit retry loop
                     return
 
@@ -366,6 +429,8 @@ class Orchestrator:
             # All attempts exhausted or non-retryable error
             task.status = TaskStatus.FAILED
             task.duration = time.perf_counter() - start_time
+            if self.enable_json_logging:
+                _log.error("Task failed", task_name=task.name, error=str(task.result), attempts=attempt, duration=task.duration)
             # Record metrics for failure
             if self.enable_metrics and self._task_counter:
                 self._task_counter.labels(name=task.name, status='failed').inc()
@@ -391,6 +456,9 @@ class Orchestrator:
 
         # Reset cancellation flags from any previous runs
         self._cancellation_flags.clear()
+
+        if self.enable_json_logging:
+            _log.info("Orchestration started", task_count=len(self.tasks), layers=len(layers))
 
         self.start_time = time.perf_counter()
 
@@ -432,6 +500,8 @@ class Orchestrator:
                         tg.create_task(self._run_task(task))
 
             total_duration = time.perf_counter() - self.start_time
+            if self.enable_json_logging:
+                _log.info("Orchestration completed", duration=total_duration, tasks_total=len(self.tasks))
             return total_duration
         finally:
             if span_ctx is not None:
