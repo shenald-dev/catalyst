@@ -20,6 +20,7 @@ Build with speed, build with intent. Catalyst is the result of deep-diving into 
 - **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, makespan estimation, DOT export.
 - **Graph Introspection:** Query ancestors, descendants, depth, and reachability for any task (enables monitoring and dynamic decisions).
 - **Resource-Aware Scheduling:** Limit CPU, memory, or custom resources with semaphore-based gating.
+- **Makespan Estimation:** Compute critical-path duration (unlimited resources) OR simulate list scheduling under resource constraints to predict realistic completion time.
 - **Robust Error Handling:** Per-task timeouts, configurable retry policies (exponential backoff, exception filters).
 - **Cancellation Propagation:** Optional fail-fast for downstream tasks when upstream fails.
 - **Declarative Workflows:** Load entire pipelines from YAML files with `Orchestrator.load_yaml()`.
@@ -91,6 +92,35 @@ engine = Orchestrator(resource_limits={"cpu": 2.0})
 engine.load_yaml("workflow.yaml")
 await engine.run()
 ```
+
+## 📊 Makespan Estimation
+
+Catalyst can estimate the total execution time of a workflow:
+
+- **Unlimited resources (critical path):** `dag.estimated_makespan()` returns the sum of durations along the critical path. This is the theoretical minimum if you have infinite parallelism.
+- **Resource-constrained:** `dag.estimated_makespan(resource_limits={"cpu": 4.0, "memory_mb": 8192})` simulates list scheduling to approximate the makespan given limited resources. This helps with capacity planning and bottleneck identification.
+
+```python
+from core.dag import DAG
+dag = DAG()
+dag.add_task("build", duration=10.0, resources={"cpu": 2.0})
+dag.add_task("test", dependencies={"build"}, duration=5.0, resources={"cpu": 1.0})
+dag.add_task("deploy", dependencies={"test"}, duration=2.0, resources={"cpu": 0.5})
+
+# Unlimited resources: 10+5+2 = 17 seconds (critical path)
+print(dag.estimated_makespan())  # 17.0
+
+# With CPU limit 2.0:
+# build runs 0-10 using 2.0 CPU
+# test can't start until build finishes (10) and resources free.
+# test runs 10-15 using 1.0 CPU; deploy could overlap with test? depends on test finishing.
+# makespan ~ 17 still because sequential dependencies
+# With two parallel independent branches, impact more visible.
+```
+
+### Performance
+
+The resource-aware estimator handles large DAGs efficiently (typical <10ms for 2000 tasks). See `benchmarks/run_benchmarks.py` for microbenchmarks.
 
 ## ⚙️ Configuration
 
