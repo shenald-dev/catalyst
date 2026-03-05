@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 import warnings
+import base64
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Dict, Callable, Any, Optional
@@ -50,6 +51,7 @@ class Task:
     status: TaskStatus = TaskStatus.PENDING
     result: Any = None
     duration: float = 0.0
+    func_ref: Optional[str] = None  # For checkpoint restoration (module:qualname)
 
 
 _UNSET = object()
@@ -512,6 +514,150 @@ class Orchestrator:
                     profiling_proc.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     profiling_proc.kill()
+
+    # --- Checkpoint Persistence (Phase 6) ---
+
+    def save_checkpoint(self, path: str) -> None:
+        """
+        Save the current orchestrator state to a checkpoint file.
+
+        The checkpoint includes:
+        - DAG structure and metadata
+        - Task statuses, results, durations
+        - Function/plugin references (for recovery)
+        - Configuration snapshot (resource_limits, cancellation setting)
+
+        Args:
+            path: Destination file path (will be overwritten).
+
+        Raises:
+            OSError: If the file cannot be written.
+            TypeError: If state contains non-serializable objects.
+        """
+        checkpoint = {
+            "version": 1,  # checkpoint format version
+            "dag": self.dag.serialize(),  # bytes
+            "tasks": [],
+            "config": {
+                "resource_limits": self.resource_limits,
+                "enable_cancellation": self.enable_cancellation,
+            }
+        }
+        for task in self.tasks.values():
+            # Attempt to derive a function reference if not a plugin
+            func_ref = None
+            if task.func is not None:
+                try:
+                    module = task.func.__module__
+                    qualname = task.func.__qualname__
+                    func_ref = f"{module}:{qualname}"
+                except Exception:
+                    func_ref = None
+            # Prepare task data; result may not be serializable
+            task_data = {
+                "name": task.name,
+                "status": task.status.value,
+                "duration": task.duration,
+                "result": task.result,  # hope it serializes; if not, catch later
+                "plugin_name": task.plugin_name,
+                "func_ref": func_ref,
+                "args": task.args,
+                "kwargs": task.kwargs,
+            }
+            checkpoint["tasks"].append(task_data)
+
+        # Encode using msgspec if available, else JSON with fallback
+        try:
+            import msgspec
+            data = msgspec.encode(checkpoint)
+        except ImportError:
+            # JSON fallback: need to handle DAG bytes as base64
+            import json
+            checkpoint_json = checkpoint.copy()
+            # DAG blob as base64 string
+            checkpoint_json["dag"] = base64.b64encode(checkpoint_json["dag"]).decode('ascii')
+            data = json.dumps(checkpoint_json).encode('utf-8')
+        # Write
+        with open(path, 'wb') as f:
+            f.write(data)
+
+    def load_checkpoint(self, path: str) -> None:
+        """
+        Load orchestrator state from a checkpoint file.
+
+        Restores the DAG, tasks, and their statuses/results. The tasks' functions
+        or plugin references are restored, but the actual functions are not re-bound
+        until `add_task`-like resolution happens. Currently, after loading, the
+        orchestrator is ready for inspection; to resume execution, ensure plugins
+        are loaded and modules are importable.
+
+        Args:
+            path: Checkpoint file path.
+
+        Raises:
+            FileNotFoundError: If the checkpoint file does not exist.
+            ValueError: If the checkpoint version is unsupported or data is invalid.
+            OSError: If the file cannot be read.
+        """
+        with open(path, 'rb') as f:
+            data = f.read()
+        # Decode
+        try:
+            import msgspec
+            checkpoint = msgspec.decode(data, type=dict)
+        except ImportError:
+            import json
+            checkpoint = json.loads(data.decode('utf-8'))
+            # Decode base64 DAG blob
+            dag_blob = base64.b64decode(checkpoint["dag"])
+            checkpoint["dag"] = dag_blob
+        # Version check
+        version = checkpoint.get("version")
+        if version != 1:
+            raise ValueError(f"Unsupported checkpoint version: {version}")
+
+        # Restore DAG
+        self.dag = DAG.deserialize(checkpoint["dag"])
+
+        # Clear current tasks
+        self.tasks.clear()
+        # Rebuild tasks from checkpoint
+        for task_data in checkpoint["tasks"]:
+            task = Task(
+                name=task_data["name"],
+                status=TaskStatus(task_data["status"]),
+                duration=task_data.get("duration", 0.0),
+                result=task_data.get("result"),
+                plugin_name=task_data.get("plugin_name"),
+                args=tuple(task_data.get("args", ())),
+                kwargs=task_data.get("kwargs", {})
+            )
+            # We don't set func here; it will be resolved dynamically from func_ref if needed.
+            # Store the func_ref on the task for later resolution? Not in Task dataclass.
+            # For now we can store it in a separate mapping _func_refs if we want to support resume.
+            # Simpler: we just keep plugin_name; for function tasks, we cannot re-execute without re-importing.
+            # Store func_ref in task's kwargs? That's hacky. We'll add a field in Task: `func_ref` optional.
+            # But we want backward compatibility. Let's modify Task dataclass to include `func_ref: Optional[str] = None`.
+            # However, adding field might break existing code? It's just a dataclass with default; safe.
+            # We'll add that to Task; but that requires changing the class definition. I can add it as a new field with default None, placed before or after others. It should be fine.
+            # But to avoid large diff, we could store func_ref in `kwargs` under a special key? Better to add field.
+            # Since we are in development, it's fine to modify Task.
+            task.func_ref = task_data.get("func_ref")  # type: ignore
+            self.tasks[task.name] = task
+
+        # Restore resource semaphores based on resource_limits
+        self._resource_semaphores.clear()
+        for resource, limit in self.resource_limits.items():
+            self._resource_semaphores[resource] = asyncio.BoundedSemaphore(int(limit))
+
+        # Reset cancellation flags and profiling/metrics state
+        self._cancellation_flags.clear()
+        if self.enable_metrics and self._dag_size_gauge is not None:
+            self._dag_size_gauge.set(len(self.dag))
+
+        _log.info(f"Checkpoint loaded from {path} ({len(self.tasks)} tasks restored)")
+
+    # --- End Checkpoint Persistence ---
 
     async def _execute_task_internal(self, task: Task) -> Any:
         """Internal task execution without retry/timeout wrapping."""
