@@ -29,3 +29,6 @@ pymemcache>=4.0.0
 
 # Core YAML support (already in requirements.txt but included for dev)
 PyYAML>=5.4
+
+# Linting and code quality
+ruff>=0.5.0
