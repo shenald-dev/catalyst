@@ -17,4 +17,10 @@ uv pip install -e .[dev]
 uvicorn catalyst.presentation.api.main:app --reload
 ```
 
+## 🤝 Contributing
+Join the flow state and help us make Catalyst even faster! 🚀
+- 🐛 **Found a bug?** Open an issue to let us know.
+- ✨ **Have a feature idea?** We are open to PRs! Just make sure to run `ruff format` and keep the typed codebase pristine.
+- 🎨 **Documentation tweaks?** Always welcome! 
+
 *Built by a Vibe Coder. Focused on Performance.*
