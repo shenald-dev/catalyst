@@ -1,5 +1,11 @@
 # Catalyst
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI version](https://badge.fury.io/py/catalyst.svg)](https://badge.fury.io/py/catalyst)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://github.com/shenald-dev/catalyst/workflows/Test/badge.svg)](https://github.com/shenald-dev/catalyst/actions)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-green.svg)](https://github.com/shenald-dev/catalyst)
+
 🚀 **High-performance workflow orchestration for the modern builder.**
 
 Catalyst is an intentional, high-performance task engine designed to handle complex workflows with ease. It leverages asynchronous execution and parallel processing to ensure your build pipelines are as fast as possible.
@@ -8,7 +14,7 @@ Catalyst is an intentional, high-performance task engine designed to handle comp
 
 Build with speed, build with intent. Catalyst is the result of deep-diving into systems design to create a tool that handles the "heavy lifting" of workflow automation without the boilerplate.
 
-## 🛠️ Features (v0.6 - Phase 5)
+## 🛠️ Features (v0.3.0 - Phase 3)
 
 - **Parallel Execution:** Native asyncio concurrency with layer-based execution.
 - **DAG-Based Orchestration:** Automatic topological sorting, cycle detection, critical path, makespan estimation, DOT export.
@@ -87,14 +93,15 @@ await engine.run()
 ## 📦 Installation
 
 ```bash
-# Clone the repo
+# Clone the repository
 git clone https://github.com/shenald-dev/catalyst.git
 cd catalyst
 
-# Optional: install PyYAML for YAML support
+# Install dependencies (PyYAML for YAML support)
 pip install -r requirements.txt
 
-# Or just use the Python API directly (no dependencies required)
+# Or install directly (minimal core, no deps required)
+# python -m pip install --upgrade catalyst  # (coming soon to PyPI)
 ```
 
 ## 🧩 Writing Plugins

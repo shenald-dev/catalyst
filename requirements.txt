@@ -1,11 +1,13 @@
 # Catalyst - High-performance workflow orchestration
-# Core runtime dependencies
-PyYAML>=5.4
+# Core runtime dependencies (minimal)
+PyYAML>=6.0
 
-[optional]
+# Optional dependencies for full Phase 3 feature set
 # Observability
-opentelemetry-api>=1.0.0
-opentelemetry-sdk>=1.0.0
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-exporter-otlp>=1.20.0
+prometheus-client>=0.19.0
 
 # Performance
 msgspec>=0.18.0
@@ -13,13 +15,19 @@ msgspec>=0.18.0
 # Validation
 pydantic>=2.0.0
 
-# Database plugin
+# Database plugin (SQLite + PostgreSQL)
+aiosqlite>=1.0.0
+asyncpg>=0.29.0
 sqlalchemy>=2.0.0
 
 # Cache plugin
-redis>=4.0.0
+aioredis>=2.0.0
 pymemcache>=4.0.0
 
 # Notify plugin
-aiohttp>=3.8.0
+aiohttp>=3.9.0
 aiosmtplib>=3.0.0
+
+# Profiling (py-spy)
+# Note: py-spy must be installed system-wide, not via pip
+
