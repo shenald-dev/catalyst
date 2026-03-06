@@ -370,6 +370,12 @@ class DAG:
         # Resource-constrained estimation via list scheduling simulation
         import heapq
 
+        # Clean resource limits: consider only positive limits; ignore None or non-positive.
+        clean_limits = {k: float(v) for k, v in resource_limits.items() if v is not None and v > 0}
+        if not clean_limits:
+            # All limits were non-positive or missing → treat as ideal
+            return self.estimated_makespan(resource_limits=None)
+
         # Get topological order
         try:
             order = self.topological_sort()
@@ -433,8 +439,8 @@ class DAG:
                 earliest_start[name] = max_completion
 
         # List scheduling simulation
-        # Maintain current allocated resources per resource type (accumulated)
-        allocated: Dict[str, float] = {res: 0.0 for res in resource_limits}
+        # Maintain current allocated resources per resource type (only positive limits)
+        allocated = {res: 0.0 for res in clean_limits}
         # Event heap: (release_time, resource_type, amount)
         events: List[tuple] = []  # (release_time, resource, amount)
         # We'll assign tasks greedily when they become eligible and resources are available
@@ -474,7 +480,14 @@ class DAG:
         dependencies = {name: set(node.dependencies) for name, node in self._nodes.items()}
         dependents = {name: set(node.dependents) for name, node in self._nodes.items()}
         durations = {name: node.metadata.get('duration', 1.0) for name, node in self._nodes.items()}
-        task_resources = {name: node.resources or {} for name, node in self._nodes.items()}
+        # Build task_resources with default resource requirements of 1.0 for any limited resource not explicitly set
+        resource_types = set(clean_limits.keys())
+        task_resources = {}
+        for name, node in self._nodes.items():
+            reqs = dict(node.resources) if node.resources else {}
+            for r in resource_types:
+                reqs.setdefault(r, 1.0)
+            task_resources[name] = reqs
 
         # State
         remaining_deps = {name: len(self._nodes[name].dependencies) for name in self._nodes}
@@ -494,12 +507,11 @@ class DAG:
             # If any running tasks finish at or before current_time, complete them
             while running and running[0][0] <= current_time:
                 finish, finished_task = heapq.heappop(running)
-                # Release resources
-                for res, amt in task_resources[finished_task].items():
-                    if res in allocated:
-                        allocated[res] -= amt
-                        if allocated[res] < 0:
-                            allocated[res] = 0.0
+                # Release resources (only those with positive limits)
+                for res in clean_limits:
+                    allocated[res] -= task_resources[finished_task][res]
+                    if allocated[res] < 0:
+                        allocated[res] = 0.0
                 tasks_left -= 1
                 makespan = max(makespan, finish)
                 # For each dependent of finished_task, decrement remaining_deps; if becomes 0, add to ready
@@ -515,18 +527,17 @@ class DAG:
             ready_len = len(ready)
             for _ in range(ready_len):
                 task = ready.popleft()
-                # Check if resources can accommodate
+                # Check if resources are available (only consider positive limits)
                 can_schedule = True
                 for res, amt in task_resources[task].items():
-                    # Only enforce limits for resources that are defined in resource_limits.
-                    if res in resource_limits:
-                        if allocated[res] + amt > resource_limits[res]:
+                    if res in clean_limits:
+                        if allocated[res] + amt > clean_limits[res]:
                             can_schedule = False
                             break
                 if can_schedule:
-                    # Allocate resources
-                    for res, amt in task_resources[task].items():
-                        allocated[res] += amt
+                    # Allocate resources (only those with positive limits)
+                    for res in clean_limits:
+                        allocated[res] += task_resources[task][res]
                     # Compute start time = current_time (since deps satisfied and resources now allocated)
                     start_time[task] = current_time
                     finish = current_time + durations[task]
