@@ -31,11 +31,23 @@ class WorkflowEngine:
     def __init__(self) -> None:
         self.graph: nx.DiGraph[str] = nx.DiGraph()
         self.tasks: Dict[str, Callable[..., Any]] = {}
+        self._timeouts: Dict[str, float | None] = {}
 
     def add_task(
-        self, name: str, func: Callable[..., Any], dependencies: List[str] | None = None
+        self,
+        name: str,
+        func: Callable[..., Any],
+        dependencies: List[str] | None = None,
+        timeout: float | None = None,
     ) -> None:
         """Register a task and its dependencies.
+
+        Args:
+            name: Unique task identifier.
+            func: Callable (sync or async) to execute.
+            dependencies: List of task names this task depends on.
+            timeout: Optional timeout in seconds. If the task exceeds this,
+                     it is cancelled and recorded as a TaskError.
 
         Raises:
             ValueError: If a dependency references a task not yet registered.
@@ -49,16 +61,24 @@ class WorkflowEngine:
                 )
         self.graph.add_node(name)
         self.tasks[name] = func
+        self._timeouts[name] = timeout
         if dependencies:
             for dep in dependencies:
                 self.graph.add_edge(dep, name)
 
     async def _run_task(self, name: str) -> Any:
         func = self.tasks[name]
-        if inspect.iscoroutinefunction(func):
-            return await func()
-        # Run synchronous functions in a separate thread so they don't block the event loop
-        return await asyncio.to_thread(func)
+        timeout = self._timeouts.get(name)
+
+        async def _execute() -> Any:
+            if inspect.iscoroutinefunction(func):
+                return await func()
+            # Run synchronous functions in a separate thread so they don't block the event loop
+            return await asyncio.to_thread(func)
+
+        if timeout is not None:
+            return await asyncio.wait_for(_execute(), timeout=timeout)
+        return await _execute()
 
     async def execute(self) -> Dict[str, Any]:
         """Execute the DAG in topological order, parallelizing independent tasks.
