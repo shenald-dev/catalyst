@@ -1,7 +1,7 @@
 import asyncio
 import time
 import pytest
-from catalyst.domain.engine import WorkflowEngine
+from catalyst.domain.engine import TaskError, WorkflowEngine
 
 
 @pytest.mark.asyncio
@@ -115,3 +115,100 @@ async def test_sync_task_does_not_block_async_task() -> None:
         f"Async task was blocked by sync task (time diff: {time_diff:.2f}s)"
     )
     assert results == {"sync": "sync", "async": "async"}
+
+
+def test_add_task_rejects_missing_dependency() -> None:
+    engine = WorkflowEngine()
+    with pytest.raises(ValueError, match="unregistered tasks"):
+        engine.add_task("child", lambda: "x", dependencies=["nonexistent"])
+
+
+@pytest.mark.asyncio
+async def test_failed_task_does_not_crash_workflow() -> None:
+    """A failing task should produce a TaskError, not crash the engine."""
+    engine = WorkflowEngine()
+
+    async def good_task() -> str:
+        return "ok"
+
+    async def bad_task() -> str:
+        raise RuntimeError("boom")
+
+    engine.add_task("good", good_task)
+    engine.add_task("bad", bad_task)
+
+    results = await engine.execute()
+
+    assert results["good"] == "ok"
+    assert isinstance(results["bad"], TaskError)
+    assert isinstance(results["bad"].exception, RuntimeError)
+    assert str(results["bad"].exception) == "boom"
+
+
+@pytest.mark.asyncio
+async def test_dependent_tasks_skip_on_failure() -> None:
+    """When a task fails, its downstream dependents should be skipped."""
+    engine = WorkflowEngine()
+
+    async def fail() -> str:
+        raise ValueError("failed")
+
+    async def downstream() -> str:
+        return "should not run"
+
+    engine.add_task("a", fail)
+    engine.add_task("b", downstream, ["a"])
+
+    results = await engine.execute()
+
+    assert isinstance(results["a"], TaskError)
+    assert isinstance(results["b"], TaskError)
+    assert "a" in str(results["b"].exception)
+
+
+@pytest.mark.asyncio
+async def test_independent_tasks_continue_despite_failure() -> None:
+    """Tasks in parallel branches unaffected by a failure should still succeed."""
+    engine = WorkflowEngine()
+
+    async def fail_branch() -> str:
+        raise RuntimeError("branch failed")
+
+    async def healthy_branch() -> str:
+        return "healthy"
+
+    engine.add_task("fail", fail_branch)
+    engine.add_task("ok", healthy_branch)
+
+    results = await engine.execute()
+
+    assert isinstance(results["fail"], TaskError)
+    assert results["ok"] == "healthy"
+
+
+@pytest.mark.asyncio
+async def test_sync_task_exception_is_caught() -> None:
+    """Synchronous task exceptions should be captured as TaskErrors."""
+    engine = WorkflowEngine()
+
+    def bad_sync() -> str:
+        raise RuntimeError("sync boom")
+
+    engine.add_task("bad", bad_sync)
+
+    results = await engine.execute()
+
+    assert isinstance(results["bad"], TaskError)
+    assert isinstance(results["bad"].exception, RuntimeError)
+
+
+@pytest.mark.asyncio
+async def test_dependency_order_after_add_task_validation() -> None:
+    """Tasks must be added before they can be referenced as dependencies."""
+    engine = WorkflowEngine()
+    engine.add_task("first", lambda: 1)
+    engine.add_task("second", lambda: 2, ["first"])
+    # Should not raise since "first" exists
+    results = await engine.execute()
+    assert results["first"] == 1
+    assert results["second"] == 2
