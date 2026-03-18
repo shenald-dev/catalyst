@@ -79,3 +79,39 @@ def test_sync_tasks() -> None:
 
     results = asyncio.run(engine.execute())
     assert results == {"t1": "sync_1", "t2": "sync_2"}
+
+
+@pytest.mark.asyncio
+async def test_sync_task_does_not_block_async_task() -> None:
+    engine = WorkflowEngine()
+
+    sync_started = 0.0
+    async_ended = 0.0
+
+    def blocking_sync_task() -> str:
+        nonlocal sync_started
+        sync_started = time.perf_counter()
+        time.sleep(0.5)
+        return "sync"
+
+    async def async_task() -> str:
+        nonlocal async_ended
+        # Give the event loop a chance to start the sync task if it's first
+        await asyncio.sleep(0.1)
+        async_ended = time.perf_counter()
+        return "async"
+
+    # Running these in parallel. If `blocking_sync_task` blocks the event loop,
+    # `async_task` cannot resume until the 0.5s sleep is over.
+    engine.add_task("sync", blocking_sync_task)
+    engine.add_task("async", async_task)
+
+    results = await engine.execute()
+
+    # Check that async task finished roughly at 0.1s, far before the 0.5s sync task ends
+    time_diff = async_ended - sync_started
+
+    assert time_diff < 0.4, (
+        f"Async task was blocked by sync task (time diff: {time_diff:.2f}s)"
+    )
+    assert results == {"sync": "sync", "async": "async"}

@@ -25,7 +25,8 @@ class WorkflowEngine:
         func = self.tasks[name]
         if asyncio.iscoroutinefunction(func):
             return await func()
-        return func()
+        # Run synchronous functions in a separate thread so they don't block the event loop
+        return await asyncio.to_thread(func)
 
     async def execute(self) -> Dict[str, Any]:
         """Execute the DAG in topological order, parallelizing independent tasks."""
