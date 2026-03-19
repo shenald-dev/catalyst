@@ -90,39 +90,37 @@ class WorkflowEngine:
             raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
 
         results: Dict[str, Any] = {}
-        for generation in nx.topological_generations(self.graph):
-            # Filter out tasks whose dependencies have failed
-            runnable: List[str] = []
-            skipped: List[str] = []
-            for node in generation:
-                deps = list(self.graph.predecessors(node))
-                failed_deps = [d for d in deps if isinstance(results.get(d), TaskError)]
-                if failed_deps:
-                    skipped.append(node)
-                    # Record skip with reference to first failed dependency
-                    cause = results[failed_deps[0]]
-                    results[node] = TaskError(
-                        node,
-                        RuntimeError(
-                            f"Skipped: upstream task {cause.task_name!r} failed"
-                        ),
-                    )
-                else:
-                    runnable.append(node)
+        tasks: Dict[str, asyncio.Task[Any]] = {}
 
-            if not runnable:
-                continue
+        async def run_node(node: str) -> Any:
+            deps = list(self.graph.predecessors(node))
+            if deps:
+                await asyncio.gather(*(tasks[dep] for dep in deps))
 
-            # Run all runnable tasks in this generation concurrently, isolating failures
-            generation_results = await asyncio.gather(
-                *(self._run_task(node) for node in runnable),
-                return_exceptions=True,
-            )
-            for node, result in zip(runnable, generation_results):
-                if isinstance(result, BaseException):
-                    logger.error("Task %r failed: %s", node, result)
-                    results[node] = TaskError(node, result)
-                else:
-                    results[node] = result
+            failed_deps = [d for d in deps if isinstance(results.get(d), TaskError)]
+            if failed_deps:
+                cause = results[failed_deps[0]]
+                result = TaskError(
+                    node,
+                    RuntimeError(f"Skipped: upstream task {cause.task_name!r} failed"),
+                )
+                results[node] = result
+                return result
+
+            try:
+                result = await self._run_task(node)
+                results[node] = result
+                return result
+            except BaseException as e:
+                logger.error("Task %r failed: %s", node, e)
+                result = TaskError(node, e)
+                results[node] = result
+                return result
+
+        for node in nx.topological_sort(self.graph):
+            tasks[node] = asyncio.create_task(run_node(node))
+
+        if tasks:
+            await asyncio.gather(*tasks.values())
 
         return results
