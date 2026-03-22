@@ -33,6 +33,7 @@ class WorkflowEngine:
         self.tasks: Dict[str, Callable[..., Any]] = {}
         self._timeouts: Dict[str, float | None] = {}
         self._is_async: Dict[str, bool] = {}
+        self._predecessors: Dict[str, List[str]] = {}
 
     def add_task(
         self,
@@ -64,6 +65,7 @@ class WorkflowEngine:
         self.tasks[name] = func
         self._timeouts[name] = timeout
         self._is_async[name] = inspect.iscoroutinefunction(func)
+        self._predecessors[name] = dependencies.copy() if dependencies else []
         if dependencies:
             for dep in dependencies:
                 self.graph.add_edge(dep, name)
@@ -73,15 +75,15 @@ class WorkflowEngine:
         timeout = self._timeouts.get(name)
         is_async = self._is_async.get(name, False)
 
-        async def _execute() -> Any:
+        if timeout is not None:
+            if is_async:
+                return await asyncio.wait_for(func(), timeout=timeout)
+            # Run synchronous functions in a separate thread so they don't block the event loop
+            return await asyncio.wait_for(asyncio.to_thread(func), timeout=timeout)
+        else:
             if is_async:
                 return await func()
-            # Run synchronous functions in a separate thread so they don't block the event loop
             return await asyncio.to_thread(func)
-
-        if timeout is not None:
-            return await asyncio.wait_for(_execute(), timeout=timeout)
-        return await _execute()
 
     async def execute(self) -> Dict[str, Any]:
         """Execute the DAG in topological order, parallelizing independent tasks.
@@ -98,7 +100,7 @@ class WorkflowEngine:
         tasks: Dict[str, asyncio.Task[Any]] = {}
 
         async def run_node(node: str) -> Any:
-            deps = list(self.graph.predecessors(node))
+            deps = self._predecessors[node]
             if deps:
                 await asyncio.gather(*(tasks[dep] for dep in deps))
 
