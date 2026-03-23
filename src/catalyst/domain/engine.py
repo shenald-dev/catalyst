@@ -103,7 +103,8 @@ class WorkflowEngine:
         async def run_node(node: str) -> Any:
             deps = self._predecessors.get(node, [])
             if deps:
-                await asyncio.gather(*(tasks[dep] for dep in deps))
+                for dep in deps:
+                    await tasks[dep]
 
             failed_deps = [d for d in deps if isinstance(results.get(d), TaskError)]
             if failed_deps:
