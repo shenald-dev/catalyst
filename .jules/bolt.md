@@ -32,3 +32,11 @@ Using `asyncio.gather` dynamically inside coroutines to await a group of indepen
 
 Action:
 Replaced dynamic `asyncio.gather` calls with explicit `await` loops inside the hot path of workflow node execution (`run_node`) to eliminate the overhead of awaiting parallel tasks whose resolution order does not matter as long as they all finish.
+
+## 2024-03-24 — Workflow Engine Execution Closure Refactor
+
+Learning:
+Unnecessary `async def` inner closures (like `run_node` inside `WorkflowEngine.execute`) and additional `_run_task` wrapping functions add measurable overhead in high-throughput coroutine scheduling. Flattening them into a single class method (`_run_node`) reduces call stack depth and saves coroutine creation overhead without breaking logic.
+
+Action:
+Inline task execution logic and extract inner loop closures to proper methods across other parts of the workflow engine to maintain a flatter async call stack and improve baseline DAG execution speed. Avoid attempting to sequentialize outer event-loop `await` calls that depend on cancellation semantics (e.g., replacing `asyncio.gather` with a sequential loop).

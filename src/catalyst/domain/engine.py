@@ -71,20 +71,52 @@ class WorkflowEngine:
                 self.graph.add_edge(dep, name)
                 self._predecessors[name].append(dep)
 
-    async def _run_task(self, name: str) -> Any:
-        func = self.tasks[name]
-        timeout = self._timeouts.get(name)
-        is_async = self._is_async.get(name, False)
+    async def _run_node(
+        self,
+        node: str,
+        results: Dict[str, Any],
+        tasks: Dict[str, asyncio.Task[Any]],
+    ) -> Any:
+        deps = self._predecessors.get(node, [])
+        if deps:
+            for dep in deps:
+                await tasks[dep]
 
-        if timeout is not None:
-            if is_async:
-                return await asyncio.wait_for(func(), timeout=timeout)
-            # Run synchronous functions in a separate thread so they don't block the event loop
-            return await asyncio.wait_for(asyncio.to_thread(func), timeout=timeout)
+        failed_deps = [d for d in deps if isinstance(results.get(d), TaskError)]
+        if failed_deps:
+            cause = results[failed_deps[0]]
+            result = TaskError(
+                node,
+                RuntimeError(f"Skipped: upstream task {cause.task_name!r} failed"),
+            )
+            results[node] = result
+            return result
 
-        if is_async:
-            return await func()
-        return await asyncio.to_thread(func)
+        try:
+            func = self.tasks[node]
+            timeout = self._timeouts.get(node)
+            is_async = self._is_async.get(node, False)
+
+            if timeout is not None:
+                if is_async:
+                    result = await asyncio.wait_for(func(), timeout=timeout)
+                else:
+                    result = await asyncio.wait_for(
+                        asyncio.to_thread(func), timeout=timeout
+                    )
+            else:
+                if is_async:
+                    result = await func()
+                else:
+                    result = await asyncio.to_thread(func)
+
+            results[node] = result
+            return result
+        except BaseException as e:
+            logger.error("Task %r failed: %s", node, e)
+            result = TaskError(node, e)
+            results[node] = result
+            return result
 
     async def execute(self) -> Dict[str, Any]:
         """Execute the DAG in topological order, parallelizing independent tasks.
@@ -100,34 +132,8 @@ class WorkflowEngine:
         results: Dict[str, Any] = {}
         tasks: Dict[str, asyncio.Task[Any]] = {}
 
-        async def run_node(node: str) -> Any:
-            deps = self._predecessors.get(node, [])
-            if deps:
-                for dep in deps:
-                    await tasks[dep]
-
-            failed_deps = [d for d in deps if isinstance(results.get(d), TaskError)]
-            if failed_deps:
-                cause = results[failed_deps[0]]
-                result = TaskError(
-                    node,
-                    RuntimeError(f"Skipped: upstream task {cause.task_name!r} failed"),
-                )
-                results[node] = result
-                return result
-
-            try:
-                result = await self._run_task(node)
-                results[node] = result
-                return result
-            except BaseException as e:
-                logger.error("Task %r failed: %s", node, e)
-                result = TaskError(node, e)
-                results[node] = result
-                return result
-
         for node in topo_order:
-            tasks[node] = asyncio.create_task(run_node(node))
+            tasks[node] = asyncio.create_task(self._run_node(node, results, tasks))
 
         if tasks:
             await asyncio.gather(*tasks.values())
