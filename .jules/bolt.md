@@ -40,3 +40,11 @@ Unnecessary `async def` inner closures (like `run_node` inside `WorkflowEngine.e
 
 Action:
 Inline task execution logic and extract inner loop closures to proper methods across other parts of the workflow engine to maintain a flatter async call stack and improve baseline DAG execution speed. Avoid attempting to sequentialize outer event-loop `await` calls that depend on cancellation semantics (e.g., replacing `asyncio.gather` with a sequential loop).
+
+## 2024-05-28 — Workflow Engine `iscoroutinefunction` Detection Bug
+
+Learning:
+Using `inspect.iscoroutinefunction(func)` directly during task registration (`WorkflowEngine.add_task`) fails to accurately identify callable class instances that implement an asynchronous `__call__` method, or bound asynchronous methods. This causes these functions to be mistakenly registered as synchronous and executed in the `asyncio.to_thread` pool, returning unawaited coroutines instead of executing them.
+
+Action:
+Broadened the `is_async` check to explicitly evaluate the `__call__` attribute if it exists via `inspect.iscoroutinefunction(getattr(func, "__call__", None))`, ensuring that callable objects with async methods are correctly awaited.

@@ -212,3 +212,33 @@ async def test_dependency_order_after_add_task_validation() -> None:
     results = await engine.execute()
     assert results["first"] == 1
     assert results["second"] == 2
+
+
+class AsyncCallable:
+    async def __call__(self) -> str:
+        await asyncio.sleep(0.01)
+        return "async_callable"
+
+
+@pytest.mark.asyncio
+async def test_async_callable() -> None:
+    """Classes with async __call__ should be treated as async tasks."""
+    engine = WorkflowEngine()
+    engine.add_task("test", AsyncCallable())
+    res = await engine.execute()
+    assert res == {"test": "async_callable"}
+
+
+@pytest.mark.asyncio
+async def test_bound_async_method() -> None:
+    """Bound async methods should be treated as async tasks."""
+
+    class Worker:
+        async def work(self) -> str:
+            await asyncio.sleep(0.01)
+            return "worker_method"
+
+    engine = WorkflowEngine()
+    engine.add_task("test", Worker().work)
+    res = await engine.execute()
+    assert res == {"test": "worker_method"}

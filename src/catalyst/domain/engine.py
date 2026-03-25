@@ -65,7 +65,9 @@ class WorkflowEngine:
         self._predecessors[name] = []
         self.tasks[name] = func
         self._timeouts[name] = timeout
-        self._is_async[name] = inspect.iscoroutinefunction(func)
+        self._is_async[name] = inspect.iscoroutinefunction(
+            func
+        ) or inspect.iscoroutinefunction(getattr(func, "__call__", None))
         if dependencies:
             for dep in dependencies:
                 self.graph.add_edge(dep, name)
