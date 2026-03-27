@@ -40,3 +40,11 @@ Unnecessary `async def` inner closures (like `run_node` inside `WorkflowEngine.e
 
 Action:
 Inline task execution logic and extract inner loop closures to proper methods across other parts of the workflow engine to maintain a flatter async call stack and improve baseline DAG execution speed. Avoid attempting to sequentialize outer event-loop `await` calls that depend on cancellation semantics (e.g., replacing `asyncio.gather` with a sequential loop).
+
+## 2025-03-26 — Workflow Engine Fast-Fail Short-Circuiting
+
+Learning:
+The core execution hot path in `WorkflowEngine._run_node` awaited all upstream dependencies completely before checking if any of them had produced a `TaskError`. For wide nodes that depend on many long-running tasks, if an early dependency fails, the workflow engine would unnecessarily wait for all other sibling dependencies to complete before skipping the current node. This wasted time and created a secondary list-comprehension iteration loop to build `failed_deps`.
+
+Action:
+Replaced the two separate `await` and `failed_deps` loops with a single loop that awaits a dependency and immediately checks its result for a `TaskError`. If one is found, it short-circuits and skips the node immediately without waiting for the remaining sibling dependencies. This reduces latency on error paths and removes unnecessary list and iteration overhead for dense DAGs, while keeping background execution safely intact. Maintained safe dictionary `.get()` accesses to prevent `KeyError` regressions on missing configurations.

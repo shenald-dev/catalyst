@@ -81,16 +81,16 @@ class WorkflowEngine:
         if deps:
             for dep in deps:
                 await tasks[dep]
-
-        failed_deps = [d for d in deps if isinstance(results.get(d), TaskError)]
-        if failed_deps:
-            cause = results[failed_deps[0]]
-            result = TaskError(
-                node,
-                RuntimeError(f"Skipped: upstream task {cause.task_name!r} failed"),
-            )
-            results[node] = result
-            return result
+                res = results.get(dep)
+                if isinstance(res, TaskError):
+                    result = TaskError(
+                        node,
+                        RuntimeError(
+                            f"Skipped: upstream task {res.task_name!r} failed"
+                        ),
+                    )
+                    results[node] = result
+                    return result
 
         try:
             func = self.tasks[node]
