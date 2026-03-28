@@ -97,18 +97,12 @@ class WorkflowEngine:
             timeout = self._timeouts.get(node)
             is_async = self._is_async.get(node, False)
 
+            coro = func() if is_async else asyncio.to_thread(func)
+
             if timeout is not None:
-                if is_async:
-                    result = await asyncio.wait_for(func(), timeout=timeout)
-                else:
-                    result = await asyncio.wait_for(
-                        asyncio.to_thread(func), timeout=timeout
-                    )
+                result = await asyncio.wait_for(coro, timeout=timeout)
             else:
-                if is_async:
-                    result = await func()
-                else:
-                    result = await asyncio.to_thread(func)
+                result = await coro
 
             results[node] = result
             return result

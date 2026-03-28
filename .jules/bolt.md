@@ -48,3 +48,11 @@ The core execution hot path in `WorkflowEngine._run_node` awaited all upstream d
 
 Action:
 Replaced the two separate `await` and `failed_deps` loops with a single loop that awaits a dependency and immediately checks its result for a `TaskError`. If one is found, it short-circuits and skips the node immediately without waiting for the remaining sibling dependencies. This reduces latency on error paths and removes unnecessary list and iteration overhead for dense DAGs, while keeping background execution safely intact. Maintained safe dictionary `.get()` accesses to prevent `KeyError` regressions on missing configurations.
+
+## 2025-03-28 — Workflow Engine Coroutine Instantiation Logic
+
+Learning:
+Inside the `_run_node` execution loop, redundant branch pathways (`if is_async ... else ...`) were used under the `if timeout is not None` block, duplicating the `asyncio.wait_for` and raw `await` logic across sync/async boundaries.
+
+Action:
+Consolidated the conditional coroutine/thread allocation logic upfront (`coro = func() if is_async else asyncio.to_thread(func)`) and then evaluated the timeout on the resulting awaitable object. This simplifies branching logic, reducing duplicated lines without impacting performance.
