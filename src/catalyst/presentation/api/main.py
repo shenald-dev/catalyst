@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from catalyst.domain.engine import WorkflowEngine
+from catalyst.domain.engine import TaskError, WorkflowEngine
 
 app = FastAPI(
     title="Catalyst Workflow API",
@@ -33,5 +33,23 @@ async def execute_workflow() -> dict[str, Any]:
     engine.add_task("transform", lambda: "Data Transformed", ["ingest"])
     engine.add_task("load", lambda: "Data Loaded", ["transform"])
 
+    def failing_task() -> str:
+        raise ValueError("Simulated failure")
+
+    engine.add_task("fail", failing_task, ["ingest"])
+    engine.add_task("skipped", lambda: "Skipped Data", ["fail"])
+
     results = await engine.execute()
-    return {"status": "success", "results": results}
+
+    # Convert any TaskError objects to serializable dicts
+    serializable_results = {}
+    for task_name, result in results.items():
+        if isinstance(result, TaskError):
+            serializable_results[task_name] = {
+                "error": str(result.exception),
+                "task_name": result.task_name,
+            }
+        else:
+            serializable_results[task_name] = result
+
+    return {"status": "success", "results": serializable_results}

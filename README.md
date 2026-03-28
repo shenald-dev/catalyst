@@ -3,10 +3,11 @@
 > A high-performance workflow engine for complex pipelines. Parallel DAG execution. Zero bloat.
 
 ## Features
-- **⚡ Parallel DAG Execution**: Blazing fast topology resolution.
+- **⚡ Parallel DAG Execution**: Blazing fast topology resolution with fail-fast optimization.
 - **🏗️ Domain-Driven Design**: Clean, decoupled architecture.
 - **🌐 FastAPI Dashboard**: Optional API and visualization endpoints.
 - **🛡️ Strict Typing**: Fully typed with Python 3.10+ and `mypy`.
+- **💥 Graceful Failure Handling**: When an upstream task fails, it short-circuits execution gracefully, safely yielding a serializable JSON object (in the API representation) describing the exception instead of crashing the process.
 
 ## Architecture Highlights
 The core logic lives in `src/catalyst/domain` and executes Directed Acyclic Graphs efficiently using standard library features and `networkx`. The `presentation` layer serves as a decoupled FastAPI interface.
