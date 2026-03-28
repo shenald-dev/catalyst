@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-03-28
+
+### Added
+- Adversarial QA Test: Added `test_fast_fail_does_not_cancel_unrelated_tasks` to ensure parallel fast-failure optimization does not leak execution cancellation to independent successful siblings.
+
+### Changed
+- Pruned Dead Entropy: Deleted unused `src/catalyst/infrastructure/` directory to maintain zero bloat.
+- Bumped project dependencies to safe latest minor/patch versions.
+
 ## [0.1.1] - 2026-03-27
 
 ### Added
