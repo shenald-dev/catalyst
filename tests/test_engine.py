@@ -247,3 +247,41 @@ async def test_fast_fail_does_not_cancel_unrelated_tasks() -> None:
     assert slow_completed is True
     assert isinstance(results["downstream"], TaskError)
     assert "fail" in str(results["downstream"].exception)
+
+
+@pytest.mark.asyncio
+async def test_task_timeout() -> None:
+    engine = WorkflowEngine()
+
+    async def slow_task() -> str:
+        await asyncio.sleep(0.5)
+        return "slow"
+
+    engine.add_task("slow", slow_task, timeout=0.1)
+
+    results = await engine.execute()
+
+    assert isinstance(results["slow"], TaskError)
+    assert isinstance(results["slow"].exception, asyncio.TimeoutError)
+
+
+@pytest.mark.asyncio
+async def test_cyclic_graph_raises_error() -> None:
+    engine = WorkflowEngine()
+
+    # We add A before we add B. B depends on A.
+    # However, add_task checks if dependency exists!
+    engine.add_task("A", lambda: "A")
+    engine.add_task("B", lambda: "B", dependencies=["A"])
+
+    # Now we manually inject a cycle to bypass the `add_task` validation
+    # to test the nx.NetworkXUnfeasible branch in execute()
+    engine.graph.add_edge("B", "A")
+
+    with pytest.raises(ValueError, match="Workflow must be a Directed Acyclic Graph"):
+        await engine.execute()
+
+
+def test_task_error_repr() -> None:
+    err = TaskError("my_task", ValueError("foo"))
+    assert repr(err) == "TaskError('my_task', ValueError('foo'))"
