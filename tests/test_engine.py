@@ -212,3 +212,38 @@ async def test_dependency_order_after_add_task_validation() -> None:
     results = await engine.execute()
     assert results["first"] == 1
     assert results["second"] == 2
+
+
+@pytest.mark.asyncio
+async def test_fast_fail_does_not_cancel_unrelated_tasks() -> None:
+    """When a task fast-fails due to one failed dependency, other independent dependencies should still complete."""
+    engine = WorkflowEngine()
+
+    slow_completed = False
+
+    async def fast_fail() -> str:
+        raise ValueError("I failed fast")
+
+    async def slow_success() -> str:
+        nonlocal slow_completed
+        await asyncio.sleep(0.2)
+        slow_completed = True
+        return "slow ok"
+
+    async def downstream() -> str:
+        return "should skip"
+
+    engine.add_task("fail", fast_fail)
+    engine.add_task("slow", slow_success)
+    # Downstream depends on both "fail" and "slow".
+    # Since "fail" raises an error immediately, "downstream" fast-fails.
+    # However, "slow" is an independent task running in parallel and should NOT be cancelled.
+    engine.add_task("downstream", downstream, ["fail", "slow"])
+
+    results = await engine.execute()
+
+    assert isinstance(results["fail"], TaskError)
+    assert results["slow"] == "slow ok"
+    assert slow_completed is True
+    assert isinstance(results["downstream"], TaskError)
+    assert "fail" in str(results["downstream"].exception)
