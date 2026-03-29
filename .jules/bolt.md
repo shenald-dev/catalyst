@@ -56,3 +56,11 @@ Inside the `_run_node` execution loop, redundant branch pathways (`if is_async .
 
 Action:
 Consolidated the conditional coroutine/thread allocation logic upfront (`coro = func() if is_async else asyncio.to_thread(func)`) and then evaluated the timeout on the resulting awaitable object. This simplifies branching logic, reducing duplicated lines without impacting performance.
+
+## 2026-03-29 — Workflow Engine True Fail-Fast Short-Circuiting
+
+Learning:
+The previous fail-fast optimization sequentially awaited dependencies (`for dep in deps: await tasks[dep]`). If a "slow" dependency was awaited first, the engine would block waiting for it to finish before it could check the result of a "fast" dependency that had already failed. This caused the fail-fast mechanism to be bottlenecked by the execution time of the slowest successful upstream dependency, rather than the fastest failing one.
+
+Action:
+Replaced the sequential `await` loop with `asyncio.as_completed` across the dependency tasks (`for f in asyncio.as_completed([tasks[dep] for dep in deps]):`). This ensures that the engine checks results in the order they complete, allowing it to immediately short-circuit and skip the node the moment any dependency fails, regardless of whether other slower dependencies are still running.
