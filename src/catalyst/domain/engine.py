@@ -79,9 +79,8 @@ class WorkflowEngine:
     ) -> Any:
         deps = self._predecessors.get(node, [])
         if deps:
-            for dep in deps:
-                await tasks[dep]
-                res = results.get(dep)
+            for f in asyncio.as_completed([tasks[dep] for dep in deps]):
+                res = await f
                 if isinstance(res, TaskError):
                     result = TaskError(
                         node,
