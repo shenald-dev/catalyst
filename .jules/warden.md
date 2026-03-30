@@ -1,3 +1,10 @@
+2026-03-30 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, introduced true fail-fast optimizations utilizing `asyncio.as_completed`. While this passed tests, adversarial QA revealed that `as_completed` generates proxy iterators that, when broken out of early (short-circuited), leave internal pending futures unawaited. This causes memory leaks and "Task was destroyed but it is pending!" warnings on large, heavily failing DAGs.
+
+Alignment / Deferred:
+Refactored the fail-fast mechanism in `_run_node` to use `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)` instead. This achieves identical fast-fail performance without spawning intermediate futures, safely managing background task completion without leaking memory. Bumping semantic version to `0.1.4`. Deferred upgrading dependencies like `pydantic-core` due to known incompatibilities.
+
 2026-03-29 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully implemented true fail-fast optimizations utilizing `asyncio.as_completed`. A review indicated that edge cases for timeout boundaries, `__repr__` method on `TaskError`, and explicit detection of cyclical tasks via `nx.NetworkXUnfeasible` lacked coverage. Attempted dependency updates but found `pydantic-core==2.44.0` fundamentally incompatible with the existing `pydantic` framework in FastAPI tests.
