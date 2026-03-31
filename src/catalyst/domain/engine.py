@@ -79,10 +79,26 @@ class WorkflowEngine:
     ) -> Any:
         deps = self._predecessors.get(node, [])
         if deps:
-            pending = set(tasks[dep] for dep in deps)
-            while pending:
-                done, pending = await asyncio.wait(
-                    pending, return_when=asyncio.FIRST_COMPLETED
+            pending_set = set()
+            for dep in deps:
+                t = tasks[dep]
+                if t.done():
+                    res = t.result()
+                    if isinstance(res, TaskError):
+                        result = TaskError(
+                            node,
+                            RuntimeError(
+                                f"Skipped: upstream task {res.task_name!r} failed"
+                            ),
+                        )
+                        results[node] = result
+                        return result
+                else:
+                    pending_set.add(t)
+
+            while pending_set:
+                done, pending_set = await asyncio.wait(
+                    pending_set, return_when=asyncio.FIRST_COMPLETED
                 )
                 for t in done:
                     res = t.result()
