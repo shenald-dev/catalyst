@@ -1,3 +1,10 @@
+2026-03-31 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, completely optimized dependency awaiting by replacing it with a synchronous task completion check combined with `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`, avoiding unnecessary coroutine wrapper generation for already-completed tasks. Adversarial QA confirms true fail-fast guarantees are preserved while the previous memory leak regression using `asyncio.as_completed` is avoided. No systemic bloat or orphaned files were found.
+
+Alignment / Deferred:
+Evaluated dependencies for upgrades. `pydantic-core` was bumped to 2.45.0 but instantly triggered a `SystemError` incompatibility with the existing `pydantic` suite within FastAPI during adversarial QA testing. Pydantic-core was explicitly deferred back to `2.41.5` for structural safety. No codebase changes were needed to pass tests. Bumped semantic version to `0.1.5` and updated `CHANGELOG.md` accordingly.
+
 2026-03-30 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, introduced true fail-fast optimizations utilizing `asyncio.as_completed`. While this passed tests, adversarial QA revealed that `as_completed` generates proxy iterators that, when broken out of early (short-circuited), leave internal pending futures unawaited. This causes memory leaks and "Task was destroyed but it is pending!" warnings on large, heavily failing DAGs.
