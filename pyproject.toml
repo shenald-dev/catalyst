@@ -1,6 +1,6 @@
 [project]
 name = "catalyst"
-version = "0.1.3"
+version = "0.1.4"
 description = "High-performance workflow engine for complex pipelines. Parallel DAG execution, <1s sorts, zero bloat."
 authors = [
     { name = "shenald-dev", email = "bot@shenald.dev" }

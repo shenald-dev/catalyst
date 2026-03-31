@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-03-30
+
+### Fixed
+- Memory Leak: Replaced `asyncio.as_completed` with `asyncio.wait(FIRST_COMPLETED)` in the true fail-fast dependency evaluation loop, ensuring tasks are cleaned up immediately when short-circuiting to avoid "Task destroyed but it is pending" warnings.
+
 ## [0.1.3] - 2026-03-29
 
 ### Added
