@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2026-04-01
+
+### Verified
+- Adversarial QA confirmed that system-level interrupts (`asyncio.CancelledError`, `KeyboardInterrupt`, `SystemExit`) now safely propagate outwards after removing overly broad `BaseException` catching.
+
+### Changed
+- Entropy Pruned: 0 lines (FastAPI/Pydantic false positives ignored).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (kept at `2.41.5`) due to incompatibility.
+
 ## [0.1.5] - 2026-03-31
 
 ### Verified
