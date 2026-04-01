@@ -150,7 +150,7 @@ class WorkflowEngine:
 
             results[node] = result
             return result
-        except BaseException as e:
+        except Exception as e:
             logger.error("Task %r failed: %s", node, e)
             result = TaskError(node, e)
             results[node] = result
