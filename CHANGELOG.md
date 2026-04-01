@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-03-31
+
+### Verified
+- Adversarial QA confirmed that `asyncio.wait(FIRST_COMPLETED)` gracefully manages background task completion and avoids memory leaks without breaking fast-fail constraints.
+
+### Changed
+- Entropy Pruned: 0 lines (codebase maintains zero bloat).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (kept at `2.41.5`) due to incompatibility with FastAPI/pydantic tests.
+
 ## [0.1.4] - 2026-03-30
 
 ### Fixed
