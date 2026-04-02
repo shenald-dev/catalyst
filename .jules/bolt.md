@@ -88,3 +88,7 @@ In `WorkflowEngine._run_node`, the previous implementation used `asyncio.wait(re
 
 Action:
 Replaced the `asyncio.wait` loop with `asyncio.as_completed(pending_set)`. This maintains the exact same true fail-fast capabilities (yielding results as soon as they complete in order) while drastically reducing coroutine wrapper allocation and iteration overhead for dense/wide DAG topologies.
+
+## 2024-05-19 — Correctly identifying async callable class instances
+Learning: `inspect.iscoroutinefunction()` only returns true for standard async functions, and fails on class instances that implement `async def __call__`. If overlooked, the workflow engine treats these async objects as synchronous, dispatching them to `asyncio.to_thread()` which merely returns an unawaited coroutine instead of the value.
+Action: To reliably check if any callable is a coroutine function (including instances), the engine should use `inspect.iscoroutinefunction(func) or (hasattr(func, "__call__") and inspect.iscoroutinefunction(func.__call__))`.
