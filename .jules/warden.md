@@ -1,3 +1,10 @@
+2026-04-02 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully implemented an async callable execution path optimization by testing for `async def __call__` natively, preventing instances from wrongly being dumped into a synchronous execution pool. Refactoring extracted repeated logic into a `_skip_result` helper inside `_run_node`. Vulture found zero real dead code lines; false positives inside `FastAPI` layers ignored. Retained `asyncio.as_completed` in `_run_node` as the preferred performant DAG resolver, passing all adversarial testing.
+
+Alignment / Deferred:
+Deferred the upgrade of `pydantic-core` to `2.45.0` because an adversarial dependency audit caused a `SystemError` incompatibility crash within FastAPI test runs. Strictly pinned `pydantic-core` at `2.41.5` to maintain structural safety. Prepared final release notes and safely bumped semantic version to `0.1.7`.
+
 2026-04-01 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, completely optimized exception handling by ensuring `_run_node` catches `Exception` rather than `BaseException`, properly allowing system-level interrupts (`asyncio.CancelledError`, `KeyboardInterrupt`, `SystemExit`) to propagate and cooperate with cancellation. Adversarial QA confirmed interrupt propagation works flawlessly. Scanned for dead code with vulture, but findings in FastAPI routes are false positives. Codebase maintains zero bloat.

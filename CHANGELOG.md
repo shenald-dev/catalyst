@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.6] - 2026-04-01
+## [0.1.7] - 2026-04-02
+
+### Verified
+- Adversarial QA confirmed proper asynchronous execution pathing for callables via `__call__` checking, and validated that refactored `_skip_result` execution maintains fast-fail guarantees using `asyncio.as_completed`.
+
+### Changed
+- Entropy Pruned: 0 lines (Maintained zero bloat; FastAPI endpoints ignored as false positives).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (strictly pinned at `2.41.5`) due to discovered `SystemError` incompatibility with upstream Pydantic versions.
+
 
 ### Verified
 - Adversarial QA confirmed that system-level interrupts (`asyncio.CancelledError`, `KeyboardInterrupt`, `SystemExit`) now safely propagate outwards after removing overly broad `BaseException` catching.
