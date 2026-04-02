@@ -80,3 +80,11 @@ A very common topological pattern in workflows is sequential tasks, where a node
 
 Action:
 Added a `len(deps) == 1` fast-path check immediately before the dependency evaluation loop in `WorkflowEngine._run_node`. This completely skips `pending_set` allocations and complex waiting loops for linear sections of the DAG, providing an approximate 15% reduction in total execution time for sequential DAG topologies.
+
+## 2026-04-02 — Workflow Engine Wide-Node Fail-Fast Optimization
+
+Learning:
+In `WorkflowEngine._run_node`, the previous implementation used `asyncio.wait(return_when=asyncio.FIRST_COMPLETED)` inside a `while` loop to wait for dependencies in order to provide true fail-fast behavior. For "wide" nodes with thousands of upstream dependencies, this created an O(N^2) overhead bottleneck because `asyncio.wait` recreates internal sets and futures on each iteration.
+
+Action:
+Replaced the `asyncio.wait` loop with `asyncio.as_completed(pending_set)`. This maintains the exact same true fail-fast capabilities (yielding results as soon as they complete in order) while drastically reducing coroutine wrapper allocation and iteration overhead for dense/wide DAG topologies.
