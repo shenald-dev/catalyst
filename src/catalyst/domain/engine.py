@@ -65,7 +65,9 @@ class WorkflowEngine:
         self._predecessors[name] = []
         self.tasks[name] = func
         self._timeouts[name] = timeout
-        self._is_async[name] = inspect.iscoroutinefunction(func)
+        self._is_async[name] = inspect.iscoroutinefunction(func) or (
+            hasattr(func, "__call__") and inspect.iscoroutinefunction(func.__call__)
+        )
         if dependencies:
             for dep in dependencies:
                 self.graph.add_edge(dep, name)
@@ -77,19 +79,22 @@ class WorkflowEngine:
         results: Dict[str, Any],
         tasks: Dict[str, asyncio.Task[Any]],
     ) -> Any:
+        def _skip_result(failed_upstream: TaskError) -> TaskError:
+            res_err = TaskError(
+                node,
+                RuntimeError(
+                    f"Skipped: upstream task {failed_upstream.task_name!r} failed"
+                ),
+            )
+            results[node] = res_err
+            return res_err
+
         deps = self._predecessors.get(node, [])
         if deps:
             if len(deps) == 1:
                 res = await tasks[deps[0]]
                 if isinstance(res, TaskError):
-                    result = TaskError(
-                        node,
-                        RuntimeError(
-                            f"Skipped: upstream task {res.task_name!r} failed"
-                        ),
-                    )
-                    results[node] = result
-                    return result
+                    return _skip_result(res)
             else:
                 pending_set = set()
                 for dep in deps:
@@ -97,40 +102,19 @@ class WorkflowEngine:
                     if t.done():
                         res = t.result()
                         if isinstance(res, TaskError):
-                            result = TaskError(
-                                node,
-                                RuntimeError(
-                                    f"Skipped: upstream task {res.task_name!r} failed"
-                                ),
-                            )
-                            results[node] = result
-                            return result
+                            return _skip_result(res)
                     else:
                         pending_set.add(t)
 
                 if len(pending_set) == 1:
                     res = await pending_set.pop()
                     if isinstance(res, TaskError):
-                        result = TaskError(
-                            node,
-                            RuntimeError(
-                                f"Skipped: upstream task {res.task_name!r} failed"
-                            ),
-                        )
-                        results[node] = result
-                        return result
+                        return _skip_result(res)
                 elif pending_set:
                     for f in asyncio.as_completed(pending_set):
                         res = await f
                         if isinstance(res, TaskError):
-                            result = TaskError(
-                                node,
-                                RuntimeError(
-                                    f"Skipped: upstream task {res.task_name!r} failed"
-                                ),
-                            )
-                            results[node] = result
-                            return result
+                            return _skip_result(res)
 
         try:
             func = self.tasks[node]

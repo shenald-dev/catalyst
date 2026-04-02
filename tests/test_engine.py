@@ -285,3 +285,20 @@ async def test_cyclic_graph_raises_error() -> None:
 def test_task_error_repr() -> None:
     err = TaskError("my_task", ValueError("foo"))
     assert repr(err) == "TaskError('my_task', ValueError('foo'))"
+
+
+@pytest.mark.asyncio
+async def test_async_callable_class() -> None:
+    """An object with an async __call__ method should be awaited properly."""
+    engine = WorkflowEngine()
+
+    class AsyncCallable:
+        async def __call__(self) -> str:
+            await asyncio.sleep(0.01)
+            return "async callable"
+
+    engine.add_task("test_callable", AsyncCallable())
+
+    results = await engine.execute()
+
+    assert results["test_callable"] == "async callable"
