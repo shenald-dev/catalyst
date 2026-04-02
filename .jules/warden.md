@@ -1,3 +1,10 @@
+2026-04-01 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, completely optimized exception handling by ensuring `_run_node` catches `Exception` rather than `BaseException`, properly allowing system-level interrupts (`asyncio.CancelledError`, `KeyboardInterrupt`, `SystemExit`) to propagate and cooperate with cancellation. Adversarial QA confirmed interrupt propagation works flawlessly. Scanned for dead code with vulture, but findings in FastAPI routes are false positives. Codebase maintains zero bloat.
+
+Alignment / Deferred:
+Evaluated dependencies for upgrades. Attempted bumping `pydantic-core` to `2.45.0` but immediately hit the known `SystemError` incompatibility with FastAPI testing. `pydantic-core` remains strictly pinned at `2.41.5` to maintain structural safety. Prepared final release notes and bumped semantic version to `0.1.6`.
+
 2026-03-31 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, completely optimized dependency awaiting by replacing it with a synchronous task completion check combined with `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`, avoiding unnecessary coroutine wrapper generation for already-completed tasks. Adversarial QA confirms true fail-fast guarantees are preserved while the previous memory leak regression using `asyncio.as_completed` is avoided. No systemic bloat or orphaned files were found.
