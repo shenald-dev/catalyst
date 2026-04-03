@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2026-04-03
+
+### Changed
+- Performance optimization: Inlined dependency short-circuit closure in `_run_node` to reduce Python function creation overhead.
+
 ## [0.1.7] - 2026-04-02
 
 ### Verified
