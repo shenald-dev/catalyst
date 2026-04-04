@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2026-04-04
+
+### Verified
+- Adversarial QA confirmed that performance optimizations (like true parallel DAG execution and fail-fast short-circuiting) remain intact and tests run without blocking sibling nodes.
+
+### Changed
+- Entropy Pruned: 2 lines removed (cleaned up unneeded `print()` debugging statements in tests).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (strictly pinned at `2.41.5`) due to `SystemError` compatibility issues.
+
 ## [0.1.7] - 2026-04-02
 
 ### Verified
