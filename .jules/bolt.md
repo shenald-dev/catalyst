@@ -5,3 +5,6 @@ Defining inner functions (like `def _skip_result`) inside frequently executed ho
 
 Action:
 Refactored `_run_node` to track error state natively with a local variable (`failed_upstream: TaskError | None`) and consolidated the failure return at the end of the dependency evaluation block, eliminating the `_skip_result` closure entirely. Also modernized type hints from `typing.Dict`/`typing.List` to the built-in `dict`/`list`.
+2024-05-23 — Topological Sort Overhead
+Learning: Recomputing nx.topological_sort on every execute() call for static workflows introduces unnecessary O(V+E) overhead per execution.
+Action: Cache the topological sort order in WorkflowEngine and invalidate it during add_task() to avoid redundant work in hot paths.
