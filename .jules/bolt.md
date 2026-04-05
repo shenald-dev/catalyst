@@ -92,3 +92,11 @@ Replaced the `asyncio.wait` loop with `asyncio.as_completed(pending_set)`. This 
 ## 2024-05-19 — Correctly identifying async callable class instances
 Learning: `inspect.iscoroutinefunction()` only returns true for standard async functions, and fails on class instances that implement `async def __call__`. If overlooked, the workflow engine treats these async objects as synchronous, dispatching them to `asyncio.to_thread()` which merely returns an unawaited coroutine instead of the value.
 Action: To reliably check if any callable is a coroutine function (including instances), the engine should use `inspect.iscoroutinefunction(func) or (hasattr(func, "__call__") and inspect.iscoroutinefunction(func.__call__))`.
+
+## 2026-04-05 — Workflow Engine Inner Closure Optimization
+
+Learning:
+Inside `WorkflowEngine._run_node`, a `_skip_result` closure was defined to cleanly handle formatting skipping errors. However, because this function was defined inside the async method, Python had to allocate and create the closure object dynamically for every single node executed in the workflow engine, creating measurable memory and CPU overhead in the hot path. Initially, an attempt was made to inline the logic, but that caused massive code duplication and hurt maintainability.
+
+Action:
+Extracted the `_skip_result` closure into a purely functional static method `_create_skip_error` on the `WorkflowEngine` class. By calling this static method, we eliminate the per-node object allocation overhead entirely without sacrificing code readability or repeating error formatting logic across the multiple short-circuit branches.

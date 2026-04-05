@@ -73,28 +73,29 @@ class WorkflowEngine:
                 self.graph.add_edge(dep, name)
                 self._predecessors[name].append(dep)
 
+    @staticmethod
+    def _create_skip_error(node: str, failed_upstream: TaskError) -> TaskError:
+        return TaskError(
+            node,
+            RuntimeError(
+                f"Skipped: upstream task {failed_upstream.task_name!r} failed"
+            ),
+        )
+
     async def _run_node(
         self,
         node: str,
         results: Dict[str, Any],
         tasks: Dict[str, asyncio.Task[Any]],
     ) -> Any:
-        def _skip_result(failed_upstream: TaskError) -> TaskError:
-            res_err = TaskError(
-                node,
-                RuntimeError(
-                    f"Skipped: upstream task {failed_upstream.task_name!r} failed"
-                ),
-            )
-            results[node] = res_err
-            return res_err
-
         deps = self._predecessors.get(node, [])
         if deps:
             if len(deps) == 1:
                 res = await tasks[deps[0]]
                 if isinstance(res, TaskError):
-                    return _skip_result(res)
+                    res_err = self._create_skip_error(node, res)
+                    results[node] = res_err
+                    return res_err
             else:
                 pending_set = set()
                 for dep in deps:
@@ -102,19 +103,25 @@ class WorkflowEngine:
                     if t.done():
                         res = t.result()
                         if isinstance(res, TaskError):
-                            return _skip_result(res)
+                            res_err = self._create_skip_error(node, res)
+                            results[node] = res_err
+                            return res_err
                     else:
                         pending_set.add(t)
 
                 if len(pending_set) == 1:
                     res = await pending_set.pop()
                     if isinstance(res, TaskError):
-                        return _skip_result(res)
+                        res_err = self._create_skip_error(node, res)
+                        results[node] = res_err
+                        return res_err
                 elif pending_set:
                     for f in asyncio.as_completed(pending_set):
                         res = await f
                         if isinstance(res, TaskError):
-                            return _skip_result(res)
+                            res_err = self._create_skip_error(node, res)
+                            results[node] = res_err
+                            return res_err
 
         try:
             func = self.tasks[node]
