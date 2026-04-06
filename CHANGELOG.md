@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2026-04-06
+
+### Verified
+- Adversarial QA confirmed that the removal of `_skip_result` closures improved hot path latency without regressions. Tested system interrupts and fast-fail dependencies utilizing `asyncio.as_completed` without memory leaks.
+
+### Changed
+- Entropy Pruned: 1 line (Refactored outdated `typing.Dict` to built-in `dict` in tests).
+- Dependencies Bumped: Safely updated testing utilities. Strictly deferred upgrading `pydantic-core` (pinned at `2.41.5`) due to incompatibility with upstream Pydantic versions crashing test suites.
+
 ## [0.1.7] - 2026-04-02
 
 ### Verified
