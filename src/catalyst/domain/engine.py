@@ -34,6 +34,7 @@ class WorkflowEngine:
         self._timeouts: dict[str, float | None] = {}
         self._is_async: dict[str, bool] = {}
         self._predecessors: dict[str, list[str]] = {}
+        self._cached_topo_order: list[str] | None = None
 
     def add_task(
         self,
@@ -72,6 +73,7 @@ class WorkflowEngine:
             for dep in dependencies:
                 self.graph.add_edge(dep, name)
                 self._predecessors[name].append(dep)
+        self._cached_topo_order = None
 
     async def _run_node(
         self,
@@ -146,8 +148,11 @@ class WorkflowEngine:
         and also produce TaskErrors referencing the upstream failure.
         """
         try:
-            topo_order = list(nx.topological_sort(self.graph))
+            if self._cached_topo_order is None:
+                self._cached_topo_order = list(nx.topological_sort(self.graph))
+            topo_order = self._cached_topo_order
         except nx.NetworkXUnfeasible:
+            self._cached_topo_order = None
             raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
 
         results: dict[str, Any] = {}

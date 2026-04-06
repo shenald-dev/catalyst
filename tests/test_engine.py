@@ -302,3 +302,26 @@ async def test_async_callable_class() -> None:
     results = await engine.execute()
 
     assert results["test_callable"] == "async callable"
+
+
+@pytest.mark.asyncio
+async def test_cached_topo_order() -> None:
+    engine = WorkflowEngine()
+    engine.add_task("A", lambda: "A")
+    engine.add_task("B", lambda: "B", ["A"])
+
+    assert engine._cached_topo_order is None
+
+    await engine.execute()
+    assert engine._cached_topo_order == ["A", "B"]
+
+    # Execute again to test cached path
+    await engine.execute()
+    assert engine._cached_topo_order == ["A", "B"]
+
+    # Invalidate cache when new task added
+    engine.add_task("C", lambda: "C", ["B"])
+    assert engine._cached_topo_order is None
+
+    await engine.execute()
+    assert engine._cached_topo_order == ["A", "B", "C"]
