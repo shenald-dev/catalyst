@@ -1,7 +1,5 @@
-## 2025-04-04 — Closure Allocation in Hot Paths
-
+## 2024-04-06 — Topological Sort Performance Bottleneck
 Learning:
-Defining inner functions (like `def _skip_result`) inside frequently executed hot paths (like `_run_node`) forces Python to allocate a new closure context on every invocation, causing unnecessary memory overhead and execution latency.
-
+NetworkX's `topological_sort` is an O(V+E) operation. Executing it on every `.execute()` call inside a static DAG creates a severe and unnecessary performance bottleneck for pipelines that run repeatedly.
 Action:
-Refactored `_run_node` to track error state natively with a local variable (`failed_upstream: TaskError | None`) and consolidated the failure return at the end of the dependency evaluation block, eliminating the `_skip_result` closure entirely. Also modernized type hints from `typing.Dict`/`typing.List` to the built-in `dict`/`list`.
+Always cache expensive graph topology evaluations. Invalidate the cache inside methods that mutate the graph structure (e.g., `add_task`), ensuring hot-paths can pull the evaluation instantly in constant time.

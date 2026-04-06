@@ -34,6 +34,7 @@ class WorkflowEngine:
         self._timeouts: dict[str, float | None] = {}
         self._is_async: dict[str, bool] = {}
         self._predecessors: dict[str, list[str]] = {}
+        self._cached_topo_order: list[str] | None = None
 
     def add_task(
         self,
@@ -68,6 +69,7 @@ class WorkflowEngine:
         self._is_async[name] = inspect.iscoroutinefunction(func) or (
             hasattr(func, "__call__") and inspect.iscoroutinefunction(func.__call__)
         )
+        self._cached_topo_order = None
         if dependencies:
             for dep in dependencies:
                 self.graph.add_edge(dep, name)
@@ -145,10 +147,12 @@ class WorkflowEngine:
         Failed tasks produce TaskError results. Dependent tasks are skipped
         and also produce TaskErrors referencing the upstream failure.
         """
-        try:
-            topo_order = list(nx.topological_sort(self.graph))
-        except nx.NetworkXUnfeasible:
-            raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
+        if self._cached_topo_order is None:
+            try:
+                self._cached_topo_order = list(nx.topological_sort(self.graph))
+            except nx.NetworkXUnfeasible:
+                raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
+        topo_order = self._cached_topo_order
 
         results: dict[str, Any] = {}
         tasks: dict[str, asyncio.Task[Any]] = {}
