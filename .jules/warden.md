@@ -1,3 +1,10 @@
+2026-04-04 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent successfully verified tests and implemented bottleneck optimizations. Ran adversarial QA tests locally with full passing suite. Identified minor debugging statements from prior commits in test files (`print` calls in `test_bottleneck.py` and `test_fail_fast.py`) and removed them to prevent log pollution. False positives from `vulture` dead-code scans inside `FastAPI` layers ignored.
+
+Alignment / Deferred:
+Deferred the upgrade of `pydantic-core` to `2.45.0` once again because an adversarial dependency audit caused a `SystemError` incompatibility crash within FastAPI test runs (requires broader framework coordination). Strictly pinned `pydantic-core` at `2.41.5` to maintain structural safety. Prepared final release notes and safely bumped semantic version to `0.1.8`.
+
 2026-04-02 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully implemented an async callable execution path optimization by testing for `async def __call__` natively, preventing instances from wrongly being dumped into a synchronous execution pool. Refactoring extracted repeated logic into a `_skip_result` helper inside `_run_node`. Vulture found zero real dead code lines; false positives inside `FastAPI` layers ignored. Retained `asyncio.as_completed` in `_run_node` as the preferred performant DAG resolver, passing all adversarial testing.

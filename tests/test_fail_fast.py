@@ -48,7 +48,6 @@ async def test_true_fail_fast_multiple_deps() -> None:
     # downstream_eval_time should be around start + 0.1s
     assert downstream_eval_time is not None
     eval_duration = downstream_eval_time - start
-    print(f"Downstream eval duration: {eval_duration}")
 
     assert eval_duration < 0.2, (
         "Downstream did not fail fast, waited for slow dependency!"
