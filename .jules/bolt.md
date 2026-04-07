@@ -1,7 +1,7 @@
-## 2025-04-04 — Closure Allocation in Hot Paths
+## 2025-04-07 — Optimize DAG topological sort evaluation
 
 Learning:
-Defining inner functions (like `def _skip_result`) inside frequently executed hot paths (like `_run_node`) forces Python to allocate a new closure context on every invocation, causing unnecessary memory overhead and execution latency.
+The workflow engine evaluates `nx.topological_sort` on the DAG dynamically during each `execute()` call. For static workflows that are constructed once and executed repeatedly, this O(V+E) operation is unnecessary and adds overhead.
 
 Action:
-Refactored `_run_node` to track error state natively with a local variable (`failed_upstream: TaskError | None`) and consolidated the failure return at the end of the dependency evaluation block, eliminating the `_skip_result` closure entirely. Also modernized type hints from `typing.Dict`/`typing.List` to the built-in `dict`/`list`.
+Introduced a cache (`_cached_topo_order`) inside `WorkflowEngine` that computes and stores the sorted node order once. The cache is automatically invalidated when new tasks are added via `add_task`. This optimizes execution time on multiple workflow executions.
