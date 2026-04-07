@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.9] - 2026-04-07
+
+### Verified
+- Adversarial QA confirmed the structural soundness of the `_run_node` optimization. Eliminating closure allocations from the hot path maintained full system stability.
+
+### Changed
+- Entropy Pruned: 0 lines. Modernized type hints across `src/catalyst/domain/engine.py` using built-in generics (`dict`/`list`).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (kept safely at `2.41.5`) due to a `SystemError` compatibility crash during adversarial testing.
+
 ## [0.1.8] - 2026-04-04
 
 ### Verified
