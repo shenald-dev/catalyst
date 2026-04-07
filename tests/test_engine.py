@@ -277,9 +277,42 @@ async def test_cyclic_graph_raises_error() -> None:
     # Now we manually inject a cycle to bypass the `add_task` validation
     # to test the nx.NetworkXUnfeasible branch in execute()
     engine.graph.add_edge("B", "A")
+    # Manually invalidate the cache since we bypassed add_task()
+    engine._cached_topo_order = None
 
     with pytest.raises(ValueError, match="Workflow must be a Directed Acyclic Graph"):
         await engine.execute()
+
+
+@pytest.mark.asyncio
+async def test_topo_sort_is_cached() -> None:
+    """The topological sort order should be cached and reused on subsequent executions."""
+    engine = WorkflowEngine()
+    engine.add_task("A", lambda: "A")
+    engine.add_task("B", lambda: "B", ["A"])
+
+    assert engine._cached_topo_order is None
+
+    # First execution should populate the cache
+    await engine.execute()
+    assert engine._cached_topo_order is not None
+    assert engine._cached_topo_order == ["A", "B"]
+
+    # Store the object identity of the cached list
+    cached_list_id = id(engine._cached_topo_order)
+
+    # Second execution should reuse the exact same list
+    await engine.execute()
+    assert id(engine._cached_topo_order) == cached_list_id
+
+    # Adding a new task should invalidate the cache
+    engine.add_task("C", lambda: "C", ["B"])
+    assert engine._cached_topo_order is None
+
+    # Third execution should populate a new list in the cache
+    await engine.execute()
+    assert engine._cached_topo_order is not None
+    assert id(engine._cached_topo_order) != cached_list_id
 
 
 def test_task_error_repr() -> None:
