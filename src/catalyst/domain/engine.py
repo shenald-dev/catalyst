@@ -106,10 +106,14 @@ class WorkflowEngine:
                     if isinstance(res, TaskError):
                         failed_upstream = res
                 elif not failed_upstream and pending_set:
-                    for f in asyncio.as_completed(pending_set):
+                    iterator = asyncio.as_completed(pending_set)
+                    for f in iterator:
                         res = await f
                         if isinstance(res, TaskError):
                             failed_upstream = res
+                            for remaining in iterator:
+                                if hasattr(remaining, "close"):
+                                    getattr(remaining, "close")()
                             break
 
             if failed_upstream is not None:
@@ -123,7 +127,9 @@ class WorkflowEngine:
                 return res_err
 
         try:
-            func = self.tasks[node]
+            func = self.tasks.get(node)
+            if func is None:
+                raise KeyError(f"Task {node!r} not found")
             timeout = self._timeouts.get(node)
             is_async = self._is_async.get(node, False)
 
