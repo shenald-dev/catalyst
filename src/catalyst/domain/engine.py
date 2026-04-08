@@ -63,6 +63,7 @@ class WorkflowEngine:
                     f"Task {name!r} depends on unregistered tasks: {missing}"
                 )
         self.graph.add_node(name)
+        self._cached_topo_order = None
         self._predecessors[name] = []
         self.tasks[name] = func
         self._timeouts[name] = timeout
