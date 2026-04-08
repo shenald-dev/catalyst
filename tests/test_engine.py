@@ -302,3 +302,30 @@ async def test_async_callable_class() -> None:
     results = await engine.execute()
 
     assert results["test_callable"] == "async callable"
+
+
+@pytest.mark.asyncio
+async def test_topological_sort_caching() -> None:
+    """Test that the topological sort order is cached and invalidated correctly."""
+    engine = WorkflowEngine()
+
+    engine.add_task("A", lambda: "A")
+    engine.add_task("B", lambda: "B", ["A"])
+
+    assert engine._cached_topo_order is None
+
+    # First execution should cache the order
+    await engine.execute()
+    assert engine._cached_topo_order == ["A", "B"]
+
+    # Second execution should use the cache
+    await engine.execute()
+    assert engine._cached_topo_order == ["A", "B"]
+
+    # Adding a new task should invalidate the cache
+    engine.add_task("C", lambda: "C", ["B"])
+    assert engine._cached_topo_order is None
+
+    # Third execution should re-cache the order
+    await engine.execute()
+    assert engine._cached_topo_order == ["A", "B", "C"]
