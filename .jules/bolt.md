@@ -1,5 +1,12 @@
-## 2024-04-06 — Topological Sort Performance Bottleneck
+## 2026-04-05 — Skip Result Closure Overhead
+
 Learning:
-NetworkX's `topological_sort` is an O(V+E) operation. Executing it on every `.execute()` call inside a static DAG creates a severe and unnecessary performance bottleneck for pipelines that run repeatedly.
+Refactored `_run_node` to track error state natively with a local variable (`failed_upstream: TaskError | None`) and consolidated the failure return at the end of the dependency evaluation block, eliminating the `_skip_result` closure entirely. Also modernized type hints from `typing.Dict`/`typing.List` to the built-in `dict`/`list`.
+
+## 2026-04-07 — Topological Sort Recomputation Overhead
+
+Learning:
+For static DAGs executed repeatedly, recomputing `nx.topological_sort` on every `.execute()` call creates an O(V+E) performance penalty that compounds over multiple engine runs, especially for complex pipelines.
+
 Action:
-Always cache expensive graph topology evaluations. Invalidate the cache inside methods that mutate the graph structure (e.g., `add_task`), ensuring hot-paths can pull the evaluation instantly in constant time.
+Cached the result of `nx.topological_sort` into `self._cached_topo_order` during engine instantiation and validated invalidation of the cache via `add_task()` when new tasks alter the DAG structure.
