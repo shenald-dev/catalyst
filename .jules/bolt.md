@@ -1,19 +1,18 @@
-## 2024-05-24 — Workflow Engine Parallel DAG Execution Bottleneck
+## 2025-04-04 — Closure Allocation in Hot Paths
 
 Learning:
-The core workflow engine implementation evaluated DAG execution generation by generation using `networkx.topological_generations()`. While it efficiently scheduled parallel tasks within the same topological level, it introduced a synchronization bottleneck: the next generation couldn't start until all tasks in the current generation completed, blocking independent tasks on slow neighbors in the same level.
+Defining inner functions (like `def _skip_result`) inside frequently executed hot paths (like `_run_node`) forces Python to allocate a new closure context on every invocation, causing unnecessary memory overhead and execution latency.
 
 Action:
-Modified DAG execution logic to traverse the DAG directly, creating `asyncio.Task` wrappers for each node and orchestrating dependency resolution directly via `asyncio.gather` on the upstream dependencies. This allows tasks to execute truly in parallel without unnecessary synchronization barriers, improving throughput for uneven workflows.
+Refactored `_run_node` to track error state natively with a local variable (`failed_upstream: TaskError | None`) and consolidated the failure return at the end of the dependency evaluation block, eliminating the `_skip_result` closure entirely. Also modernized type hints from `typing.Dict`/`typing.List` to the built-in `dict`/`list`.
 
-## 2024-05-25 — Workflow Engine Redundant DAG Validation and Inspection Overhead
+## 2026-04-07 — Topological Sort Recomputation Overhead
 
 Learning:
-Two performance insights discovered in the workflow engine's core execution path:
-1. `nx.is_directed_acyclic_graph(self.graph)` traverses the graph to check for cycles before calling `nx.topological_sort(self.graph)`, which also internally checks for cycles (and raises `nx.NetworkXUnfeasible`). Validating before sorting traverses the graph twice.
-2. `inspect.iscoroutinefunction()` is relatively expensive to evaluate dynamically during task execution (`_run_task`), especially for workflows with many tasks.
+For static DAGs executed repeatedly, recomputing `nx.topological_sort` on every `.execute()` call creates an O(V+E) performance penalty that compounds over multiple engine runs, especially for complex pipelines.
 
 Action:
+Cached the result of `nx.topological_sort` into `self._cached_topo_order` during engine instantiation and validated invalidation of the cache via `add_task()` when new tasks alter the DAG structure.
 1. Eliminated the explicit `nx.is_directed_acyclic_graph` check. Instead, wrapped the `nx.topological_sort` call in a `try/except` block, catching `nx.NetworkXUnfeasible`. This cuts the validation traversal overhead by half.
 2. Moved the `inspect.iscoroutinefunction` check from execution time to registration time (`add_task()`), storing the boolean result to avoid introspection overhead in the hot path.
 
