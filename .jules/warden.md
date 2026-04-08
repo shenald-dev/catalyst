@@ -1,3 +1,10 @@
+2026-04-08 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully mitigated the `asyncio.as_completed` resource leak warning by utilizing `close()` to properly resolve lingering unawaited generator task resources. Verified these operations are sound and do not disrupt the strict fail-fast mechanism. Eliminated a deprecation warning in the test runner. No real codebase bloat found during the pruning pass.
+
+Alignment / Deferred:
+Deferred the upgrade of `pydantic-core` (bounded at `2.41.5`) due to persistent `SystemError` compatibility conflicts with upstream dependencies when updating to `2.45.0`. Updated versions locally and within the FastAPI API definition, syncing documentation logs to track the changes. Prepared version bump to `0.1.10`.
+
 2026-04-07 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, completely eliminated the `_skip_result` closure within the hot path `_run_node`, correctly tracking error states with native variables instead. This completely strips overhead around repeated closure context allocations during DAG traversal. The agent also modernized type hints, trading out `typing.Dict`/`typing.List` aliases for standard `dict`/`list` forms. Vulture run confirmed no true structural dead code exists beyond expected FastAPI/Pydantic false positives.

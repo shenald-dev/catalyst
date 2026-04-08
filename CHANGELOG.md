@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.10] - 2026-04-08
+
+### Verified
+- Adversarial QA confirmed the test suite is stable. Updated `pyproject.toml` test configuration to clear `pytest-asyncio` deprecation warnings.
+
+### Changed
+- Entropy Pruned: 0 lines (Maintained zero bloat).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (strictly pinned at `2.41.5`) due to discovered `SystemError` incompatibility.
+
 ## [0.1.9] - 2026-04-07
 
 ### Verified

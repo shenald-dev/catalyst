@@ -1,6 +1,6 @@
 [project]
 name = "catalyst"
-version = "0.1.9"
+version = "0.1.10"
 description = "High-performance workflow engine for complex pipelines. Parallel DAG execution, <1s sorts, zero bloat."
 authors = [
     { name = "shenald-dev", email = "bot@shenald.dev" }
@@ -33,3 +33,6 @@ target-version = "py310"
 
 [tool.mypy]
 strict = true
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
