@@ -42,5 +42,4 @@ async def test_generation_bottleneck() -> None:
     # Total time = 0.5s
 
     duration = end - start
-    print(f"Duration: {duration}")
     assert duration < 0.55  # True parallel DAG should take ~0.5s, not ~0.6s.

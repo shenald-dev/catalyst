@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 import networkx as nx
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +30,17 @@ class WorkflowEngine:
 
     def __init__(self) -> None:
         self.graph: nx.DiGraph[str] = nx.DiGraph()
-        self.tasks: Dict[str, Callable[..., Any]] = {}
-        self._timeouts: Dict[str, float | None] = {}
-        self._is_async: Dict[str, bool] = {}
-        self._predecessors: Dict[str, List[str]] = {}
+        self.tasks: dict[str, Callable[..., Any]] = {}
+        self._timeouts: dict[str, float | None] = {}
+        self._is_async: dict[str, bool] = {}
+        self._predecessors: dict[str, list[str]] = {}
+        self._cached_topo_order: list[str] | None = None
 
     def add_task(
         self,
         name: str,
         func: Callable[..., Any],
-        dependencies: List[str] | None = None,
+        dependencies: list[str] | None = None,
         timeout: float | None = None,
     ) -> None:
         """Register a task and its dependencies.
@@ -62,6 +63,7 @@ class WorkflowEngine:
                     f"Task {name!r} depends on unregistered tasks: {missing}"
                 )
         self.graph.add_node(name)
+        self._cached_topo_order = None
         self._predecessors[name] = []
         self.tasks[name] = func
         self._timeouts[name] = timeout
@@ -72,12 +74,13 @@ class WorkflowEngine:
             for dep in dependencies:
                 self.graph.add_edge(dep, name)
                 self._predecessors[name].append(dep)
+        self._cached_topo_order = None
 
     async def _run_node(
         self,
         node: str,
-        results: Dict[str, Any],
-        tasks: Dict[str, asyncio.Task[Any]],
+        results: dict[str, Any],
+        tasks: dict[str, asyncio.Task[Any]],
     ) -> Any:
         deps = self._predecessors.get(node, [])
         if deps:
@@ -98,6 +101,16 @@ class WorkflowEngine:
                     else:
                         pending_set.add(t)
 
+                if not failed_upstream and len(pending_set) == 1:
+                    res = await pending_set.pop()
+                    if isinstance(res, TaskError):
+                        failed_upstream = res
+                elif not failed_upstream and pending_set:
+                    for f in asyncio.as_completed(pending_set):
+                        res = await f
+                        if isinstance(res, TaskError):
+                            failed_upstream = res
+                            break
                 if failed_upstream is None:
                     if len(pending_set) == 1:
                         res = await pending_set.pop()
@@ -140,21 +153,22 @@ class WorkflowEngine:
             results[node] = result
             return result
 
-    async def execute(self) -> Dict[str, Any]:
+    async def execute(self) -> dict[str, Any]:
         """Execute the DAG in topological order, parallelizing independent tasks.
 
         Failed tasks produce TaskError results. Dependent tasks are skipped
         and also produce TaskErrors referencing the upstream failure.
         """
-        try:
-            topo_order = list(nx.topological_sort(self.graph))
-        except nx.NetworkXUnfeasible:
-            raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
+        if self._cached_topo_order is None:
+            try:
+                self._cached_topo_order = list(nx.topological_sort(self.graph))
+            except nx.NetworkXUnfeasible:
+                raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
 
-        results: Dict[str, Any] = {}
-        tasks: Dict[str, asyncio.Task[Any]] = {}
+        results: dict[str, Any] = {}
+        tasks: dict[str, asyncio.Task[Any]] = {}
 
-        for node in topo_order:
+        for node in self._cached_topo_order:
             tasks[node] = asyncio.create_task(self._run_node(node, results, tasks))
 
         if tasks:
