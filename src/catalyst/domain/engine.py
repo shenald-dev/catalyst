@@ -67,8 +67,14 @@ class WorkflowEngine:
         self._predecessors[name] = []
         self.tasks[name] = func
         self._timeouts[name] = timeout
-        self._is_async[name] = inspect.iscoroutinefunction(func) or (
-            hasattr(func, "__call__") and inspect.iscoroutinefunction(func.__call__)
+        # Resolve potential `functools.partial` wrappers to correctly detect async
+        base_func = func
+        while hasattr(base_func, "func"):
+            base_func = base_func.func
+
+        self._is_async[name] = inspect.iscoroutinefunction(base_func) or (
+            hasattr(base_func, "__call__")
+            and inspect.iscoroutinefunction(base_func.__call__)
         )
         if dependencies:
             for dep in dependencies:
@@ -79,7 +85,6 @@ class WorkflowEngine:
     async def _run_node(
         self,
         node: str,
-        results: dict[str, Any],
         tasks: dict[str, asyncio.Task[Any]],
     ) -> Any:
         deps = self._predecessors.get(node, [])
@@ -123,7 +128,6 @@ class WorkflowEngine:
                         f"Skipped: upstream task {failed_upstream.task_name!r} failed"
                     ),
                 )
-                results[node] = res_err
                 return res_err
 
         try:
@@ -139,13 +143,10 @@ class WorkflowEngine:
                 result = await asyncio.wait_for(coro, timeout=timeout)
             else:
                 result = await coro
-
-            results[node] = result
             return result
         except Exception as e:
             logger.error("Task %r failed: %s", node, e)
             result = TaskError(node, e)
-            results[node] = result
             return result
 
     async def execute(self) -> dict[str, Any]:
@@ -160,13 +161,12 @@ class WorkflowEngine:
             except nx.NetworkXUnfeasible:
                 raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
 
-        results: dict[str, Any] = {}
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         for node in self._cached_topo_order:
-            tasks[node] = asyncio.create_task(self._run_node(node, results, tasks))
+            tasks[node] = asyncio.create_task(self._run_node(node, tasks))
 
         if tasks:
             await asyncio.gather(*tasks.values())
 
-        return results
+        return {node: task.result() for node, task in tasks.items()}

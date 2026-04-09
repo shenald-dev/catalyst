@@ -1,3 +1,4 @@
+from functools import partial
 import asyncio
 import time
 import pytest
@@ -362,3 +363,20 @@ async def test_topological_sort_caching() -> None:
     # Third execution should re-cache the order
     await engine.execute()
     assert engine._cached_topo_order == ["A", "B", "C"]
+
+
+@pytest.mark.asyncio
+async def test_functools_partial_async() -> None:
+    """A functools.partial wrapping an async function should be executed as async, not passed to to_thread."""
+    engine = WorkflowEngine()
+
+    async def my_task(arg: str) -> str:
+        await asyncio.sleep(0.01)
+        return f"done {arg}"
+
+    engine.add_task("test_partial", partial(my_task, "foo"))
+
+    results = await engine.execute()
+
+    assert results["test_partial"] == "done foo"
+    assert engine._is_async["test_partial"] is True

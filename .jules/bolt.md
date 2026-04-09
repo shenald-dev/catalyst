@@ -21,3 +21,11 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2025-04-09 — Async Callable Obfuscation via functools.partial
+
+Learning:
+Using `functools.partial` to wrap asynchronous functions causes standard `inspect.iscoroutinefunction(func)` detection to fail (returning `False`), leading to async tasks being erroneously executed as synchronous threads via `asyncio.to_thread`. This not only negates async performance benefits but also breaks expected task returns since a thread returns the un-awaited coroutine object instead of its result.
+
+Action:
+Refactored `WorkflowEngine.add_task` to recursively resolve the base function from wrappers by following `.func` attributes before checking for coroutine signatures, ensuring partial-wrapped async callables are correctly identified and awaited natively.
