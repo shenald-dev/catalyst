@@ -4,6 +4,7 @@
 
 ## Features
 - **⚡ Parallel DAG Execution**: Blazing fast topology resolution with fail-fast optimization avoiding closure allocation overhead.
+- **📦 Advanced Async Callable Detection**: Natively unwraps decorators and wrapped callables (e.g., `functools.partial`) to properly identify and await async underlying logic securely.
 - **🏗️ Domain-Driven Design**: Clean, decoupled architecture.
 - **🌐 FastAPI Dashboard**: Optional API and visualization endpoints.
 - **🛡️ Strict Typing**: Fully typed with Python 3.10+ and `mypy`, leveraging built-in generic types.

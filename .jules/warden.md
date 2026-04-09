@@ -67,3 +67,10 @@ The prior agent, BOLT, successfully implemented fail-fast optimizations in the c
 
 Alignment / Deferred:
 Wrote new `test_fast_fail_does_not_cancel_unrelated_tasks` in `tests/test_engine.py` to lock down this structural integrity. Deleted the dead `infrastructure` code, successfully synced `CHANGELOG.md` with release notes, and bumped package versions to `0.1.2`. Pydantic-core upgrading was deferred back to its compatible version.
+
+2026-04-09 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully enhanced async callable identification. By natively unpacking decorators (e.g., `functools.partial`) and custom callable classes through the `.func` property, the workflow engine now strictly and accurately delegates wrapped async functions as background coroutines. Adversarial testing verified that wrapped callables execute cleanly asynchronously, resolving the `RuntimeWarning: coroutine was never awaited` issue. No unused imports or functions detected needing pruning.
+
+Alignment / Deferred:
+Deferred `pydantic-core` upgrades beyond `2.41.5` due to persisting ecosystem incompatibility. Updated version to `0.1.11` to capture the async function wrapper structural fixes. Synchronized `CHANGELOG.md` with release notes and `README.md` to note robust decorator support.

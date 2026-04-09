@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.11] - 2026-04-09
+### Changed
+* **Correctness:** Improved execution engine to securely unwrap complex callables (such as `functools.partial` or custom decorator classes). This ensures underlying async methods are correctly evaluated and awaited as coroutines, eliminating runtime unawaited coroutine warnings and preserving performance logic.
+* **Lifecycle:** Verified code architecture against vulture, confirming zero actual codebase bloat. Updated core framework typing. Deferred `pydantic-core` to `2.41.5` for stability.
+
 All notable changes to this project will be documented in this file.
 
 ## [0.1.10] - 2026-04-08
