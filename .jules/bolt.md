@@ -21,3 +21,11 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2026-04-09 — Async Callable Identification in Wrapping Decorators
+
+Learning:
+When utilizing decorators like `functools.partial` or custom callable classes, checking for coroutines purely via `inspect.iscoroutinefunction()` or `__call__` evaluation fails to identify the underlying async function, treating it as a standard synchronous function and throwing it off to `asyncio.to_thread`. This results in `RuntimeWarning: coroutine was never awaited`.
+
+Action:
+Updated the initialization routing of `WorkflowEngine.add_task` to natively trace function encapsulation via the `.func` property loop before evaluating `inspect.iscoroutinefunction`. Nested callables like `.partial` are correctly unwrapped, accurately identified, and securely executed asynchronously.

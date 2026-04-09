@@ -362,3 +362,38 @@ async def test_topological_sort_caching() -> None:
     # Third execution should re-cache the order
     await engine.execute()
     assert engine._cached_topo_order == ["A", "B", "C"]
+
+
+@pytest.mark.asyncio
+async def test_recursive_unwrap_async() -> None:
+    engine = WorkflowEngine()
+
+    async def async_task() -> str:
+        await asyncio.sleep(0.01)
+        return "async"
+
+    import functools
+
+    partial_task = functools.partial(async_task)
+    engine.add_task("test_partial", partial_task)
+
+    # wrapper
+    from typing import Callable, Any
+
+    def my_decorator(f: Callable[..., Any]) -> Any:
+        class Wrapper:
+            def __init__(self, fn: Callable[..., Any]) -> None:
+                self.func = fn
+
+            def __call__(self) -> Any:
+                return self.func()
+
+        return Wrapper(f)
+
+    wrapped = my_decorator(async_task)
+    engine.add_task("test_wrap", wrapped)
+
+    results = await engine.execute()
+
+    assert results["test_partial"] == "async"
+    assert results["test_wrap"] == "async"
