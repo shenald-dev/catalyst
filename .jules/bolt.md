@@ -21,3 +21,11 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2025-04-10 — Async Callable Detection through Wrappers
+
+Learning:
+Using `inspect.iscoroutinefunction()` directly on wrapped callables (like those created by `functools.partial`) incorrectly returns `False`. This causes the workflow engine to misidentify asynchronous tasks and erroneously execute them inside `asyncio.to_thread` as synchronous blocking tasks, negating the benefits of concurrency.
+
+Action:
+Refactored `WorkflowEngine.add_task` to recursively unwrap wrapped callables by following the `.func` attribute before checking for async properties. This ensures that `functools.partial` closures of async functions are correctly detected and natively awaited in the execution hot path.
