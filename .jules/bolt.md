@@ -21,3 +21,9 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2024-05-18 — Unwrapping async callables correctly
+Learning:
+`inspect.iscoroutinefunction` natively unwraps `__wrapped__` but fails to automatically unwrap `functools.partial` objects. If a partial is applied to an async function or an instance with an async `__call__` method, it is incorrectly evaluated as a synchronous function by `iscoroutinefunction` without first chasing its `.func` attribute.
+Action:
+Before checking `iscoroutinefunction()`, apply a `while hasattr(base_func, 'func'): base_func = base_func.func` loop. This applies more broadly to any pattern inspecting wrapped or composed functions in Python to avoid execution errors where coroutines are treated as synchronous, breaking async execution context rules.
