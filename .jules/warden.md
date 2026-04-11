@@ -1,3 +1,10 @@
+2026-04-09 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully mitigated issues around parallel DAG evaluation by adding `types-networkx` to fix strict `mypy` typing errors and establishing standard `py.typed` markers across `src/catalyst`. Adversarial QA uncovered a subtle bug in `WorkflowEngine.add_task()`: async functions wrapped in `functools.partial` were misidentified as synchronous. Unwrapping the functions down to `base_func` completely fixed this bug, verified by passing local tests.
+
+Alignment / Deferred:
+Evaluated dependencies for upgrades. Vulture scans confirmed zero dead codebase bloat. Attempted bumping `pydantic-core` but continued to defer it back to `2.41.5` due to a known `SystemError` incompatibility with upstream Pydantic testing in FastAPI. Maintained structural typing integrity and prepped library bump to `0.1.11`.
+
 2026-04-08 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully mitigated the `asyncio.as_completed` resource leak warning by utilizing `close()` to properly resolve lingering unawaited generator task resources. Verified these operations are sound and do not disrupt the strict fail-fast mechanism. Eliminated a deprecation warning in the test runner. No real codebase bloat found during the pruning pass.

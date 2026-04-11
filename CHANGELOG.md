@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] - 2026-04-09
+
+### Verified
+- Adversarial QA uncovered a subtle bug in `WorkflowEngine.add_task()` where `functools.partial` wrappers masked async functions as synchronous. Fixed by safely unwrapping `base_func` during task registration, passing all tests.
+- Verified robust codebase typing by introducing `types-networkx` into local dev dependencies and dropping explicit `py.typed` marker files into `src/catalyst` and its subpackages.
+
+### Changed
+- Entropy Pruned: 0 lines (Maintained zero bloat).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (strictly pinned at `2.41.5`) due to the known `SystemError` incompatibility during API tests.
+
 ## [0.1.10] - 2026-04-08
 
 ### Verified
