@@ -21,3 +21,11 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2024-05-24 — Unsafe Async Task Identification
+
+Learning:
+Generic hasattr(obj, "func") unwrapping to detect async closures inside WorkflowEngine can cause circular loops on malicious wrappers and false-positive crashes on completely valid class instances that simply have a .func() async method.
+
+Action:
+Always strictly check isinstance(obj, functools.partial) when unwrapping built-in wrappers. When evaluating custom closures or wrapped objects for asyncio properties, do not unwrap attributes based purely on naming convention unless you can securely verify the object type to prevent standard method masking.
