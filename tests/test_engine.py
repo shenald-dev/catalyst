@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import time
 import pytest
 from catalyst.domain.engine import TaskError, WorkflowEngine
@@ -362,3 +363,28 @@ async def test_topological_sort_caching() -> None:
     # Third execution should re-cache the order
     await engine.execute()
     assert engine._cached_topo_order == ["A", "B", "C"]
+
+
+@pytest.mark.asyncio
+async def test_functools_partial_async() -> None:
+    engine = WorkflowEngine()
+
+    async def async_task(x: int) -> int:
+        await asyncio.sleep(0.01)
+        return x * 2
+
+    engine.add_task("A", functools.partial(async_task, 5))
+    results = await engine.execute()
+    assert results["A"] == 10
+
+
+@pytest.mark.asyncio
+async def test_functools_partial_sync() -> None:
+    engine = WorkflowEngine()
+
+    def sync_task(x: int) -> int:
+        return x * 2
+
+    engine.add_task("A", functools.partial(sync_task, 5))
+    results = await engine.execute()
+    assert results["A"] == 10
