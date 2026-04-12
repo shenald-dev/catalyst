@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import time
 import pytest
 from catalyst.domain.engine import TaskError, WorkflowEngine
@@ -362,3 +363,36 @@ async def test_topological_sort_caching() -> None:
     # Third execution should re-cache the order
     await engine.execute()
     assert engine._cached_topo_order == ["A", "B", "C"]
+
+
+@pytest.mark.asyncio
+async def test_partial_async_function() -> None:
+    """A functools.partial wrapping an async function should be identified as async."""
+    engine = WorkflowEngine()
+
+    async def my_task(arg: str) -> str:
+        await asyncio.sleep(0.01)
+        return f"hello {arg}"
+
+    engine.add_task("t1", functools.partial(my_task, "world"))
+
+    results = await engine.execute()
+    assert results["t1"] == "hello world"
+    assert engine._is_async["t1"] is True
+
+
+@pytest.mark.asyncio
+async def test_partial_async_callable_class() -> None:
+    """A functools.partial wrapping an async callable class should be identified as async."""
+    engine = WorkflowEngine()
+
+    class AsyncCallable:
+        async def __call__(self, arg: str) -> str:
+            await asyncio.sleep(0.01)
+            return f"async {arg}"
+
+    engine.add_task("t1", functools.partial(AsyncCallable(), "world"))
+
+    results = await engine.execute()
+    assert results["t1"] == "async world"
+    assert engine._is_async["t1"] is True

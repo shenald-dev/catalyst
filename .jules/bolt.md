@@ -21,3 +21,11 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2026-04-12 — Async Callable Resolution for `functools.partial`
+
+Learning:
+`inspect.iscoroutinefunction()` returns `False` for async functions or async callable classes wrapped in `functools.partial`. This causes the workflow engine to misidentify async tasks as synchronous and run them via `asyncio.to_thread`, leading to a `RuntimeWarning: coroutine was never awaited` error and execution failure.
+
+Action:
+Refactored `WorkflowEngine.add_task` to iterate and properly unwrap `functools.partial` wrappers by accessing the `.func` attribute in a loop before checking `inspect.iscoroutinefunction()`, ensuring correct async task resolution.
