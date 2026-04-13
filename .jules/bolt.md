@@ -21,3 +21,11 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2024-04-13 — Functional Data Flow in DAG Execution
+
+Learning:
+Passing mutable state dictionaries (like a shared `results` dict) through recursive or execution hot paths like `_run_node` makes data flow harder to trace and introduces unnecessary side effects.
+
+Action:
+Extracted results directly via `task.result()` after task execution completes within the `execute()` method. This aligns with a cleaner, functional data flow while preserving performance and avoiding inline side-effects.
