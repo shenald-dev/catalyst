@@ -338,6 +338,28 @@ async def test_async_callable_class() -> None:
 
 
 @pytest.mark.asyncio
+async def test_async_callable_with_partial() -> None:
+    """A functools.partial wrapping an object with an async __call__ method should be identified as async."""
+    import functools
+
+    engine = WorkflowEngine()
+
+    class AsyncCallable:
+        async def __call__(self, arg: str) -> str:
+            await asyncio.sleep(0.01)
+            return f"async callable with {arg}"
+
+    engine.add_task(
+        "test_partial_callable", functools.partial(AsyncCallable(), "partial_arg")
+    )
+
+    results = await engine.execute()
+
+    assert results["test_partial_callable"] == "async callable with partial_arg"
+    assert engine._is_async["test_partial_callable"] is True
+
+
+@pytest.mark.asyncio
 async def test_topological_sort_caching() -> None:
     """Test that the topological sort order is cached and invalidated correctly."""
     engine = WorkflowEngine()
