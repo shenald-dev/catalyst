@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] - 2026-04-14
+
+### Verified
+- Adversarial QA confirmed the correct identification and awaiting of `functools.partial` wrapped asynchronous callables within the DAG engine.
+
+### Changed
+- Entropy Pruned: 0 lines (Maintained zero bloat; FastAPI endpoints ignored as false positives).
+- Dependencies Bumped: Deferred upgrading `pydantic-core` (strictly pinned at `2.41.5`) due to discovered `SystemError` incompatibility with upstream Pydantic versions.
+
 ## [0.1.10] - 2026-04-08
 
 ### Verified

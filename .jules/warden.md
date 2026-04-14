@@ -1,3 +1,10 @@
+2026-04-14 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, implemented a fix to correctly identify and unwrap `functools.partial` wrappers around callable classes when checking for asynchronous targets, preventing async functions from being erroneously dispatched to threads. Adversarial QA confirmed proper execution. Scanned for dead code with vulture, but findings in FastAPI routes are false positives. Codebase maintains zero bloat.
+
+Alignment / Deferred:
+Evaluated dependencies for upgrades. Attempted bumping `pydantic-core` but strictly deferred it to `2.41.5` to maintain structural safety based on past system errors. Prepared final release notes and bumped semantic version to `0.1.11`.
+
 2026-04-08 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully mitigated the `asyncio.as_completed` resource leak warning by utilizing `close()` to properly resolve lingering unawaited generator task resources. Verified these operations are sound and do not disrupt the strict fail-fast mechanism. Eliminated a deprecation warning in the test runner. No real codebase bloat found during the pruning pass.
