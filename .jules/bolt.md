@@ -21,3 +21,11 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
+
+## 2025-04-14 — functools.partial Async Callable Detection
+
+Learning:
+When an asynchronous function is wrapped using `functools.partial`, `inspect.iscoroutinefunction()` incorrectly evaluates it as `False` because the partial object does not automatically forward `__wrapped__` attributes and instead hides the underlying callable behind `.func`.
+
+Action:
+Modified `_is_async` resolution during task registration to robustly unwrap any number of nested `functools.partial` layers using `while isinstance(base_func, functools.partial): base_func = base_func.func` before running the `iscoroutinefunction` check. Added unit tests for both async functions and objects with an `async def __call__`.
