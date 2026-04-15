@@ -362,3 +362,24 @@ async def test_topological_sort_caching() -> None:
     # Third execution should re-cache the order
     await engine.execute()
     assert engine._cached_topo_order == ["A", "B", "C"]
+
+
+@pytest.mark.asyncio
+async def test_partial_async_callable() -> None:
+    """A functools.partial wrapping an AsyncCallable should be awaited properly."""
+    import functools
+
+    engine = WorkflowEngine()
+
+    class AsyncCallable:
+        async def __call__(self, x: int) -> int:
+            await asyncio.sleep(0.01)
+            return x * 2
+
+    partial_func = functools.partial(AsyncCallable(), 21)
+
+    engine.add_task("test_partial_callable", partial_func)
+
+    results = await engine.execute()
+
+    assert results["test_partial_callable"] == 42
