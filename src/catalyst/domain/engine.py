@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import inspect
 import logging
 import networkx as nx
@@ -67,8 +68,14 @@ class WorkflowEngine:
         self._predecessors[name] = []
         self.tasks[name] = func
         self._timeouts[name] = timeout
-        self._is_async[name] = inspect.iscoroutinefunction(func) or (
-            hasattr(func, "__call__") and inspect.iscoroutinefunction(func.__call__)
+
+        base_func = func
+        while isinstance(base_func, functools.partial):
+            base_func = base_func.func
+
+        self._is_async[name] = inspect.iscoroutinefunction(base_func) or (
+            hasattr(base_func, "__call__")
+            and inspect.iscoroutinefunction(base_func.__call__)
         )
         if dependencies:
             for dep in dependencies:
