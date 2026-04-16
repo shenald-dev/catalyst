@@ -1,3 +1,4 @@
+import functools
 import asyncio
 import time
 import pytest
@@ -362,3 +363,34 @@ async def test_topological_sort_caching() -> None:
     # Third execution should re-cache the order
     await engine.execute()
     assert engine._cached_topo_order == ["A", "B", "C"]
+
+
+@pytest.mark.asyncio
+async def test_async_callable_with_partial() -> None:
+    engine = WorkflowEngine()
+
+    async def my_async_task(arg: str) -> str:
+        await asyncio.sleep(0.01)
+        return arg
+
+    partial_task = functools.partial(my_async_task, "partial_arg")
+    engine.add_task("test_partial", partial_task)
+
+    results = await engine.execute()
+    assert results["test_partial"] == "partial_arg"
+
+
+@pytest.mark.asyncio
+async def test_async_callable_class_with_partial() -> None:
+    engine = WorkflowEngine()
+
+    class AsyncCallable:
+        async def __call__(self, arg: str) -> str:
+            await asyncio.sleep(0.01)
+            return arg
+
+    partial_task = functools.partial(AsyncCallable(), "partial_class_arg")
+    engine.add_task("test_partial_class", partial_task)
+
+    results = await engine.execute()
+    assert results["test_partial_class"] == "partial_class_arg"
