@@ -18,6 +18,35 @@ async def test_partial_async_task() -> None:
 
     engine.add_task("test_partial", partial_func)
 
+    empty file
+    # If the engine correctly detects it as async, it will await it on the event loop.
+    # If it fails to detect it and treats it as sync_with_async_attr
+    assert engine._is_async["sync_with_async_attr"] is False
+
+    results = await engine.execute()
+    assert results["sync_with_async_attr"] == "sync result"
+
+
+import asyncio
+import functools
+import pytest
+from catalyst.domain.engine import WorkflowEngine
+
+
+async def my_async_task(arg: str) -> str:
+    await asyncio.sleep(0.1)
+    return f"async {arg}"
+
+
+@pytest.mark.asyncio
+async def test_partial_async_task() -> None:
+    engine = WorkflowEngine()
+
+    # Create a partial wrapper around an async function
+    partial_func = functools.partial(my_async_task, "partial")
+
+    engine.add_task("test_partial", partial_func)
+
     # If the engine correctly detects it as async, it will await it on the event loop.
     # If it fails to detect it and treats it as sync, it will use asyncio.to_thread,
     # which works but incurs overhead and is incorrect.
