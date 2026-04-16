@@ -1,3 +1,10 @@
+2026-04-16 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, resolved the zombie dependency bug where `WorkflowEngine.add_task` left stale incoming graph edges on overwritten nodes. Verified via adversarial QA tests that the explicit node-edge removal ensures an accurate topological sort without falsely triggering cyclic unfeasible exceptions. Scanned for dead code with vulture, finding 0 true unneeded lines.
+
+Alignment / Deferred:
+Successfully resolved the long-deferred upgrade of `pydantic-core`. Evaluated against the latest environment utilizing updated `pytest` suites and FastAPI mock representations, finding `SystemError` crash scenarios resolved. Updated core dependencies fully without structural modifications. Synced version bumps in API definitions and manifest bounds to `0.1.11` while logging the release in the changelog.
+
 2026-04-08 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully mitigated the `asyncio.as_completed` resource leak warning by utilizing `close()` to properly resolve lingering unawaited generator task resources. Verified these operations are sound and do not disrupt the strict fail-fast mechanism. Eliminated a deprecation warning in the test runner. No real codebase bloat found during the pruning pass.

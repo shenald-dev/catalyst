@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] - 2026-04-16
+
+### Verified
+- Adversarial QA confirmed structural soundness of the `WorkflowEngine.add_task()` bugfix. The internal Directed Graph is completely clear of stale incoming edges on task overwrite, maintaining true topological ordering without false cyclic errors.
+
+### Changed
+- Entropy Pruned: 0 lines.
+- Dependencies Bumped: Successfully upgraded all core dependencies including `pydantic-core` (now safely running latest without `SystemError` crashes).
+
 ## [0.1.10] - 2026-04-08
 
 ### Verified
