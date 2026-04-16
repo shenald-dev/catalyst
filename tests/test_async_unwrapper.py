@@ -50,3 +50,5 @@ async def test_sync_callable_with_async_func_attribute_executes_safely() -> None
 
     results = await engine.execute()
     assert results["sync_with_async_attr"] == "sync result"
+
+```
