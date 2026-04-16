@@ -86,7 +86,6 @@ class WorkflowEngine:
     async def _run_node(
         self,
         node: str,
-        results: dict[str, Any],
         tasks: dict[str, asyncio.Task[Any]],
     ) -> Any:
         deps = self._predecessors.get(node, [])
@@ -130,7 +129,6 @@ class WorkflowEngine:
                         f"Skipped: upstream task {failed_upstream.task_name!r} failed"
                     ),
                 )
-                results[node] = res_err
                 return res_err
 
         try:
@@ -147,13 +145,10 @@ class WorkflowEngine:
             else:
                 result = await coro
 
-            results[node] = result
             return result
         except Exception as e:
             logger.error("Task %r failed: %s", node, e)
-            result = TaskError(node, e)
-            results[node] = result
-            return result
+            return TaskError(node, e)
 
     async def execute(self) -> dict[str, Any]:
         """Execute the DAG in topological order, parallelizing independent tasks.
@@ -167,13 +162,12 @@ class WorkflowEngine:
             except nx.NetworkXUnfeasible:
                 raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
 
-        results: dict[str, Any] = {}
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         for node in self._cached_topo_order:
-            tasks[node] = asyncio.create_task(self._run_node(node, results, tasks))
+            tasks[node] = asyncio.create_task(self._run_node(node, tasks))
 
         if tasks:
             await asyncio.gather(*tasks.values())
 
-        return results
+        return {node: task.result() for node, task in tasks.items()}
