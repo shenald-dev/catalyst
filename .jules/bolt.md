@@ -1,11 +1,3 @@
-## 2024-05-24 — Unsafe Async Task Identification
-
-Learning:
-Generic hasattr(obj, "func") unwrapping to detect async closures inside WorkflowEngine can cause circular loops on malicious wrappers and false-positive crashes on completely valid class instances that simply have a .func() async method.
-
-Action:
-Always strictly check isinstance(obj, functools.partial) when unwrapping built-in wrappers. When evaluating custom closures or wrapped objects for asyncio properties, do not unwrap attributes based purely on naming convention unless you can securely verify the object type to prevent standard method masking.
-
 ## 2025-04-04 — Closure Allocation in Hot Paths
 
 Learning:
@@ -30,6 +22,10 @@ When breaking out of an `asyncio.as_completed` generator prematurely (e.g. durin
 Action:
 Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_completed` coroutines, explicitly closing them via `getattr(remaining, "close")()` to silence type checker warnings while guaranteeing clean object cleanup.
 
-## 2025-04-15 — Unwrapping functools.partial for callable async classes
-Learning: When checking if a given function or class is an async coroutine (e.g. `hasattr(base_func, "__call__")` combined with `inspect.iscoroutinefunction()`), wrapped callables using `functools.partial` must be explicitly unwrapped first. A single unwrap or simply unwrapping `func` isn't enough; it should use `while isinstance(base_func, functools.partial): base_func = base_func.func`. Otherwise, wrapped async classes may be falsely identified as synchronous.
-Action: Ensure any dynamic runtime introspection that checks for coroutine status safely unwraps `functools.partial` entirely before checking properties like `__call__`.
+## 2024-05-24 — Unsafe Async Task Identification
+
+Learning:
+Generic hasattr(obj, "func") unwrapping to detect async closures inside WorkflowEngine can cause circular loops on malicious wrappers and false-positive crashes on completely valid class instances that simply have a .func() async method.
+
+Action:
+Always strictly check isinstance(obj, functools.partial) when unwrapping built-in wrappers. When evaluating custom closures or wrapped objects for asyncio properties, do not unwrap attributes based purely on naming convention unless you can securely verify the object type to prevent standard method masking.
