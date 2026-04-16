@@ -63,6 +63,8 @@ class WorkflowEngine:
                 raise ValueError(
                     f"Task {name!r} depends on unregistered tasks: {missing}"
                 )
+        if self.graph.has_node(name):
+            self.graph.remove_edges_from(list(self.graph.in_edges(name)))
         self.graph.add_node(name)
         self._cached_topo_order = None
         self._predecessors[name] = []

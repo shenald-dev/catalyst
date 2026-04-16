@@ -33,3 +33,7 @@ Passing mutable dictionaries (like the `results` dict in `_run_node`) through as
 
 Action:
 Avoid passing mutable state dictionaries (like a shared `results` dict) through execution hot paths like `_run_node`. Instead, extract results directly via `task.result()` after task execution (e.g., within `execute()`) to maintain cleaner and more functional data flow.
+
+## 2026-04-16 — Fix zombie dependency bug on overwritten tasks
+Learning: When overwriting an existing task's dependencies using `WorkflowEngine.add_task()`, `NetworkX` does not automatically discard its previous incoming graph edges. This leaves the task topologically dependent on stale predecessors, potentially introducing execution order bugs and false cycles.
+Action: explicitly remove existing incoming edges `self.graph.remove_edges_from(list(self.graph.in_edges(name)))` before updating a node in the internal directed graph structure.

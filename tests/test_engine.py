@@ -394,3 +394,28 @@ async def test_async_callable_class_with_partial() -> None:
 
     results = await engine.execute()
     assert results["test_partial_class"] == "partial_class_arg"
+
+
+@pytest.mark.asyncio
+async def test_overwrite_task_removes_old_dependencies() -> None:
+    """Overwriting an existing task should remove its previous dependencies from the graph."""
+    engine = WorkflowEngine()
+    engine.add_task("B", lambda: "B")
+    engine.add_task("C", lambda: "C")
+
+    # A depends on B
+    engine.add_task("A", lambda: "A1", ["B"])
+    assert list(engine.graph.in_edges("A")) == [("B", "A")]
+    assert engine._predecessors["A"] == ["B"]
+
+    # Overwrite A, now it depends on C instead of B
+    engine.add_task("A", lambda: "A2", ["C"])
+
+    # The graph should only contain the C -> A edge
+    assert list(engine.graph.in_edges("A")) == [("C", "A")]
+    assert engine._predecessors["A"] == ["C"]
+
+    results = await engine.execute()
+    assert results["A"] == "A2"
+    assert results["B"] == "B"
+    assert results["C"] == "C"
