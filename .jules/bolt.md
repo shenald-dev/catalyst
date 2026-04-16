@@ -25,3 +25,11 @@ Refactored `_run_node` to safely extract and exhaust the remaining `asyncio.as_c
 ## 2025-04-15 — Unwrapping functools.partial for callable async classes
 Learning: When checking if a given function or class is an async coroutine (e.g. `hasattr(base_func, "__call__")` combined with `inspect.iscoroutinefunction()`), wrapped callables using `functools.partial` must be explicitly unwrapped first. A single unwrap or simply unwrapping `func` isn't enough; it should use `while isinstance(base_func, functools.partial): base_func = base_func.func`. Otherwise, wrapped async classes may be falsely identified as synchronous.
 Action: Ensure any dynamic runtime introspection that checks for coroutine status safely unwraps `functools.partial` entirely before checking properties like `__call__`.
+
+## 2024-04-16 — Refactored DAG engine execution hot paths for functional data flow
+
+Learning:
+Passing mutable dictionaries (like the `results` dict in `_run_node`) through asynchronous execution hot paths breaks functional data flow, creates tight coupling between scheduling and task execution, and can hinder performance and code maintainability by sharing unnecessary state.
+
+Action:
+Avoid passing mutable state dictionaries (like a shared `results` dict) through execution hot paths like `_run_node`. Instead, extract results directly via `task.result()` after task execution (e.g., within `execute()`) to maintain cleaner and more functional data flow.
