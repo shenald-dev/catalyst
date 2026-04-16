@@ -1,424 +1,180 @@
-We are given two versions of the same file: base (main) and head (fix-async-unwrapper-9039973977486674884).
- The base branch content is provided (truncated) and the head branch content is provided (truncated) but they are identical in the non-truncated parts.
-
- However, the head branch is named "fix-async-unwrapper", so we must assume that the head branch has a fix in the `_run_node` method that is not shown in the base branch's truncation.
-
- Since the problem states that we must keep ALL meaningful changes from both branches, and the only difference we can see is in the truncation (which we don't have), we must rely on the fact that the head branch has a change in the `_run_node` method.
-
- But note: the base branch and head branch provided in the problem are identical up to the point of truncation. Therefore, the only changes are in the truncated part.
-
- However, the problem does not give us the full truncated part for either branch. This is a dilemma.
-
- Let me read the problem again: 
-   "Base branch (main):" followed by a code block that is truncated.
-   "Head branch (fix-async-unwrapper-9039973977486674884):" followed by a code block that is truncated.
-
- But note: the head branch code block in the problem is actually a description? Wait, no, the problem says:
-
-   **Head branch (fix-async-unwrapper-9039973977486674884):**
-   ```
-   We are given two versions of the same file: base (main) and head (fix-async-unwrapper-9039973977486674884).
-   We need to merge them, keeping all meaningful changes from both.
-
-   Let's compare the two versions:
-
-   Base (main):
-     ... (truncated) ... but we have the full content for the parts we see.
-
-   Head (fix-async-unwrapper-9039973977486674884):
-     ... (truncated) ... same as base until the _run_node method.
-
-   However, note that the head version has a change in the _run_node method.
-
-   Looking at the provided snippets:
-
-   Base:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   Head:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   But wait, the head version is truncated at the same point? Actually, the head version provided in the problem is truncated at the same point as the base.
-
-   However, the problem says: "Keep ALL meaningful changes from BOTH branches."
-
-   Since the head branch is named "fix-async-unwrapper", it likely has a fix in the _run_node method.
-
-   But the provided snippets for both base and head are identical up to the point of truncation? 
-
-   Let me read again:
-
-   Base:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   Head:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   They look the same. However, the problem states that the head branch is a fix for async unwrapper.
-
-   Since the provided snippets are truncated, we must assume that the rest of the _run_node method in the head branch is different.
-
-   But wait, the problem says: "Output ONLY the final merged file content"
-
-   And we are only given two versions of the file, but they are truncated. However, note that the base branch and head branch provided in the problem are identical in the non-truncated parts.
-
-   How can we merge if we don't have the full content?
-
-   Let me reexamine the problem:
-
-   The base branch (main) is given as:
-       ... (truncated)
-
-   The head branch (fix-async-unwrapper-9039973977486674884) is given as:
-       ... (truncated)
-
-   But note: the head branch version provided in the problem is exactly the same as the base branch version in the non-truncated part? 
-
-   Actually, looking at the two:
-
-   Base:
-       ... 
-       self._is_async[name] = inspect.iscoroutinefunction(base_func) or (
-           hasattr(base_func, "__call__")
-           and inspect.iscoroutinefunction(base_func.__call__)
-       )
-       if dependencies:
-           for dep in dependencies:
-               self.graph.add_edge(dep, name)
-               s
-   ... (truncated)
-   ```
-
-   Head:
-       We are given two versions of the same file: base (main) and head (fix-async-unwrapper-9039973977486674884).
-       We need to merge them, keeping all meaningful changes from both.
-
-       Let's compare the two versions:
-
-       Base (main):
-           ... (truncated) ... but we have the full content for the parts we see.
-
-       Head (fix-async-unwrapper-9039973977486674884):
-           ... (truncated) ... same as base until the _run_node method.
-
-       However, note that the head version has a change in the _run_node method.
-
-       Looking at the provided snippets:
-
-       Base:
-           async def _run_node(
-               self,
-               node: str,
-               results: dict[str, Any],
-               tasks: dict[str, asyncio.Task[Any]],
-           ) -> Any:
-               deps = self._predecessors.get
-
-       Head:
-           async def _run_node(
-               self,
-               node: str,
-               results: dict[str, Any],
-               tasks: dict[str, asyncio.Task[Any]],
-           ) -> Any:
-               deps = self._predecessors.get
-
-       But wait, the head version is truncated at the same point? Actually, the head version provided in the problem is truncated at the same point as the base.
-
-       However, the problem says: "Keep ALL meaningful changes from BOTH branches."
-
-       Since the head branch is named "fix-async-unwrapper", it likely has a fix in the _run_node method.
-
-       But the provided snippets for both base and head are identical up to the point of truncation? 
-
-       Let me read again:
-
-       Base:
-           async def _run_node(
-               self,
-               node: str,
-               results: dict[str, Any],
-               tasks: dict[str, asyncio.Task[Any]],
-           ) -> Any:
-               deps = self._predecessors.get
-
-       Head:
-           async def _run_node(
-               self,
-               node: str,
-               results: dict[str, Any],
-               tasks: dict[str, asyncio.Task[Any]],
-           ) -> Any:
-               deps = self._predecessors.get
-
-       They look the same. However, the problem states that the head branch is a fix for async unwrapper.
-
-       Since the provided snippets are truncated, we must assume that the rest of the _run_node method in the head branch is different.
-
-   This is confusing because the head branch description in the problem is not the code but a meta-description.
-
-   Let me look at the exact text:
-
-   **Head branch (fix-async-unwrapper-9039973977486674884):**
-   ```
-   We are given two versions of the same file: base (main) and head (fix-async-unwrapper-9039973977486674884).
-   We need to merge them, keeping all meaningful changes from both.
-
-   Let's compare the two versions:
-
-   Base (main):
-     ... (truncated) ... but we have the full content for the parts we see.
-
-   Head (fix-async-unwrapper-9039973977486674884):
-     ... (truncated) ... same as base until the _run_node method.
-
-   However, note that the head version has a change in the _run_node method.
-
-   Looking at the provided snippets:
-
-   Base:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   Head:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   But wait, the head version is truncated at the same point? Actually, the head version provided in the problem is truncated at the same point as the base.
-
-   However, the problem says: "Keep ALL meaningful changes from BOTH branches."
-
-   Since the head branch is named "fix-async-unwrapper", it likely has a fix in the _run_node method.
-
-   But the provided snippets for both base and head are identical up to the point of truncation? 
-
-   Let me read again:
-
-   Base:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   Head:
-       async def _run_node(
-           self,
-           node: str,
-           results: dict[str, Any],
-           tasks: dict[str, asyncio.Task[Any]],
-       ) -> Any:
-           deps = self._predecessors.get
-
-   They look the same. However, the problem states that the head branch is a fix for async unwrapper.
-
-   Since the provided snippets are truncated, we must assume that the rest of the _run_node method in the head branch is different.
-
-   ```
-
-   So the head branch content provided in the problem is not the code but a description? That doesn't make sense.
-
-   Alternatively, the problem might have intended to provide the full head branch code but mistakenly put the description in the code block.
-
-   Given the confusion, I notice that the base branch code block ends with:
-        deps = self._predecessors.get
-
-   and the head branch code block in the problem is actually a description of the merge task, not the code.
-
-   Therefore, I think there was a mistake in the problem statement.
-
-   However, the problem says: "Output ONLY the final merged file content"
-
-   And we are to merge the two versions: base (main) and head (fix-async-unwrapper-9039973977486674884).
-
-   Since the head branch is named "fix-async-unwrapper", and the base branch is main, and the only difference we are told about is in the _run_node method, we must assume that the head branch has a fix in the _run_node method that is not present in the base.
-
-   But we are not given the full head branch code.
-
-   This is a problem.
-
-   Let me look for clues: the base branch code block ends with "deps = self._predecessors.get" and then is truncated.
-
-   The head branch description says: "same as base until the _run_node method" and then says the head version has a change in the _run_node method.
-
-   And then it shows two snippets that are identical (both truncated at the same point).
-
-   This suggests that the head branch's _run_node method is different after the line "deps = self._predecessors.get".
-
-   Since we don't have the full code for either branch beyond that point, we cannot know what the fix is.
-
-   However, the problem says: "Keep ALL meaningful changes from BOTH branches."
-
-   And we are to output the merged file.
-
-   Given that we don't have the full head branch code, we must assume that the head branch code is the same as the base branch code except for the fix in the _run_node method.
-
-   But we don't know what the fix is.
-
-   This is impossible.
-
-   Alternatively, perhaps the head branch code block was meant to be the actual code but was replaced by the description by mistake.
-
-   Let me read the head branch code block again: it starts with "We are given two versions..." which is clearly not code.
-
-   Therefore, I think the head branch code block in the problem is erroneous.
-
-   How should we proceed?
-
-   The problem says: "You are an expert programmer. I need you to merge two versions of a file."
-
-   And then it gives the base branch (main) as a code block (truncated) and the head branch as a code block that is actually a description.
-
-   This is likely a mistake in the problem.
-
-   Given the constraints, I notice that the base branch code block ends with:
-        deps = self._predecessors.get
-
-   and then is truncated.
-
-   The head branch is supposed to have a fix in the _run_node method.
-
-   Since we don't have the head branch code, we cannot merge.
-
-   However, the problem says: "Output ONLY the final merged file content"
-
-   And we must produce a valid file.
-
-   Another possibility: the head branch code block was intended to be the full head branch code, but the problem setter pasted the wrong thing.
-
-   But we have to work with what we have.
-
-   Let me look at the base branch code block: it is truncated at "deps = self._predecessors.get"
-
-   The head branch description says that the head version has a change in the _run_node method.
-
-   Since we are not given the head branch code, we must assume that the head branch code is the same as the base branch code except for the fix in the _run_node method, and we are expected to know what the fix is from the branch name? That doesn't make sense.
-
-   Alternatively, perhaps the fix is known: "fix-async-unwrapper" might refer to a common issue where async functions are not properly unwrapped.
-
-   In the context of the _run_node method, we might be awaiting a task that is already an awaitable, or not awaiting when we should.
-
-   But without the code, we can't fix it.
-
-   Given the dilemma, I notice that the base branch code block ends with "deps = self._predecessors.get", which is incomplete.
-
-   In a real merge, we would have the full code.
-
-   Since this is a simulated problem, and the head branch is described as having a fix in the _run_node method, and we are not given the head branch code, I think we are expected to output the base branch code as is, because we don't have the head branch code to merge.
-
-   But that ignores the head branch.
-
-   Alternatively, the head branch code block might have been meant to be the code after the truncation, but it was replaced by the description.
-
-   Let me assume that the head branch code block was supposed to be the actual code for the head branch, but the problem setter made a mistake and put the description there.
-
-   However, the description is not code.
-
-   Another idea: perhaps the head branch code block is the base branch code block plus the fix, but the problem setter only showed the beginning and then described the fix.
-
-   But we are not given the fix.
-
-   I think there is no way to solve this as stated.
-
-   However, note that the problem says: "If both branches modified the same lines differently, use your best judgment to combine them logically."
-
-   Since we don't have the head branch code, we cannot know what changes were made.
-
-   Given the branch name "fix-async-unwrapper", and the fact that the base branch code is truncated at the beginning of _run_node, I will assume that the head branch has a complete _run_node method that fixes an issue with async unwrapping.
-
-   But we don't know what the fix is.
-
-   This is not productive.
-
-   Let me try to reconstruct what the _run_node method might look like in the base branch from the truncation.
-
-   The base branch code block shows:
-
-        async def _run_node(
-            self,
-            node: str,
-            results: dict[str, Any],
-            tasks: dict[str, asyncio.Task[Any]],
-        ) -> Any:
-            deps = self._predecessors.get
-
-   This is incomplete. It should be:
-
+import asyncio
+import functools
+import inspect
+import logging
+import networkx as nx
+from typing import Any, Callable
+
+logger = logging.getLogger(__name__)
+
+
+class TaskError:
+    """Structured representation of a failed task."""
+
+    __slots__ = ("task_name", "exception")
+
+    def __init__(self, task_name: str, exception: BaseException) -> None:
+        self.task_name = task_name
+        self.exception = exception
+
+    def __repr__(self) -> str:
+        return f"TaskError({self.task_name!r}, {self.exception!r})"
+
+
+class WorkflowEngine:
+    """Core domain logic for parallel DAG execution.
+
+    Handles task failures gracefully: a failing task produces a TaskError result,
+    and dependent tasks are skipped (also producing TaskErrors) rather than
+    crashing the entire workflow.
+    """
+
+    def __init__(self) -> None:
+        self.graph: nx.DiGraph[str] = nx.DiGraph()
+        self.tasks: dict[str, Callable[..., Any]] = {}
+        self._timeouts: dict[str, float | None] = {}
+        self._is_async: dict[str, bool] = {}
+        self._predecessors: dict[str, list[str]] = {}
+        self._cached_topo_order: list[str] | None = None
+
+    def add_task(
+        self,
+        name: str,
+        func: Callable[..., Any],
+        dependencies: list[str] | None = None,
+        timeout: float | None = None,
+    ) -> None:
+        """Register a task and its dependencies.
+
+        Args:
+            name: Unique task identifier.
+            func: Callable (sync or async) to execute.
+            dependencies: List of task names this task depends on.
+            timeout: Optional timeout in seconds. If the task exceeds this,
+                     it is cancelled and recorded as a TaskError.
+
+        Raises:
+            ValueError: If a dependency references a task not yet registered.
+        """
+        # Validate dependencies exist before adding
+        if dependencies:
+            missing = [dep for dep in dependencies if dep not in self.tasks]
+            if missing:
+                raise ValueError(
+                    f"Task {name!r} depends on unregistered tasks: {missing}"
+                )
+        self.graph.add_node(name)
+        self._cached_topo_order = None
+        self._predecessors[name] = []
+        self.tasks[name] = func
+        self._timeouts[name] = timeout
+
+        base_func = func
+        while isinstance(base_func, functools.partial):
+            base_func = base_func.func
+
+        self._is_async[name] = inspect.iscoroutinefunction(base_func) or (
+            hasattr(base_func, "__call__")
+            and inspect.iscoroutinefunction(base_func.__call__)
+        )
+
+        if dependencies:
+            for dep in dependencies:
+                self.graph.add_edge(dep, name)
+                self._predecessors[name].append(dep)
+        self._cached_topo_order = None
+
+    async def _run_node(
+        self,
+        node: str,
+        results: dict[str, Any],
+        tasks: dict[str, asyncio.Task[Any]],
+    ) -> Any:
         deps = self._predecessors.get(node, [])
+        if deps:
+            failed_upstream: TaskError | None = None
+            if len(deps) == 1:
+                res = await tasks[deps[0]]
+                if isinstance(res, TaskError):
+                    failed_upstream = res
+            else:
+                pending_set = set()
+                for dep in deps:
+                    t = tasks[dep]
+                    if t.done():
+                        res = t.result()
+                        if isinstance(res, TaskError):
+                            failed_upstream = res
+                            break
+                    else:
+                        pending_set.add(t)
 
-   or something similar.
+                if not failed_upstream and len(pending_set) == 1:
+                    res = await pending_set.pop()
+                    if isinstance(res, TaskError):
+                        failed_upstream = res
+                elif not failed_upstream and pending_set:
+                    iterator = asyncio.as_completed(pending_set)
+                    for f in iterator:
+                        res = await f
+                        if isinstance(res, TaskError):
+                            failed_upstream = res
+                            for remaining in iterator:
+                                if hasattr(remaining, "close"):
+                                    getattr(remaining, "close")()
+                            break
 
-   Then, the method likely waits for the dependencies and then runs the task.
+            if failed_upstream is not None:
+                res_err = TaskError(
+                    node,
+                    RuntimeError(
+                        f"Skipped: upstream task {failed_upstream.task_name!r} failed"
+                    ),
+                )
+                results[node] = res_err
+                return res_err
 
-   A common pattern in such engines is:
+        try:
+            func = self.tasks.get(node)
+            if func is None:
+                raise KeyError(f"Task {node!r} not found")
+            timeout = self._timeouts.get(node)
+            is_async = self._is_async.get(node, False)
 
-        for dep in deps:
-            if dep not in results:
-                # Wait for the dependency task to complete
-                dep_task = tasks[dep]
-                try:
-                    dep_result = await dep_task
-                except BaseException as e:
-                    results[dep] = TaskError(dep, e)
-                else:
-                    results[dep] = dep_result
+            coro = func() if is_async else asyncio.to_thread(func)
 
-        # Then run the current node's task
+            if timeout is not None:
+                result = await asyncio.wait_for(coro, timeout=timeout)
+            else:
+                result = await coro
 
-   But we don't have the rest.
+            results[node] = result
+            return result
+        except Exception as e:
+            logger.error("Task %r failed: %s", node, e)
+            result = TaskError(node, e)
+            results[node] = result
+            return result
 
-   The head branch is a fix for "async unwrapper", which might mean that in the base branch, there was an issue where the result of an async task was not being properly awaited, or vice versa.
+    async def execute(self) -> dict[str, Any]:
+        """Execute the DAG in topological order, parallelizing independent tasks.
 
-   Without more information, we cannot know.
+        Failed tasks produce TaskError results. Dependent tasks are skipped
+        and also produce TaskErrors referencing the upstream failure.
+        """
+        if self._cached_topo_order is None:
+            try:
+                self._cached_topo_order = list(nx.topological_sort(self.graph))
+            except nx.NetworkXUnfeasible:
+                raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
 
-   Given the instructions, and since we must output something, I will output the base branch code as the merged file, because we don't have the head branch code to merge in.
+        results: dict[str, Any] = {}
+        tasks: dict[str, asyncio.Task[Any]] = {}
 
-   But that ignores the head branch.
+        for node in self._cached_topo_order:
+            tasks[node] = asyncio.create_task(self._run_node(node, results, tasks))
 
-   Alternatively, perhaps the head branch code is the same as the base branch code, and the description is just a description, so there are no changes in the head branch? But the branch name suggests there is a fix.
+        if tasks:
+            await asyncio.gather(*tasks.values())
 
-   I think the only logical thing is to assume that the head branch code block was intended to be the code for the head branch, but it was replaced by the description by mistake. Since we cannot recover the head branch code, we must use the base branch code.
-
-   However, the problem says: "Keep ALL meaningful changes from BOTH branches."
-
-   If the head branch has no code changes (because we don't have them), then we keep the base branch.
-
-   But that seems wrong.
-
-   Let me read the head branch code block one more time: it is a multi-line string that starts with "We are
+        return results
