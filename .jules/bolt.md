@@ -37,3 +37,11 @@ Avoid passing mutable state dictionaries (like a shared `results` dict) through 
 ## 2026-04-16 — Fix zombie dependency bug on overwritten tasks
 Learning: When overwriting an existing task's dependencies using `WorkflowEngine.add_task()`, `NetworkX` does not automatically discard its previous incoming graph edges. This leaves the task topologically dependent on stale predecessors, potentially introducing execution order bugs and false cycles.
 Action: explicitly remove existing incoming edges `self.graph.remove_edges_from(list(self.graph.in_edges(name)))` before updating a node in the internal directed graph structure.
+
+## 2024-04-17 — Fix asyncio.gather background task leak on BaseException
+
+Learning:
+When awaiting multiple tasks via `asyncio.gather()`, if one task raises a `BaseException` (like `SystemExit` or `KeyboardInterrupt`), the exception propagates immediately, but the remaining sibling tasks continue running as orphans in the background. This breaks cooperative task cancellation and can cause resource leaks or `RuntimeError: coroutine was never awaited`.
+
+Action:
+Wrap `asyncio.gather` in a `try...except BaseException` block. When caught, iterate over the task pool and `.cancel()` any tasks that are not yet `.done()`. Ensure they finish cancelling cleanly by awaiting them again with `return_exceptions=True` before re-raising the original exception.
