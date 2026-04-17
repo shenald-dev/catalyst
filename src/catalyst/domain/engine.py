@@ -170,6 +170,13 @@ class WorkflowEngine:
             tasks[node] = asyncio.create_task(self._run_node(node, tasks))
 
         if tasks:
-            await asyncio.gather(*tasks.values())
+            try:
+                await asyncio.gather(*tasks.values())
+            except BaseException:
+                for task in tasks.values():
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(*tasks.values(), return_exceptions=True)
+                raise
 
         return {node: task.result() for node, task in tasks.items()}
