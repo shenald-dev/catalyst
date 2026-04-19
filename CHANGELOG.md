@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.12] - 2024-04-17
+
+### Fixed
+- Fixed an `asyncio.gather` background task leak. When a workflow evaluation task encounters a `BaseException` (like `SystemExit` or `KeyboardInterrupt`), the execution engine now gracefully iterates and issues `.cancel()` to any unawaited background sibling tasks instead of silently allowing them to drift and crash as orphans.
+
+### Changed
+- Entropy Pruned: 0 lines.
+- Dependencies Bumped: Upgraded `mypy` locally; core boundaries remain intact.
+
 ## [0.1.11] - 2026-04-16
 
 ### Verified
