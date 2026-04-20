@@ -10,7 +10,7 @@
 - **💥 Graceful Failure Handling**: When an upstream task fails, it short-circuits execution gracefully, safely yielding a serializable JSON object (in the API representation) describing the exception instead of crashing the process.
 
 ## Architecture Highlights
-The core logic lives in `src/catalyst/domain` and executes Directed Acyclic Graphs efficiently using standard library features and `networkx`. The `presentation` layer serves as a decoupled FastAPI interface.
+The core logic lives in `src/catalyst/domain` and executes Directed Acyclic Graphs efficiently using pure standard library features. The `presentation` layer serves as a decoupled FastAPI interface.
 
 ## Quick Start
 ```bash

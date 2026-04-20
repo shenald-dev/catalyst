@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.13] - 2026-04-20
+
+### Verified
+- Adversarial QA confirmed structural soundness of the `graphlib` migration. The internal Directed Graph functions flawlessly without external dependencies. The codebase maintains zero bloat.
+
+### Changed
+- Entropy Pruned: 0 lines. Replaced the `networkx` dependency with standard library elements (`graphlib.TopologicalSorter` and native dictionaries).
+- Dependencies Bumped: Safely verified all tests pass without the `networkx` dependency.
+
 ## [0.1.12] - 2024-04-17
 
 ### Fixed
