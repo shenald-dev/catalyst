@@ -2,7 +2,7 @@ import asyncio
 import functools
 import inspect
 import logging
-import networkx as nx
+import graphlib
 from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,6 @@ class WorkflowEngine:
     """
 
     def __init__(self) -> None:
-        self.graph: nx.DiGraph[str] = nx.DiGraph()
         self.tasks: dict[str, Callable[..., Any]] = {}
         self._timeouts: dict[str, float | None] = {}
         self._is_async: dict[str, bool] = {}
@@ -63,9 +62,6 @@ class WorkflowEngine:
                 raise ValueError(
                     f"Task {name!r} depends on unregistered tasks: {missing}"
                 )
-        if self.graph.has_node(name):
-            self.graph.remove_edges_from(list(self.graph.in_edges(name)))
-        self.graph.add_node(name)
         self._cached_topo_order = None
         self._predecessors[name] = []
         self.tasks[name] = func
@@ -81,7 +77,6 @@ class WorkflowEngine:
         )
         if dependencies:
             for dep in dependencies:
-                self.graph.add_edge(dep, name)
                 self._predecessors[name].append(dep)
         self._cached_topo_order = None
 
@@ -160,8 +155,9 @@ class WorkflowEngine:
         """
         if self._cached_topo_order is None:
             try:
-                self._cached_topo_order = list(nx.topological_sort(self.graph))
-            except nx.NetworkXUnfeasible:
+                ts = graphlib.TopologicalSorter(self._predecessors)
+                self._cached_topo_order = list(ts.static_order())
+            except graphlib.CycleError:
                 raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
 
         tasks: dict[str, asyncio.Task[Any]] = {}
