@@ -45,3 +45,11 @@ When awaiting multiple tasks via `asyncio.gather()`, if one task raises a `BaseE
 
 Action:
 Wrap `asyncio.gather` in a `try...except BaseException` block. When caught, iterate over the task pool and `.cancel()` any tasks that are not yet `.done()`. Ensure they finish cancelling cleanly by awaiting them again with `return_exceptions=True` before re-raising the original exception.
+
+## 2025-04-20 — Removing NetworkX dependency overhead
+
+Learning:
+Using a heavy third-party dependency like `networkx` solely for basic directed graph edge tracking and topological sorting introduces unnecessary bloat, larger memory footprints, and installation overhead, especially when targeting modern Python environments (>=3.9) which offer built-in alternatives.
+
+Action:
+Replaced `networkx` completely with the standard library `graphlib.TopologicalSorter`. Removed `nx.DiGraph` overhead in favor of maintaining a native `dict[str, list[str]]` for predecessors. Handled `graphlib.CycleError` in place of `nx.NetworkXUnfeasible`. This resulted in a cleaner runtime dependency tree and zero external package overhead for core DAG execution.

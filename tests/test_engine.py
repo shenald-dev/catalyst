@@ -276,8 +276,8 @@ async def test_cyclic_graph_raises_error() -> None:
     engine.add_task("B", lambda: "B", dependencies=["A"])
 
     # Now we manually inject a cycle to bypass the `add_task` validation
-    # to test the nx.NetworkXUnfeasible branch in execute()
-    engine.graph.add_edge("B", "A")
+    # to test the graphlib.CycleError branch in execute()
+    engine._predecessors["A"] = ["B"]
     # Manually invalidate the cache since we bypassed add_task()
     engine._cached_topo_order = None
 
@@ -405,14 +405,12 @@ async def test_overwrite_task_removes_old_dependencies() -> None:
 
     # A depends on B
     engine.add_task("A", lambda: "A1", ["B"])
-    assert list(engine.graph.in_edges("A")) == [("B", "A")]
     assert engine._predecessors["A"] == ["B"]
 
     # Overwrite A, now it depends on C instead of B
     engine.add_task("A", lambda: "A2", ["C"])
 
-    # The graph should only contain the C -> A edge
-    assert list(engine.graph.in_edges("A")) == [("C", "A")]
+    # The predecessors should only contain C
     assert engine._predecessors["A"] == ["C"]
 
     results = await engine.execute()
