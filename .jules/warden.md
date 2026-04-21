@@ -1,3 +1,10 @@
+2026-04-20 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully eliminated the heavy `networkx` dependency, replacing it with the standard library's `graphlib.TopologicalSorter` and native dictionaries for predecessor tracking. This completely removes unnecessary bloat from the codebase while maintaining true fail-fast functionality and preserving O(V+E) performance guarantees. Adversarial QA tests pass with flying colors. A run of `vulture` revealed 0 lines of true dead code, only finding expected false positives in the FastAPI presentation layer.
+
+Alignment / Deferred:
+Updated `README.md` to remove outdated references to `networkx` and reflect the pure standard library implementation of the engine. Synchronized `CHANGELOG.md` with release notes detailing the structural optimization. Prepared version bump to `0.1.13`.
+
 2024-04-17 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully resolved an `asyncio.gather` background task leak that occurred when a sibling task raised a `BaseException` (like `SystemExit` or `KeyboardInterrupt`). By correctly wrapping `asyncio.gather` and iterating over uncompleted tasks to actively call `.cancel()`, cooperative cancellation is preserved without masking the originating interrupt. Verified the test suite completely passes. Dead code elimination via vulture scans returned zero valid findings. The codebase maintains zero structural bloat.
