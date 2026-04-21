@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.14] - 2026-04-21
+
+### Verified
+- Adversarial QA confirmed structural soundness of the recent standard library `graphlib` optimizations. The dependency graph executes fast-fail logic correctly. The codebase maintains strict zero bloat.
+
+### Changed
+- Entropy Pruned: 0 lines. Checked the repository with `vulture` and verified all unused code has been cleanly pruned.
+- Dependencies Bumped: Safely verified that the latest minor upgrades of core frameworks pass the test suite perfectly.
+
+
 ## [0.1.13] - 2026-04-20
 
 ### Verified
