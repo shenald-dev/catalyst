@@ -53,3 +53,11 @@ Using a heavy third-party dependency like `networkx` solely for basic directed g
 
 Action:
 Replaced `networkx` completely with the standard library `graphlib.TopologicalSorter`. Removed `nx.DiGraph` overhead in favor of maintaining a native `dict[str, list[str]]` for predecessors. Handled `graphlib.CycleError` in place of `nx.NetworkXUnfeasible`. This resulted in a cleaner runtime dependency tree and zero external package overhead for core DAG execution.
+
+## 2024-04-22 — asyncio.as_completed memory leaks in fail-fast pattern
+
+Learning:
+When implementing a fail-fast mechanism (e.g., breaking out early from evaluating multiple dependent tasks), using `asyncio.as_completed` generates proxy iterators that yield un-awaited wrapper coroutines. If broken out of prematurely, these remaining un-awaited coroutines cause `RuntimeWarning: coroutine was never awaited` and memory leaks. Manually iterating over the generator to call `.close()` on them is brittle, unsafe in complex scenarios, and considered an anti-pattern.
+
+Action:
+Refactored the core execution path in `_run_node` to completely eliminate `asyncio.as_completed`. Replaced it with a cleaner `while pending_set:` loop using `asyncio.wait(pending_set, return_when=asyncio.FIRST_COMPLETED)`, which directly manages underlying tasks without spawning intermediate wrapper futures, thereby solving the memory leak safely and natively.
