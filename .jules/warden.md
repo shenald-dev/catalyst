@@ -1,3 +1,10 @@
+2026-04-21 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully eliminated the heavy `networkx` dependency, replacing it with the standard library's `graphlib.TopologicalSorter` and native dictionaries for predecessor tracking. Adversarial QA tests confirm the engine correctly maintains fail-fast behavior and exact performance semantics. A scan with `vulture` revealed 0 lines of true dead code, containing only expected FastAPI router false positives. The codebase maintains strict zero bloat.
+
+Alignment / Deferred:
+Verified safe execution of dependency upgrades. Ensured core tests pass beautifully under the standard library refactor. Synced release notes locally and bumped the package version to `0.1.14`.
+
 2026-04-20 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully eliminated the heavy `networkx` dependency, replacing it with the standard library's `graphlib.TopologicalSorter` and native dictionaries for predecessor tracking. This completely removes unnecessary bloat from the codebase while maintaining true fail-fast functionality and preserving O(V+E) performance guarantees. Adversarial QA tests pass with flying colors. A run of `vulture` revealed 0 lines of true dead code, only finding expected false positives in the FastAPI presentation layer.
