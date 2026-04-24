@@ -61,3 +61,11 @@ When implementing a fail-fast mechanism (e.g., breaking out early from evaluatin
 
 Action:
 Refactored the core execution path in `_run_node` to completely eliminate `asyncio.as_completed`. Replaced it with a cleaner `while pending_set:` loop using `asyncio.wait(pending_set, return_when=asyncio.FIRST_COMPLETED)`, which directly manages underlying tasks without spawning intermediate wrapper futures, thereby solving the memory leak safely and natively.
+
+## 2024-04-24 — Workflow Engine DAG Execution Parallelism Simplification
+
+Learning:
+The `_run_node` fail-fast evaluation branch inside `WorkflowEngine` had an unnecessary and bloated inner logic chunk when tracking `pending_set` logic. The loop explicitly separated `done` and `pending_set` checks sequentially to bypass `asyncio.wait` for `len(pending_set) == 1`. By removing this custom manual queue logic and just letting `asyncio.wait` handle waiting on pending sets via `return_when=asyncio.FIRST_COMPLETED`, the codebase is vastly simpler and fewer corner cases pop up while keeping performance essentially identical since single dependency shortcuts still exist.
+
+Action:
+Removed the hand-crafted `pending_set.pop()` branch inside `WorkflowEngine._run_node` and simplified the collection strategy directly into `{tasks[dep] for dep in deps}` and passing them cleanly into `asyncio.wait`.

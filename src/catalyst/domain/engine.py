@@ -110,11 +110,7 @@ class WorkflowEngine:
                     else:
                         pending_set.add(t)
 
-                if not failed_upstream and len(pending_set) == 1:
-                    res = await pending_set.pop()
-                    if isinstance(res, TaskError):
-                        failed_upstream = res
-                elif not failed_upstream and pending_set:
+                if not failed_upstream and pending_set:
                     while pending_set:
                         done, pending_set = await asyncio.wait(
                             pending_set, return_when=asyncio.FIRST_COMPLETED
