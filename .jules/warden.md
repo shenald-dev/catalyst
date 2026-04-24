@@ -95,3 +95,11 @@ The prior agent, BOLT, successfully implemented fail-fast optimizations in the c
 
 Alignment / Deferred:
 Wrote new `test_fast_fail_does_not_cancel_unrelated_tasks` in `tests/test_engine.py` to lock down this structural integrity. Deleted the dead `infrastructure` code, successfully synced `CHANGELOG.md` with release notes, and bumped package versions to `0.1.2`. Pydantic-core upgrading was deferred back to its compatible version.
+
+2026-04-23 — Assessment & Lifecycle
+
+Observation / Pruned:
+Observed the migration from `asyncio.as_completed` to `asyncio.wait(FIRST_COMPLETED)` for fail-fast logic evaluation. This systemic optimization removes the overhead of unawaited wrapper coroutines and prevents `RuntimeWarning` task leaks during early short-circuiting. Entropy pruned: 0 lines.
+
+Alignment / Deferred:
+Updated the core `_run_node` docstrings to explicitly state the safe `asyncio.wait` behavior. Version correctly bumped to `0.1.15`. Deferred any framework upgrades as the current dependencies pass adversarial verification.

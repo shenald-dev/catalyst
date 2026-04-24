@@ -85,6 +85,12 @@ class WorkflowEngine:
         node: str,
         tasks: dict[str, asyncio.Task[Any]],
     ) -> Any:
+        """Evaluate and execute a single node in the DAG.
+
+        Uses a fast-path for single dependencies. For multiple dependencies,
+        evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
+        to implement clean fail-fast behavior without leaving un-awaited wrapper coroutines.
+        """
         deps = self._predecessors.get(node, [])
         if deps:
             failed_upstream: TaskError | None = None
