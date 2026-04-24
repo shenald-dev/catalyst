@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.15] - 2026-04-23
+## [0.1.15] - 2026-04-24
 
 * **[QA Status]:** Verified structural soundness of the `asyncio.as_completed` removal optimization. The dependency graph evaluates fail-fast logic safely via `asyncio.wait(FIRST_COMPLETED)` without memory leaks or unawaited coroutines.
 * **[Entropy Pruned]:** 0 lines. Checked the repository with `vulture` and verified all unused code has been cleanly pruned.
 * **[Dependencies Bumped]:** Verified dependencies are stable.
 * **[Docs Updated]:** Updated docstrings in `src/catalyst/domain/engine.py` to reflect the transition to `asyncio.wait`.
-
+* **[Release Prep]:** Bumped version to 0.1.15 to reflect the underlying fail-fast refactoring which enhances memory stability.
 
 ## [0.1.14] - 2026-04-21
 
