@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.16] - 2024-04-24
+
+* **[QA Status]:** Verified structural soundness of the `WorkflowEngine` fast-fail optimization. The simplified `pending_set` evaluation loop natively leverages `asyncio.wait(FIRST_COMPLETED)` and correctly avoids breaking tests.
+* **[Entropy Pruned]:** 0 lines. Evaluated repository with `vulture`; remaining flags (`execute_workflow`, `health_check`, `StatusResponse` properties) were properly confirmed as FastAPI external endpoints/false positives and left intact.
+* **[Dependencies Bumped]:** Dependencies are stable and safely resolved in the editable virtual environment.
+* **[Docs Updated]:** Logged system optimization shifts into the `warden.md` ledger noting the simplification pattern.
+
 ## [0.1.15] - 2026-04-23
 
 * **[QA Status]:** Verified structural soundness of the `asyncio.as_completed` removal optimization. The dependency graph evaluates fail-fast logic safely via `asyncio.wait(FIRST_COMPLETED)` without memory leaks or unawaited coroutines.
