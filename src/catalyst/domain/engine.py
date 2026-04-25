@@ -99,29 +99,19 @@ class WorkflowEngine:
                 if isinstance(res, TaskError):
                     failed_upstream = res
             else:
-                pending_set = set()
-                for dep in deps:
-                    t = tasks[dep]
-                    if t.done():
+                pending_set = {tasks[dep] for dep in deps}
+
+                while pending_set:
+                    done, pending_set = await asyncio.wait(
+                        pending_set, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    for t in done:
                         res = t.result()
                         if isinstance(res, TaskError):
                             failed_upstream = res
                             break
-                    else:
-                        pending_set.add(t)
-
-                if not failed_upstream and pending_set:
-                    while pending_set:
-                        done, pending_set = await asyncio.wait(
-                            pending_set, return_when=asyncio.FIRST_COMPLETED
-                        )
-                        for t in done:
-                            res = t.result()
-                            if isinstance(res, TaskError):
-                                failed_upstream = res
-                                break
-                        if failed_upstream is not None:
-                            break
+                    if failed_upstream is not None:
+                        break
 
             if failed_upstream is not None:
                 res_err = TaskError(
