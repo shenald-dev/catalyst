@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.17] - 2026-04-25
+
+* **[QA Status]:** Verified structural soundness of the fast-fail mechanism within the `WorkflowEngine`. The explicit, redundant synchronous checks via `task.done()` were replaced by directly evaluating `pending_set` natively via `asyncio.wait(FIRST_COMPLETED)`, entirely eliminating Python-level overhead and duplicate logic without breaking fail-fast constraints.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Dependencies are completely stable within the editable virtual environment.
+* **[Docs Updated]:** Logged optimization patterns in `warden.md` tracking the elimination of redundant loops.
+* **[Release]:** v0.1.17 cut, tagged, and ready.
+
 ## [0.1.16] - 2024-04-24
 
 * **[QA Status]:** Verified structural soundness of the `WorkflowEngine` fast-fail optimization. The simplified `pending_set` evaluation loop natively leverages `asyncio.wait(FIRST_COMPLETED)` and correctly avoids breaking tests.
