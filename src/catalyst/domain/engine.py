@@ -3,7 +3,7 @@ import functools
 import inspect
 import logging
 import graphlib
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class WorkflowEngine:
         self,
         name: str,
         func: Callable[..., Any],
-        dependencies: list[str] | None = None,
+        dependencies: Iterable[str] | None = None,
         timeout: float | None = None,
     ) -> None:
         """Register a task and its dependencies.
@@ -55,6 +55,10 @@ class WorkflowEngine:
         Raises:
             ValueError: If a dependency references a task not yet registered.
         """
+        if dependencies is not None:
+            # Convert dependencies to a list to prevent exhausting iterators/generators
+            dependencies = list(dependencies)
+
         # Validate dependencies exist before adding
         if dependencies:
             missing = [dep for dep in dependencies if dep not in self.tasks]
