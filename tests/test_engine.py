@@ -417,3 +417,20 @@ async def test_overwrite_task_removes_old_dependencies() -> None:
     assert results["A"] == "A2"
     assert results["B"] == "B"
     assert results["C"] == "C"
+
+
+@pytest.mark.asyncio
+async def test_add_task_with_iterator_dependencies() -> None:
+    """If dependencies is an iterator, it should be fully evaluated and not exhausted during validation."""
+    engine = WorkflowEngine()
+    engine.add_task("A", lambda: "A")
+
+    # Pass a generator expression for dependencies
+    engine.add_task("B", lambda: "B", dependencies=(x for x in ["A"]))
+
+    # The iterator should not be exhausted and silent ignored, but correctly stored as a dependency
+    assert engine._predecessors["B"] == ["A"]
+
+    results = await engine.execute()
+    assert results["A"] == "A"
+    assert results["B"] == "B"
