@@ -48,7 +48,7 @@ class WorkflowEngine:
         Args:
             name: Unique task identifier.
             func: Callable (sync or async) to execute.
-            dependencies: List of task names this task depends on.
+            dependencies: Iterable of task names this task depends on.
             timeout: Optional timeout in seconds. If the task exceeds this,
                      it is cancelled and recorded as a TaskError.
 

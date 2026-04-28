@@ -1,3 +1,10 @@
+2026-04-28 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent successfully addressed a bug where iterators or generators passed to `WorkflowEngine.add_task` would be silently exhausted during validation, causing dependency connections to be skipped. Materializing the `Iterable` into a `list` upfront correctly prevents this. Codebase zero-bloat state holds intact via `vulture`.
+
+Alignment / Deferred:
+Updated the docstring of `WorkflowEngine.add_task` to correctly reflect the `Iterable` type hint. Maintained locked dependency versions as the latest minor bumps are stable. Cut the release and manually prepared version bump to `0.1.18`.
+
 2026-04-21 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully eliminated the heavy `networkx` dependency, replacing it with the standard library's `graphlib.TopologicalSorter` and native dictionaries for predecessor tracking. Adversarial QA tests confirm the engine correctly maintains fail-fast behavior and exact performance semantics. A scan with `vulture` revealed 0 lines of true dead code, containing only expected FastAPI router false positives. The codebase maintains strict zero bloat.
@@ -89,7 +96,7 @@ The prior agent, BOLT, successfully implemented true fail-fast optimizations uti
 Alignment / Deferred:
 Expanded test cases to hit 100% test coverage around task timeouts and circular graphs. Pruned local artifacts and explicitly rolled back `pydantic-core` to `2.41.5` to pass the build pipeline. Deferred upgrading `pydantic-core` until a coordinated major version migration can be established. Version bumped to `0.1.3`.
 
-YYYY-MM-DD — Assessment & Lifecycle
+2026-04-28 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, optimized `WorkflowEngine._run_node` by replacing sequential wait blocks with a fast-fail short-circuit mechanism, saving processing time on deep DAG failures. However, they left a regression in the `presentation/api/main.py` execution endpoint: it did not serialize the new `TaskError` object, crashing the mock endpoint completely upon failure. No heavy codebase pruning was required today, as the code maintains zero bloat.
 

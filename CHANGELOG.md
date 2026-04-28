@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.18] - 2026-04-28
+
+* **[QA Status]:** Verified structural soundness of the fix for silent iterator exhaustion in `WorkflowEngine.add_task`. The core graph logic materializes `Iterable` types properly, passing the test suite and edge case coverages flawlessly.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions.
+* **[Docs Updated]:** Logged optimization and bugfix details in `warden.md` tracking the elimination of the exhaustion bug. Updated `add_task` docstring to reflect the `Iterable` parameter.
+* **[Release]:** v0.1.18 cut, tagged, and ready.
+
+
 ## [0.1.17] - 2026-04-25
 
 * **[QA Status]:** Verified structural soundness of the fast-fail mechanism within the `WorkflowEngine`. The explicit, redundant synchronous checks via `task.done()` were replaced by directly evaluating `pending_set` natively via `asyncio.wait(FIRST_COMPLETED)`, entirely eliminating Python-level overhead and duplicate logic without breaking fail-fast constraints.
