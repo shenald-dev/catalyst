@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.19] - 2026-04-29
+
+* **[QA Status]:** Verified structural soundness of the fast path optimizations in `add_task` and the loop simplifications in `_run_node`. The system evaluates the simplified bytecode early-return pattern perfectly, retaining fail-fast guarantees.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions within the editable virtual environment.
+* **[Docs Updated]:** Logged optimization and refactoring details in `warden.md` ledger.
+* **[Release]:** v0.1.19 cut, tagged, and ready.
+
 ## [0.1.18] - 2026-04-28
 
 * **[QA Status]:** Verified structural soundness of the fix for silent iterator exhaustion in `WorkflowEngine.add_task`. The core graph logic materializes `Iterable` types properly, passing the test suite and edge case coverages flawlessly.
