@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.19] - 2026-05-18
+* **[Performance]**: Implemented `iscoroutinefunction` fast path in `add_task` to heavily cut overhead for standard async tasks during large DAG generation.
+* **[Maintainability]**: Directly returned `TaskError` within `_run_node` early-exit blocks to prevent redundant variable tracking and reduce bytecode paths.
+
+
 All notable changes to this project will be documented in this file.
 
 ## [0.1.18] - 2026-04-28

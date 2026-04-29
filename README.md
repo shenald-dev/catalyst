@@ -12,6 +12,10 @@
 ## Architecture Highlights
 The core logic lives in `src/catalyst/domain` and executes Directed Acyclic Graphs efficiently using pure standard library features. The `presentation` layer serves as a decoupled FastAPI interface.
 
+
+### Performance Enhancements
+Recent updates significantly improved DAG construction and engine evaluation speed. Fast-paths skip heavy inspection overhead during registration, while optimized short-circuits during the fail-fast process reduce nested `asyncio` states.
+
 ## Quick Start
 ```bash
 uv pip install -e .[dev]
