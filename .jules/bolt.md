@@ -13,3 +13,11 @@ When an API accepts an `Iterable` (like a generator) for a sequence parameter (e
 
 Action:
 Always proactively materialize iterables into a concrete sequence (like `list(dependencies)`) immediately upon entering a function if the sequence needs to be iterated over multiple times (e.g., for validation followed by assignment). This prevents silent exhaustion bugs and creates a safe, defensive copy.
+
+## 2024-05-18 — Optimize inspect and list assignment overhead in task registration and fail-fast loops
+
+Learning:
+In highly concurrent DAG construction, repeated runtime type introspection (`isinstance` loops over `functools.partial`) on standard async functions adds significant CPU overhead. Additionally, managing error states via nested variable tracking (`failed_upstream = res; break` followed by `if failed_upstream: return TaskError(...)`) requires extra bytecode evaluation over a simpler direct return strategy. Finally, copying optional list inputs via manual loops or iterative list assignments can be simplified directly via `list(dependencies) if dependencies is not None else []`.
+
+Action:
+Always use a fast path condition (`inspect.iscoroutinefunction(func)`) before iterating through deep unwrapping logic to short-circuit introspection for standard functions. Use early returns (`return TaskError(...)`) in asynchronous fail-fast loops to bypass redundant state-tracking variables.
