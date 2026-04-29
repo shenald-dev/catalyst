@@ -66,22 +66,27 @@ class WorkflowEngine:
                 raise ValueError(
                     f"Task {name!r} depends on unregistered tasks: {missing}"
                 )
-        self._cached_topo_order = None
-        self._predecessors[name] = []
         self.tasks[name] = func
         self._timeouts[name] = timeout
 
-        base_func = func
-        while isinstance(base_func, functools.partial):
-            base_func = base_func.func
+        is_async = False
+        if inspect.iscoroutinefunction(func):
+            is_async = True
+        else:
+            base_func = func
+            while isinstance(base_func, functools.partial):
+                base_func = base_func.func
+            if inspect.iscoroutinefunction(base_func):
+                is_async = True
+            elif hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+                base_func.__call__
+            ):
+                is_async = True
 
-        self._is_async[name] = inspect.iscoroutinefunction(base_func) or (
-            hasattr(base_func, "__call__")
-            and inspect.iscoroutinefunction(base_func.__call__)
+        self._is_async[name] = is_async
+        self._predecessors[name] = (
+            list(dependencies) if dependencies is not None else []
         )
-        if dependencies:
-            for dep in dependencies:
-                self._predecessors[name].append(dep)
         self._cached_topo_order = None
 
     async def _run_node(
@@ -97,11 +102,15 @@ class WorkflowEngine:
         """
         deps = self._predecessors.get(node, [])
         if deps:
-            failed_upstream: TaskError | None = None
             if len(deps) == 1:
                 res = await tasks[deps[0]]
                 if isinstance(res, TaskError):
-                    failed_upstream = res
+                    return TaskError(
+                        node,
+                        RuntimeError(
+                            f"Skipped: upstream task {res.task_name!r} failed"
+                        ),
+                    )
             else:
                 pending_set = {tasks[dep] for dep in deps}
 
@@ -112,19 +121,12 @@ class WorkflowEngine:
                     for t in done:
                         res = t.result()
                         if isinstance(res, TaskError):
-                            failed_upstream = res
-                            break
-                    if failed_upstream is not None:
-                        break
-
-            if failed_upstream is not None:
-                res_err = TaskError(
-                    node,
-                    RuntimeError(
-                        f"Skipped: upstream task {failed_upstream.task_name!r} failed"
-                    ),
-                )
-                return res_err
+                            return TaskError(
+                                node,
+                                RuntimeError(
+                                    f"Skipped: upstream task {res.task_name!r} failed"
+                                ),
+                            )
 
         try:
             func = self.tasks.get(node)
