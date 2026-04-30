@@ -1,3 +1,10 @@
+2026-04-29 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, optimized DAG fail-fast and registration hotpaths. A fast path was added to bypass `functools.partial` unwrapping during `add_task` for standard async functions, reducing overhead. The fail-fast loop in `_run_node` was refactored to use direct early returns, simplifying the bytecode execution. Safe materialization of dependency input generators was ensured. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+
+Alignment / Deferred:
+Dependencies were verified as stable within the editable virtual environment. Adjusted `README.md` and synced tracking logs correctly to highlight optimizations. Prepared version bump to `0.1.19`.
+
 2026-04-28 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent successfully addressed a bug where iterators or generators passed to `WorkflowEngine.add_task` would be silently exhausted during validation, causing dependency connections to be skipped. Materializing the `Iterable` into a `list` upfront correctly prevents this. Codebase zero-bloat state holds intact via `vulture`.
