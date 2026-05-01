@@ -434,3 +434,19 @@ async def test_add_task_with_iterator_dependencies() -> None:
     results = await engine.execute()
     assert results["A"] == "A"
     assert results["B"] == "B"
+
+
+@pytest.mark.asyncio
+async def test_string_dependency_is_handled_correctly() -> None:
+    """If a dependency is passed as a string instead of a list, it should not be destructured into characters."""
+    engine = WorkflowEngine()
+    engine.add_task("task_a", lambda: "A")
+
+    # Pass a string instead of a list
+    engine.add_task("task_b", lambda: "B", dependencies="task_a")
+
+    assert engine._predecessors["task_b"] == ["task_a"]
+
+    results = await engine.execute()
+    assert results["task_a"] == "A"
+    assert results["task_b"] == "B"
