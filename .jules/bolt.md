@@ -21,3 +21,11 @@ In highly concurrent DAG construction, repeated runtime type introspection (`isi
 
 Action:
 Always use a fast path condition (`inspect.iscoroutinefunction(func)`) before iterating through deep unwrapping logic to short-circuit introspection for standard functions. Use early returns (`return TaskError(...)`) in asynchronous fail-fast loops to bypass redundant state-tracking variables.
+
+## 2026-05-01 — String Dependency Destructuring Bug
+
+Learning:
+When accepting an `Iterable` or generator for sequence parameters (like `dependencies`), explicitly check for strings first to avoid unintentionally exhausting or destructuring them. `list("task_a")` yields `['t', 'a', 's', 'k', '_', 'a']`, causing unregistered task `ValueError`s.
+
+Action:
+Always implement an explicit `isinstance(val, str)` check when normalizing iterables into lists to prevent strings from breaking expected behavior.

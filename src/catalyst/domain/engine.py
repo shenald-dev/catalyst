@@ -57,7 +57,10 @@ class WorkflowEngine:
         """
         if dependencies is not None:
             # Convert dependencies to a list to prevent exhausting iterators/generators
-            dependencies = list(dependencies)
+            if isinstance(dependencies, str):
+                dependencies = [dependencies]
+            else:
+                dependencies = list(dependencies)
 
         # Validate dependencies exist before adding
         if dependencies:
