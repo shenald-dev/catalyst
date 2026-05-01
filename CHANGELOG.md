@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.20] - 2026-04-30
+
+* **[QA Status]:** Verified structural soundness of the prior agent's registration path fast-fail refactor. Tests natively pass and no regressions were found.
+* **[Entropy Pruned]:** 2 lines. Pruned unreachable `iscoroutinefunction` dead code wrapped within the `functools.partial` loop fallback, recovering 100% test coverage.
+* **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions.
+* **[Docs Updated]:** Logged optimization and refactoring details in `warden.md` ledger.
+* **[Release]:** v0.1.20 cut, tagged, and ready.
+
 ## [0.1.19] - 2026-04-29
 
 * **[QA Status]:** Verified structural soundness of the fast path optimizations in `add_task` and the loop simplifications in `_run_node`. The system evaluates the simplified bytecode early-return pattern perfectly, retaining fail-fast guarantees.

@@ -1,3 +1,10 @@
+2026-04-30 — Assessment & Lifecycle
+Observation / Pruned:
+Verified structural soundness of the prior agent's registration path fast-fail refactor. Tests natively pass and no regressions were found. However, during adversarial QA and coverage inspection, identified unreachable `inspect.iscoroutinefunction(base_func)` code within the `functools.partial` loop fallback, resulting from the fast-path addition. Pruned the dead code block to restore 100% test coverage and eliminate entropy. Scanned via vulture confirmed no new dead logic.
+
+Alignment / Deferred:
+Maintained locked dependencies at their latest compatible versions. Synced `CHANGELOG.md` with pruning notes and cut the release, bumping to `0.1.20`.
+
 2026-04-29 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, optimized DAG fail-fast and registration hotpaths. A fast path was added to bypass `functools.partial` unwrapping during `add_task` for standard async functions, reducing overhead. The fail-fast loop in `_run_node` was refactored to use direct early returns, simplifying the bytecode execution. Safe materialization of dependency input generators was ensured. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
