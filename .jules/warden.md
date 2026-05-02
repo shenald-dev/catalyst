@@ -1,3 +1,10 @@
+2026-05-01 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully addressed a bug where string dependencies passed to `WorkflowEngine.add_task` would be destructured into lists of characters during validation. Materializing strings into lists upfront correctly prevents this. Codebase zero-bloat state holds intact via `vulture`.
+
+Alignment / Deferred:
+Maintained locked dependencies at their latest compatible versions. Synced `CHANGELOG.md` with release notes and cut the release, bumping to `0.1.21`.
+
 2026-04-30 — Assessment & Lifecycle
 Observation / Pruned:
 Verified structural soundness of the prior agent's registration path fast-fail refactor. Tests natively pass and no regressions were found. However, during adversarial QA and coverage inspection, identified unreachable `inspect.iscoroutinefunction(base_func)` code within the `functools.partial` loop fallback, resulting from the fast-path addition. Pruned the dead code block to restore 100% test coverage and eliminate entropy. Scanned via vulture confirmed no new dead logic.
