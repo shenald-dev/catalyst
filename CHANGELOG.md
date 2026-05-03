@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.21] - 2026-05-01
+
+* **[QA Status]:** Verified structural soundness of the fix for string dependency handling in `WorkflowEngine`. The codebase gracefully handles string inputs as single-element lists without destructing them.
+* **[Entropy Pruned]:** 0 lines. Evaluated repository with `vulture`; remaining flags are properly confirmed as FastAPI external endpoints/false positives and left intact.
+* **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions.
+* **[Docs Updated]:** Logged optimization and bugfix details in `warden.md` ledger.
+* **[Release]:** v0.1.21 cut, tagged, and ready.
+
 ## [0.1.20] - 2026-04-30
 
 * **[QA Status]:** Verified structural soundness of the prior agent's registration path fast-fail refactor. Tests natively pass and no regressions were found.
