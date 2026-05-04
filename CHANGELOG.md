@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.22] - 2026-05-03
+
+* **[QA Status]:** Verified structural soundness of the fix for string dependency handling in `WorkflowEngine`. The codebase gracefully handles string inputs as single-element lists without destructing them.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions.
+* **[Docs Updated]:** Logged optimization and bugfix details in `warden.md` ledger.
+* **[Release]:** v0.1.22 cut, tagged, and ready.
+
 ## [0.1.21] - 2026-05-01
 
 * **[QA Status]:** Verified structural soundness of the fix for string dependency handling in `WorkflowEngine`. The codebase gracefully handles string inputs as single-element lists without destructing them.

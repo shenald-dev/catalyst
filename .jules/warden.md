@@ -1,3 +1,10 @@
+2026-05-03 — Assessment & Lifecycle
+Observation / Pruned:
+Verified structural soundness of the fix for string dependency handling in `WorkflowEngine`. The codebase gracefully handles string inputs as single-element lists without destructing them. Tests natively pass and no regressions were found. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
+
+Alignment / Deferred:
+Maintained locked dependencies at their latest compatible versions. Synced `CHANGELOG.md` with pruning notes and cut the release, bumping to `0.1.22`.
+
 2026-05-01 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, BOLT, successfully addressed a bug where string dependencies passed to `WorkflowEngine.add_task` would be destructured into lists of characters during validation. Materializing strings into lists upfront correctly prevents this. Codebase zero-bloat state holds intact via `vulture`.
