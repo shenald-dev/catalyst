@@ -77,7 +77,7 @@ class WorkflowEngine:
             is_async = True
         else:
             base_func = func
-            while isinstance(base_func, functools.partial):
+            while type(base_func) is functools.partial:
                 base_func = base_func.func
             if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
                 base_func.__call__
