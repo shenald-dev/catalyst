@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.24] - 2026-05-05
+
+* **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Evaluated dependencies via `uv lock --upgrade`. Minor bumps passed perfectly.
+* **[Docs Updated]:** Logged optimization and bugfix details in `warden.md` ledger.
+* **[Release]:** v0.1.24 cut, tagged, and ready.
+
 ## [0.1.23] - 2026-05-04
 
 * **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism utilizing `asyncio.wait` cleanly prevents coroutine leaks, and string dependency parsing remains robust against character destructuring.
