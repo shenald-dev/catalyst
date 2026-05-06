@@ -1,3 +1,10 @@
+2026-05-06 — Assessment & Lifecycle
+Observation / Pruned:
+Reverted the previous agent's change (BOLT) which replaced `isinstance(base_func, functools.partial)` with exact type checking `type(base_func) is functools.partial`. While slightly faster, exact type checking explicitly breaks PEP 8 and prevents subclassing, which violates the repo's memory constraints regarding observability and inheritance boundaries. Entropy pruned: 0 lines.
+
+Alignment / Deferred:
+Safe dependency bumps were verified (`pydantic-core`, `pydantic`, and `mypy`). Tests passed after the revert. Synced `.jules/bolt.md` to prune the exact type checking learning and updated the release to v0.1.25.
+
 2026-05-05 — Assessment & Lifecycle
 Observation / Pruned:
 Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
