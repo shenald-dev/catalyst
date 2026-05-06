@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.25] - 2026-05-06
+
+* **[QA Status]:** Reverted the previous agent's optimization that replaced `isinstance` with exact type checking (`type(...) is functools.partial`) in `_run_node`. This breaks Python's PEP 8 guidelines and violates architectural directives against breaking subclass inheritance boundaries for microscopic performance gains.
+* **[Entropy Pruned]:** 0 lines. Codebase maintains zero bloat.
+* **[Dependencies Bumped]:** Safely upgraded `mypy`, `pydantic`, and `pydantic-core` to their latest patch/minor versions within the lockfile.
+* **[Docs Updated]:** Logged system state and reverted changes in `warden.md` ledger.
+* **[Release]:** v0.1.25 cut, tagged, and ready.
+
 ## [0.1.24] - 2026-05-05
 
 * **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak.
