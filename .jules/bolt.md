@@ -37,3 +37,10 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+## 2024-05-06 — Fix Reference Cycle in WorkflowEngine Memory Loop
+
+Learning:
+Passing a full `tasks` dictionary (containing `asyncio.Task` objects) deep into a coroutine wrapper that also modifies or evaluates those tasks creates a subtle memory-leaking reference cycle. Python's cyclic garbage collector is required to clean it up, which adds unnecessary runtime overhead, particularly on high-throughput async DAG workflows.
+
+Action:
+When evaluating parallel asyncio tasks, extract only the required dependencies as a list (`dep_tasks`) in the caller and pass the subset natively into the execution loop to decouple the dictionary state and break the reference cycle. Additionally, prefer `isinstance(..., functools.partial)` over exact type checking for better flexibility and PEP-8 compliance.
