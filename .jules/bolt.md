@@ -37,3 +37,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+## 2024-05-07 — Optimize Memory Cycles and Partial Type Checks
+
+Learning:
+Passing a full dictionary of asyncio.Task objects into a task execution coroutine creates a memory-leaking reference cycle (tasks dict -> Task object -> Coroutine -> tasks dict). Additionally, exact type checking (e.g. `type(func) is functools.partial`) is brittle and breaks inheritance logic; standard `isinstance` is preferred.
+
+Action:
+Refactored `_run_node` to break the memory reference cycle by explicitly passing only a list of needed dependency tasks (`dep_tasks`) rather than the entire execution dictionary. Updated type checks for partial unwrapping to use `isinstance` for robustness without sacrificing performance.
