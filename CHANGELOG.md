@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.25] - 2026-05-07
+
+* **[QA Status]:** Verified structural soundness of the `functools.partial` strict type checking optimization in `WorkflowEngine.add_task`. Exact type evaluation is isolated and correctly executes in hot paths safely.
+* **[Entropy Pruned]:** 0 lines. Checked the repository with `vulture` and verified all unused code has been cleanly pruned, correctly deferring false positive FastAPI routing functions.
+* **[Dependencies Bumped]:** Successfully upgraded all core dependencies via lockfile resolution, including `pydantic-core` (now safely running `v2.46.4` without `SystemError` crashes) and `mypy` (v2.0.0).
+* **[Docs Updated]:** Logged optimization patterns in `warden.md` and prepared version bump to v0.1.25.
+* **[Release]:** v0.1.25 cut, tagged, and ready.
+
 ## [0.1.24] - 2026-05-05
 
 * **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak.
