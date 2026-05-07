@@ -37,3 +37,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+## 2024-06-10 — Eliminate asyncio.Task Reference Cycles in execution engines
+
+Learning:
+Passing a full dictionary of running `asyncio.Task` objects down into nested coroutines (like a DAG node executor) causes each spawned coroutine to hold a reference to the entire collection of all tasks. This creates massive memory-leaking reference cycles (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
+
+Action:
+Pre-resolve dependencies directly in the loop that spawns the tasks. Pass highly efficient sequences (e.g., tuples like `dep_tasks = tuple(tasks[d] for d in deps)`) into the coroutine rather than the whole registry dictionary. This cleanly breaks the reference cycle and completely avoids dictionary lookups inside the hot-path async execution context without adding new synchronous allocation overhead.
