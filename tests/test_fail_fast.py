@@ -31,9 +31,11 @@ async def test_true_fail_fast_multiple_deps() -> None:
 
     from typing import Any, Dict
 
-    async def wrapped_run_node(node: str, tasks: Dict[str, asyncio.Task[Any]]) -> Any:
+    from typing import List
+
+    async def wrapped_run_node(node: str, dep_tasks: List[asyncio.Task[Any]]) -> Any:
         nonlocal downstream_eval_time
-        res = await orig_run_node(node, tasks)
+        res = await orig_run_node(node, dep_tasks)
         if node == "downstream":
             downstream_eval_time = time.perf_counter()
         return res
