@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.25]
+
+* **[QA Status]:** Verified performance optimization to `type(base_func) is functools.partial`.
+* **[Dependencies Bumped]:** Bumped `pydantic` to v2.13.4 and `pydantic-core` to v2.46.4.
+* **[Release]:** v0.1.25 cut and ready.
+
 ## [0.1.24] - 2026-05-05
 
 * **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak.
