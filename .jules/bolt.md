@@ -37,3 +37,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+## 2024-05-19 — Resolve memory leak / reference cycle in _run_node
+
+Learning:
+Passing a dictionary of `asyncio.Task` objects into a coroutine creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
+
+Action:
+Instead, pass a pre-resolved, highly efficient tuple of specific dependency tasks (e.g., `tuple(tasks[d] for d in deps)`) to the coroutine to break the cycle without introducing synchronous list/set allocations.
