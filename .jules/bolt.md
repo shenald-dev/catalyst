@@ -37,3 +37,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+## 2024-05-08 — Refactor _run_node signature to prevent memory leak
+
+Learning:
+Passing a dictionary of `asyncio.Task` objects directly into an `async def` task runner creates a circular reference memory leak (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
+
+Action:
+Eagerly resolve dependencies before invoking the task runner and pass them as an immutable, resolved tuple of `Task` objects to break the cycle and improve decoupled state management.
