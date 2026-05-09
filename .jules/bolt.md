@@ -37,3 +37,9 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+## $(date +%Y-%m-%d) — DAG Dependency Resolution Memory Leak Fix
+
+Learning: Passing an entire dictionary of pending `asyncio.Task` objects directly into a coroutine (`_run_node`) that runs alongside other asynchronous operations creates a memory-leaking reference cycle (dictionary -> task -> coroutine closure -> dictionary) and introduces unnecessary runtime dictionary lookups in hot paths.
+
+Action: When evaluating parallel DAG workflows, always resolve dependency structures during the graph construction phase. Pass only the required minimal state (e.g., a tuple of `Task` objects specific to the dependencies) to hot-path functions, rather than passing global execution state dictionaries.
