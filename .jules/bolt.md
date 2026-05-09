@@ -37,3 +37,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+## 2026-05-09 — Memory optimization in DAG execution loop
+
+Learning:
+Passing a mutable dictionary of all running `asyncio.Task` objects into a coroutine (like a node execution function in a DAG engine) creates a memory-leaking reference cycle: the dictionary references the task, the task executes the coroutine, and the coroutine closure captures the dictionary.
+
+Action:
+Instead of passing the entire task state dictionary through the execution hot path, pre-resolve dependency tasks into a static, highly efficient tuple (e.g., `tuple(tasks[d] for d in deps)`) before executing the coroutine. This breaks the reference cycle, prevents memory leaks, and avoids additional synchronous allocations.
