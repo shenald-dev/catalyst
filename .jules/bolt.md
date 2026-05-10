@@ -37,3 +37,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+2026-05-10 — Memory leak via cyclic task dictionary in asyncio DAG
+
+Learning:
+Passing a mutable dictionary containing asyncio.Task objects into a coroutine creates a memory-leaking reference cycle (dictionary -> Task -> Coroutine -> dictionary) in long-running parallel workflows.
+
+Action:
+Pass pre-resolved tuples of required tasks instead of mutable state dictionaries into execution hot paths to break the cycle without introducing synchronous list allocations.

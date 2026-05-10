@@ -201,3 +201,4 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fail-Fast Optimization: Upgraded the DAG execution logic in `_run_node` to fast-fail the moment a sibling dependency produces a `TaskError`, skipping the task instead of sequentially awaiting all the rest before skipping. This cuts down overhead in wide, failing task nodes.
+* **[Performance]**: Fixed a memory-leaking reference cycle in `_run_node` by passing a tuple of resolved dependency tasks instead of a mutable dictionary of all tasks.
