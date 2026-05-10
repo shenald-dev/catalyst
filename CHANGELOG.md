@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.25] - 2026-05-10
+
+* **[QA Status]:** Verified structural soundness of the `functools.partial` exact type checking micro-optimization in `_run_node`.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Upgraded minor versions of `coverage`, `idna`, `librt`, `pydantic`, and `pydantic-core` safely via `uv lock --upgrade`.
+* **[Docs Updated]:** Logged optimization and dependency bump details in `warden.md` ledger.
+* **[Release]:** v0.1.25 cut, tagged, and ready.
+
 ## [0.1.24] - 2026-05-05
 
 * **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak.
