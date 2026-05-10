@@ -37,3 +37,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
+
+## 2024-05-10 — Prevent Memory Leaks via Reference Cycles in DAG Node Execution
+
+Learning:
+Passing a mutable state dictionary (like the `tasks` dict mapping task names to `asyncio.Task` objects) deep into execution hot paths, specifically as an argument to the coroutine that is stored *within* that dictionary, creates a significant reference cycle memory leak (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict) that the garbage collector struggles to clean up rapidly under heavy DAG execution load.
+
+Action:
+Break reference cycles in node execution by extracting pre-resolved, immutable, and highly efficient structures (like a `tuple` of specific dependent `Task` objects) before passing them into the coroutine context.
