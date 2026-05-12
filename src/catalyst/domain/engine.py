@@ -99,6 +99,9 @@ class WorkflowEngine:
     ) -> Any:
         """Evaluate and execute a single node in the DAG.
 
+        Accepts a tuple of specific dependency tasks instead of the entire tasks dictionary
+        to prevent memory-leaking reference cycles (tasks dict -> Task object -> Coroutine -> tasks dict).
+
         Uses a fast-path for single dependencies. For multiple dependencies,
         evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
         to implement clean fail-fast behavior without leaving un-awaited wrapper coroutines.
