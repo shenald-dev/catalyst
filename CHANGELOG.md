@@ -9,7 +9,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
  But note: the Head branch does not have the [0.1.25] section at all because it was branched off before that.
 
  How to resolve?
- We are told: 
+ We are told:
    - This is a TRUE CONFLICT (both branches modified the same file from the same ancestor).
    - We must keep ALL meaningful changes from BOTH branches.
 
@@ -43,7 +43,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    Then, for the [0.1.24] section in Base (main) we see:
 
-     * **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. ... 
+     * **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. ...
      * **[Entropy Pruned]**: 0 lines. Codebase remains at zero bloat, with FastAPI routing endpoints validated as false positives from `vulture` dead-code scans.
      * **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Successfully rolled back `mypy` update to strictly adhere to `>=1.8.0,<2` constraint to avoid test failures.
      * **[Docs Updated]**: Documented type checking micro-optimization guidelines in `.jules/warden.md` ledger.
@@ -91,7 +91,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    @@ -200,4 +200,5 @@ All notable changes to this project will be documented in this file.
     - Graceful API Execution Reporting: `TaskError` exceptions returned by the `execute_workflow` endpoint will now be correctly serialized as standard JSON, rather than crashing FastAPI.
-    
+
     ### Changed
    -- Fail-Fast Optimization: Upgraded the DAG execution logic in `_run_node` to fast-fail the moment a sibling dependency produces a `TaskError`, skipping the task instead of sequentially awaiting all the rest before skipping. This cuts down overhead in wide, failing task nodes.
    \ No newline at end of file
@@ -124,21 +124,21 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
  So:
    Base (main) has:
-        ... 
+        ...
         ### Changed
-        - Fail-Fast Optimization: ... 
+        - Fail-Fast Optimization: ...
 
    Head (PR) has:
         ...
         ### Changed
-        - Fail-Fast Optimization: ... 
-        * **[Performance]**: ... 
+        - Fail-Fast Optimization: ...
+        * **[Performance]**: ...
 
  Therefore, the conflict is that the Base branch has a "### Changed" section with one bullet, and the Head branch has the same "### Changed" section but with an additional bullet.
 
- But note: the Head branch was branched off from the ancestor, which did not have the [0.1.25] section and also did not have this "### Changed" section at the end? 
+ But note: the Head branch was branched off from the ancestor, which did not have the [0.1.25] section and also did not have this "### Changed" section at the end?
 
- However, the context says that the Base branch changed lines 5-211 (which is a large chunk) and the Head branch changed lines 204-205 (which is at the end). 
+ However, the context says that the Base branch changed lines 5-211 (which is a large chunk) and the Head branch changed lines 204-205 (which is at the end).
 
  How can we reconcile?
 
@@ -147,7 +147,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
    [Header]
    [Version sections from latest to oldest]
 
-   At the very end of the file, there might be a "### Changed" section that is not tied to a specific version? 
+   At the very end of the file, there might be a "### Changed" section that is not tied to a specific version?
 
  But that doesn't match the typical changelog format.
 
@@ -160,13 +160,13 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
  But note: the Base branch already has a "### Changed" section (with the Fail-Fast Optimization bullet) and the Head branch is adding another bullet to that same section.
 
- However, the Head branch's change was made relative to the ancestor, which did not have that "### Changed" section at all. So the Head branch actually added the entire "### Changed" section? 
+ However, the Head branch's change was made relative to the ancestor, which did not have that "### Changed" section at all. So the Head branch actually added the entire "### Changed" section?
 
  Let me check the Git Diff again:
 
    The Git Diff shows:
-        - [the existing line] 
-        + [the existing line] 
+        - [the existing line]
+        + [the existing line]
         + [new line]
 
    And it says: "No newline at end of file" for the Base, and then the Head adds a newline and the new line.
@@ -206,9 +206,9 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
         - Fail-Fast Optimization: Upgraded the DAG execution logic in `_run_node` to fast-fail the moment a sibling dependency produces a `TaskError`, skipping the task instead of sequentially awaiting all the rest before skipping. This cuts down overhead in wide, failing task nodes.
         * **[Performance]**: Fixed a memory-leaking reference cycle in `_run_node` by passing a tuple of resolved dependency tasks instead of a mutable dictionary of all tasks.
 
-   However, note the formatting: the Base branch uses a dash (-) for the bullet and the Head branch uses an asterisk (*) for the Performance bullet. We should keep the style of the section? But the Base branch started with a dash and then the Head branch used an asterisk. 
+   However, note the formatting: the Base branch uses a dash (-) for the bullet and the Head branch uses an asterisk (*) for the Performance bullet. We should keep the style of the section? But the Base branch started with a dash and then the Head branch used an asterisk.
 
-   Looking at the rest of the changelog, the version sections use asterisks for bullets. But this "### Changed" section is not under a version? 
+   Looking at the rest of the changelog, the version sections use asterisks for bullets. But this "### Changed" section is not under a version?
 
    The Base branch's "### Changed" section uses a dash, and the Head branch added an asterisk. We have two options:
 
@@ -225,14 +225,14 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    To avoid inconsistency, let's look at the rest of the file: the version sections use asterisks. But this is a separate section.
 
-   Since the Base branch started the section with a dash, we'll keep the dash for the first bullet and change the Head branch's bullet to a dash? Or we can leave it as an asterisk? 
+   Since the Base branch started the section with a dash, we'll keep the dash for the first bullet and change the Head branch's bullet to a dash? Or we can leave it as an asterisk?
 
    The instructions do not specify style consistency, but we must maintain proper markdown. Both are valid.
 
    However, to be safe, let's mimic the style of the existing bullet in that section in the Base branch. The Base branch used a dash, so we'll use a dash for the added bullet.
 
    Therefore, we change the Head branch's line from:
-        * **[Performance]**: ... 
+        * **[Performance]**: ...
    to:
         - **[Performance]**: ...
 
@@ -245,8 +245,8 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
    However, wait: the Base branch's version of the file (as provided in the context) does show the "### Changed" section with a dash bullet. So we are going to:
 
         ### Changed
-        - Fail-Fast Optimization: ... 
-        - **[Performance]**: ... 
+        - Fail-Fast Optimization: ...
+        - **[Performance]**: ...
 
    But note: the Head branch's original change used an asterisk. We are changing it to a dash to match the Base branch's style in that section.
 
@@ -286,7 +286,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    However, note the Git Diff showed that the Base branch's file did not have a newline at the end? But the Head branch's file did. We should output a newline at the end.
 
-   But the instructions say: "Preserve all valid code from both branches". The Head branch intended to have a newline at the end (as shown in the Git Diff: it added a newline and then the bullet). The Base branch did not have a newline at the end? 
+   But the instructions say: "Preserve all valid code from both branches". The Head branch intended to have a newline at the end (as shown in the Git Diff: it added a newline and then the bullet). The Base branch did not have a newline at the end?
 
    Actually, the Git Diff for the Base branch showed: "\ No newline at end of file" for the original line, meaning the Base branch's file (as of the commit we are merging from) did not have a newline at the end. Then the Head branch added a newline and the bullet.
 
@@ -325,7 +325,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    Alternatively, we can think of the Base branch's file as having:
 
-        ... 
+        ...
         ### Changed
         - Fail-Fast Optimization: ...   [and then no newline]
 
@@ -333,8 +333,8 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
         ...
         ### Changed
-        - Fail-Fast Optimization: ... 
-        - **[Performance]**: ... 
+        - Fail-Fast Optimization: ...
+        - **[Performance]**: ...
         [newline]
 
    So we are adding two lines: the second bullet and then a newline.
@@ -345,24 +345,24 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    But that would be:
 
-        ... 
+        ...
         ### Changed
-        - Fail-Fast Optimization: ... 
-        - **[Performance]**: ... 
+        - Fail-Fast Optimization: ...
+        - **[Performance]**: ...
         [newline]
 
-   How? 
+   How?
 
-        Original Base branch file: 
-            ... 
+        Original Base branch file:
+            ...
             ### Changed
             - Fail-Fast Optimization: ... [no newline at end of file]
 
         We change it to:
-            ... 
+            ...
             ### Changed
-            - Fail-Fast Optimization: ... 
-            - **[Performance]**: ... 
+            - Fail-Fast Optimization: ...
+            - **[Performance]**: ...
             [newline]
 
    This is achieved by:
@@ -379,7 +379,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
    Steps:
 
         resolved_content = base_content.rstrip()  # remove any trailing whitespace (including the missing newline) but note: we don't want to remove internal whitespace
-        Then we add: 
+        Then we add:
             "\n### Changed\n- Fail-Fast Optimization: ...\n- **[Performance]**: ...\n"
 
    But wait, the base_content already has the "### Changed" section and the first bullet. We don't want to duplicate.
@@ -394,12 +394,12 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    This will make the file end with a newline.
 
-   However, let's check: 
+   However, let's check:
 
         base_content = ... (ends with the string of the first bullet, no newline)
         Then we add: "\n- [Performance]...\n"
 
-        So the last part becomes: 
+        So the last part becomes:
             ... first bullet\n- [Performance]...\n
 
         Which means the first bullet line now has a newline after it (so it's a proper line) and then we have the second bullet line and then a newline.
@@ -410,27 +410,27 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    To be safe, we can do:
 
-        # If the base_content does not end with a newline, we add one before adding the new bullet? 
+        # If the base_content does not end with a newline, we add one before adding the new bullet?
         # But note: we are going to add the new bullet on a new line, so we need a newline to separate.
 
         Actually, we always want to put the new bullet on a new line. So we need to ensure that we have a newline before the new bullet.
 
-        We can do: 
+        We can do:
             if base_content and not base_content.endswith('\n'):
                 base_content += '\n'
             base_content += "- **[Performance]**: Fixed a memory-leaking reference cycle in `_run_node` by passing a tuple of resolved dependency tasks instead of a mutable dictionary of all tasks.\n"
 
    However, the instructions say: "Output ONLY the complete resolved file content". We are not to explain.
 
-   But note: the base_content we are given in the context for the Base branch is the entire file. We are going to output a string that is the base_content plus the two lines (a newline and then the bullet line and then a newline) only if the base_content didn't end with a newline? 
+   But note: the base_content we are given in the context for the Base branch is the entire file. We are going to output a string that is the base_content plus the two lines (a newline and then the bullet line and then a newline) only if the base_content didn't end with a newline?
 
-   However, the Git Diff told us that the base_content (the Base branch's file) did not have a newline at the end. So we can rely on that? 
+   However, the Git Diff told us that the base_content (the Base branch's file) did not have a newline at the end. So we can rely on that?
 
    But wait: the context provided for the Base branch is a string that was truncated in the middle. We don't know the exact ending. However, the Git Diff is authoritative: it said the Base branch's file did not have a newline at the end.
 
    Therefore, we will assume the base_content string we are to use does not end with a newline.
 
-   However, note: we are not actually given the full base_content string in a variable. We are to produce the resolved file from scratch? 
+   However, note: we are not actually given the full base_content string in a variable. We are to produce the resolved file from scratch?
 
    Actually, we are given three versions: Ancestor, Base, Head. But we are to produce the resolved file.
 
@@ -455,10 +455,10 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    However, note: the Git Diff showed that the Head branch changed the line:
 
-        - Fail-Fast Optimization: ... 
-        to 
-        - Fail-Fast Optimization: ... 
-        * **[Performance]**: ... 
+        - Fail-Fast Optimization: ...
+        to
+        - Fail-Fast Optimization: ...
+        * **[Performance]**: ...
 
    But actually, the Head branch did not change the existing line, it just added a line after it.
 
@@ -468,7 +468,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    However, note: the Base branch's file as provided in the context ends with:
 
-        ... 
+        ...
         ### Changed
         - Fail-Fast Optimization: Upgraded the DAG execution logic in `_run_node` to fast-fail the moment a sibling dependency produces a `TaskError`, skipping the task instead of sequentially awaiting all the rest before skipping. This cuts down overhead in wide, failing task nodes.
 
@@ -478,7 +478,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    So the end becomes:
 
-        ... 
+        ...
         ### Changed
         - Fail-Fast Optimization: Upgraded the DAG execution logic in `_run_node` to fast-fail the moment a sibling dependency produces a `TaskError`, skipping the task instead of sequentially awaiting all the rest before skipping. This cuts down overhead in wide, failing task nodes.
         - **[Performance]**: Fixed a memory-leaking reference cycle in `_run_node` by passing a tuple of resolved dependency tasks instead of a mutable dictionary of all tasks.
@@ -506,7 +506,7 @@ We are given three versions: Ancestor, Base (main), and Head (PR branch).
 
    Therefore, we output:
 
-        [the entire Base branch's file] 
+        [the entire Base branch's file]
         + "\n- **[Performance]**: Fixed a memory-leaking reference cycle in `_run_node` by passing a tuple of resolved dependency tasks instead of a mutable dictionary of all tasks.\n"
 
    But note: the Base branch's file already ends without a newline, so we are adding a newline, then the bullet, then a newline.
