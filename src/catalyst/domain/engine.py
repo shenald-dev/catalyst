@@ -102,6 +102,10 @@ class WorkflowEngine:
         Uses a fast-path for single dependencies. For multiple dependencies,
         evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
         to implement clean fail-fast behavior without leaving un-awaited wrapper coroutines.
+
+        Note: `dep_tasks` is a tuple of tasks (not the entire tasks dictionary)
+        to prevent reference cycles (dictionary -> task -> coroutine closure -> dictionary)
+        and eliminate repeated dictionary lookups in hot paths.
         """
         if dep_tasks:
             if len(dep_tasks) == 1:
