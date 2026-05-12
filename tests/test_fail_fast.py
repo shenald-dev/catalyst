@@ -50,4 +50,3 @@ async def test_true_fail_fast_multiple_deps() -> None:
     assert eval_duration < 0.2, (
         "Downstream did not fail fast, waited for slow dependency!"
     )
-\ No newline at end of file
