@@ -95,7 +95,7 @@ class WorkflowEngine:
     async def _run_node(
         self,
         node: str,
-        dep_tasks: list[asyncio.Task[Any]],
+        dep_tasks: tuple[asyncio.Task[Any], ...],
     ) -> Any:
         """Evaluate and execute a single node in the DAG.
 
@@ -165,7 +165,8 @@ class WorkflowEngine:
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         for node in self._cached_topo_order:
-            dep_tasks = [tasks[dep] for dep in self._predecessors.get(node, [])]
+            deps = self._predecessors.get(node, [])
+            dep_tasks = tuple(tasks[dep] for dep in deps)
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:
