@@ -10,7 +10,10 @@ All notable changes to this project will be documented in this file.
 * **[Docs Updated]**: Documented type checking micro-optimization guidelines in `.jules/warden.md` ledger.
 * **[Release]**: v0.1.25 cut, tagged, and ready.
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 ## [0.1.24] - 2026-05-05
 
 * **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak.
