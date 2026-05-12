@@ -2,6 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
+<<<<<<< HEAD
 ## [0.1.25] - 2026-05-06
 
 * **[QA Status]:** Reverted the previous agent's optimization that replaced `isinstance` with exact type checking (`type(...) is functools.partial`) in `_run_node`. This breaks Python's PEP 8 guidelines and violates architectural directives against breaking subclass inheritance boundaries for microscopic performance gains.
@@ -9,6 +10,15 @@ All notable changes to this project will be documented in this file.
 * **[Dependencies Bumped]:** Safely upgraded `mypy`, `pydantic`, and `pydantic-core` to their latest patch/minor versions within the lockfile.
 * **[Docs Updated]:** Logged system state and reverted changes in `warden.md` ledger.
 * **[Release]:** v0.1.25 cut, tagged, and ready.
+=======
+## [0.1.25] - 2026-05-07
+
+* **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. The exact type checking (`type(...) is functools.partial`) was evaluated to safely handle the hot-path execution loop without introducing regressions or breaking fast-fail mechanisms.
+* **[Entropy Pruned]**: 0 lines. Codebase remains at zero bloat, with FastAPI routing endpoints validated as false positives from `vulture` dead-code scans.
+* **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Successfully rolled back `mypy` update to strictly adhere to `>=1.8.0,<2` constraint to avoid test failures.
+* **[Docs Updated]**: Documented type checking micro-optimization guidelines in `.jules/warden.md` ledger.
+* **[Release]**: v0.1.25 cut, tagged, and ready.
+>>>>>>> origin/main
 
 ## [0.1.24] - 2026-05-05
 
