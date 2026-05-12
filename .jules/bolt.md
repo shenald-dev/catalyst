@@ -38,10 +38,10 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
 
-## 2024-05-18 — Refactored WorkflowEngine._run_node Memory Signature
+## 2024-05-11 — DAG Execution Memory Optimization
 
 Learning:
-Passing a full dictionary containing all asyncio.Task instances directly into each individual task coroutine (`_run_node`) during parallel execution creates a severe, memory-leaking reference cycle (Dict -> Task -> Coroutine -> Dict) that stresses the cyclic garbage collector.
+Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 
 Action:
-Pre-resolve node dependencies from dictionaries and pass only highly-efficient Python tuples of specific required `asyncio.Task` objects to individual execution coroutines to safely break garbage collection reference cycles on hot paths.
+Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
