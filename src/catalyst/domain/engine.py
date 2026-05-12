@@ -95,18 +95,21 @@ class WorkflowEngine:
     async def _run_node(
         self,
         node: str,
-        tasks: dict[str, asyncio.Task[Any]],
+        dep_tasks: tuple[asyncio.Task[Any], ...],
     ) -> Any:
         """Evaluate and execute a single node in the DAG.
 
         Uses a fast-path for single dependencies. For multiple dependencies,
         evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
         to implement clean fail-fast behavior without leaving un-awaited wrapper coroutines.
+
+        Note: `dep_tasks` is a tuple of tasks (not the entire tasks dictionary)
+        to prevent reference cycles (dictionary -> task -> coroutine closure -> dictionary)
+        and eliminate repeated dictionary lookups in hot paths.
         """
-        deps = self._predecessors.get(node, [])
-        if deps:
-            if len(deps) == 1:
-                res = await tasks[deps[0]]
+        if dep_tasks:
+            if len(dep_tasks) == 1:
+                res = await dep_tasks[0]
                 if isinstance(res, TaskError):
                     return TaskError(
                         node,
@@ -115,7 +118,7 @@ class WorkflowEngine:
                         ),
                     )
             else:
-                pending_set = {tasks[dep] for dep in deps}
+                pending_set = set(dep_tasks)
 
                 while pending_set:
                     done, pending_set = await asyncio.wait(
@@ -166,7 +169,8 @@ class WorkflowEngine:
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         for node in self._cached_topo_order:
-            tasks[node] = asyncio.create_task(self._run_node(node, tasks))
+            dep_tasks = tuple(tasks[d] for d in self._predecessors.get(node, []))
+            tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:
             try:

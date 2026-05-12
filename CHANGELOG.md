@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.25] - 2026-05-07
+
+* **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. The exact type checking (`type(...) is functools.partial`) was evaluated to safely handle the hot-path execution loop without introducing regressions or breaking fast-fail mechanisms.
+* **[Entropy Pruned]**: 0 lines. Codebase remains at zero bloat, with FastAPI routing endpoints validated as false positives from `vulture` dead-code scans.
+* **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Successfully rolled back `mypy` update to strictly adhere to `>=1.8.0,<2` constraint to avoid test failures.
+* **[Docs Updated]**: Documented type checking micro-optimization guidelines in `.jules/warden.md` ledger.
+* **[Release]**: v0.1.25 cut, tagged, and ready.
+
 ## [0.1.24] - 2026-05-05
 
 * **[QA Status]:** Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak.
