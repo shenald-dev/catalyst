@@ -38,6 +38,11 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
 
+<<<<<<< Updated upstream
+2024-05-11 — DAG Execution Memory Optimization
+Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
+Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
+=======
 ## 2024-06-10 — Eliminate asyncio.Task Reference Cycles in execution engines
 
 Learning:
@@ -45,3 +50,4 @@ Passing a full dictionary of running `asyncio.Task` objects down into nested cor
 
 Action:
 Pre-resolve dependencies directly in the loop that spawns the tasks. Pass highly efficient sequences (e.g., tuples like `dep_tasks = tuple(tasks[d] for d in deps)`) into the coroutine rather than the whole registry dictionary. This cleanly breaks the reference cycle and completely avoids dictionary lookups inside the hot-path async execution context without adding new synchronous allocation overhead.
+>>>>>>> Stashed changes
