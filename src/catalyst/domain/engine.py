@@ -72,10 +72,8 @@ class WorkflowEngine:
         self.tasks[name] = func
         self._timeouts[name] = timeout
 
-        is_async = False
-        if inspect.iscoroutinefunction(func):
-            is_async = True
-        else:
+        is_async = inspect.iscoroutinefunction(func)
+        if not is_async:
             base_func = func
             # Use exact type checking for performance. Subclasses of partial
             # are not supported in task execution hot paths.
