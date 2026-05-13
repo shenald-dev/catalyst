@@ -1,3 +1,10 @@
+2026-05-13 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, JULES/BOLT, identified and fixed a memory leak involving `asyncio.wait`. Breaking early out of an `asyncio.as_completed` wrapper loop left un-awaited coroutines behind, causing `RuntimeWarning` leaks. By replacing `asyncio.as_completed` with `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)` the fail-fast behavior evaluates natively in C without spawning intermediate wrappers. No structural dead code to prune. Upgraded minor dependencies correctly.
+
+Alignment / Deferred:
+Documented the memory leak fix across `README.md` and release notes. Minor dependency bumps like `idna` processed and tested properly. Deferred upgrading `mypy` to v2 major release. Cut the new release for v0.1.26.
+
 2026-05-05 — Assessment & Lifecycle
 Observation / Pruned:
 Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
