@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+* **[QA Status]:** Verified BOLT's optimization, safely upgraded dependencies (uvicorn, ruff, idna), and synced docs.
+
 ## [0.1.25] - 2026-05-07
 
 * **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. The exact type checking (`type(...) is functools.partial`) was evaluated to safely handle the hot-path execution loop without introducing regressions or breaking fast-fail mechanisms.

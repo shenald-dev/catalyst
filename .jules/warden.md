@@ -171,3 +171,9 @@ Observation / Pruned:
 Assessed micro-optimization for `functools.partial` using exact type checking. No dead code pruned today; codebase maintains structural zero-bloat state.
 Alignment / Deferred:
 Deferred major version bumps for strict analysis tooling (`mypy<2`) as standard procedure. Documented strict type checking exception rules for hot-path evaluation constraints.
+
+2026-05-12 — Assessment & Lifecycle
+Observation / Pruned:
+No dead code observed; BOLT's _run_node optimization and fail-fast test coverage are structurally sound.
+Alignment / Deferred:
+Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
