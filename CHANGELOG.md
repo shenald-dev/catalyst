@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.26] - 2026-05-08
+
+* **[QA Status]**: Verified structural soundness of the DAG execution engine optimization. Passing a mutable dictionary of `asyncio.Task` objects to `_run_node` created a memory-leaking reference cycle. The transition to pre-resolved tuples safely breaks this cycle without breaking fail-fast behavior.
+* **[Entropy Pruned]**: 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Updated minor packages securely.
+* **[Docs Updated]**: Documented memory reference cycle micro-optimization guidelines in `.jules/warden.md` ledger.
+* **[Release]**: v0.1.26 cut, tagged, and ready.
+
 ## [0.1.25] - 2026-05-07
 
 * **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. The exact type checking (`type(...) is functools.partial`) was evaluated to safely handle the hot-path execution loop without introducing regressions or breaking fast-fail mechanisms.

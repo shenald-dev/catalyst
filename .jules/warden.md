@@ -1,3 +1,10 @@
+2026-05-08 — Assessment & Lifecycle
+Observation / Pruned:
+Verified structural soundness of the DAG engine performance optimization. The previous implementation passed a mutable dictionary of `asyncio.Task` objects directly into the `_run_node` coroutine, which resulted in a memory-leaking circular reference (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict). Extracting explicit dependencies into pre-resolved, efficient tuples successfully broke this cycle without impacting correct fail-fast execution. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
+
+Alignment / Deferred:
+Maintained core locked dependencies within `uv.lock`. Updated minor packages (`idna`, `ruff`, `uvicorn`) securely. Deferred the upgrade of `pydantic-core` to `2.45.0` to maintain structural safety as previously noted. Synced `CHANGELOG.md` with release notes detailing the reference cycle fix and safely cut the release, bumping version to 0.1.26.
+
 2026-05-05 — Assessment & Lifecycle
 Observation / Pruned:
 Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
