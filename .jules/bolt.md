@@ -49,3 +49,12 @@ Ensure strict type checking is isolated to paths where subclassing is intentiona
 2024-05-11 — DAG Execution Memory Optimization
 Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
+
+
+## 2026-05-15 — Performance Optimizations in Workflow Engine
+
+ Learning:
+ We optimized engine execution by using generator expressions with empty fallback fast-paths (`tuple(x for x in y) if y else ()`) to avoid tuple memory allocations, and using the walrus operator (`:=`) to combine dictionary `get` lookups and validation.
+
+ Action:
+ In hot path execution graphs, use `tuple(tasks[d] for d in deps) if deps else ()` to bypass generator allocations for edge nodes entirely. Combine dictionary lookups with the walrus operator to avoid double-lookups or KeyError risks.
