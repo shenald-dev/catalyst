@@ -171,3 +171,9 @@ Observation / Pruned:
 Assessed micro-optimization for `functools.partial` using exact type checking. No dead code pruned today; codebase maintains structural zero-bloat state.
 Alignment / Deferred:
 Deferred major version bumps for strict analysis tooling (`mypy<2`) as standard procedure. Documented strict type checking exception rules for hot-path evaluation constraints.
+
+2026-05-16 — Assessment & Lifecycle
+Observation / Pruned:
+Verified structural soundness of the `asyncio.wait` optimization that broke the task reference cycle in DAG engine execution. The fail-fast constraint remains fully intact, eliminating memory leaks without regressions.
+Alignment / Deferred:
+Documented optimization in ledger. Safely bumped compatible locked dependencies using uv, deferring `mypy` major upgrades to avoid strict static analysis breakage.
