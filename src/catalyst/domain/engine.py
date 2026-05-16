@@ -88,7 +88,7 @@ class WorkflowEngine:
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
-            list(dependencies) if dependencies is not None else []
+            dependencies if dependencies is not None else []
         )
         self._cached_topo_order = None
 

@@ -49,3 +49,11 @@ Ensure strict type checking is isolated to paths where subclassing is intentiona
 2024-05-11 — DAG Execution Memory Optimization
 Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
+
+## 2026-05-16 — Dependency Updates via UV
+
+ Learning:
+ Upgrading dependencies to their latest compatible versions with uv lock --upgrade keeps the environment secure and maintainable, provided regressions are monitored.
+
+ Action:
+ Run uv lock --upgrade periodically.
