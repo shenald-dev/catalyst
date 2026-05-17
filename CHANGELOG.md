@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.26] - 2026-05-17
+
+* **[QA Status]:** Verified structural soundness of the memory leak optimization (breaking reference cycle via pre-resolved task tuples). The system evaluates correctly and passes all fail-fast testing guarantees.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions within the editable virtual environment. Applied explicit manifest constraint `mypy<2`.
+* **[Docs Updated]:** Logged optimization and refactoring details in `warden.md` ledger.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
+
 All notable changes to this project will be documented in this file.
 
 ## [0.1.25] - 2026-05-07
