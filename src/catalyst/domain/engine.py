@@ -3,6 +3,7 @@ import functools
 import inspect
 import logging
 import graphlib
+import types
 from typing import Any, Callable, Iterable
 
 logger = logging.getLogger(__name__)
@@ -81,10 +82,17 @@ class WorkflowEngine:
             # are not supported in task execution hot paths.
             while type(base_func) is functools.partial:
                 base_func = base_func.func
-            if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
-                base_func.__call__
+
+            # Avoid expensive inspect.iscoroutinefunction(base_func.__call__) for standard functions/methods.
+            # It's intended only for callable class instances.
+            if not isinstance(
+                base_func,
+                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
-                is_async = True
+                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+                    base_func.__call__
+                ):
+                    is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
@@ -165,8 +173,7 @@ class WorkflowEngine:
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         for node in self._cached_topo_order:
-            deps = self._predecessors.get(node, [])
-            dep_tasks = tuple(tasks[dep] for dep in deps)
+            dep_tasks = tuple(tasks[dep] for dep in self._predecessors.get(node, []))
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:
