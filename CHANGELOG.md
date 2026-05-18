@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.26] - 2026-05-18
+
+* **[QA Status]:** Verified structural soundness of the memory leak fix around async tasks dict refactoring in DAG engine. Breaking the dictionary reference cycle by using an intermediate resolved tuple safely fixes memory leaks without breaking fast-fail guarantees.
+* **[Entropy Pruned]:** 0 lines. Evaluated repository with `vulture`; remaining flags (`execute_workflow`, `health_check`, `StatusResponse` properties) were properly confirmed as FastAPI external endpoints/false positives and left intact.
+* **[Dependencies Bumped]:** Safely bumped click, idna, ruff, and uvicorn to their latest minor/patch versions. Mypy major version upgrade was explicitly restricted in pyproject.toml as per guidelines.
+* **[Docs Updated]:** Logged system optimization shifts into the `warden.md` ledger noting the reference cycle fix.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
+
 All notable changes to this project will be documented in this file.
 
 ## [0.1.25] - 2026-05-07

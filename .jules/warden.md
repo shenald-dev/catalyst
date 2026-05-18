@@ -1,3 +1,12 @@
+
+2026-05-18 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, JULES/BOLT, optimized the `WorkflowEngine._run_node` by replacing the internal `tasks` dictionary lookup with an intermediate `tuple` to break a reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict). This correctly resolved memory leaks during heavy DAG failure workloads without allocating slow lists. Scanned for dead code with vulture; findings in FastAPI routes are standard false positives. 0 lines pruned.
+
+Alignment / Deferred:
+Safe dependency bumps were applied up to their latest patch/minor versions. Constrained the `mypy` major version bump natively in `pyproject.toml` to prevent strict analysis breakages as per guidelines. Cut the release and manually prepared version bump to `0.1.26`.
+
+
 2026-05-05 — Assessment & Lifecycle
 Observation / Pruned:
 Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
