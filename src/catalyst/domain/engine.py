@@ -170,6 +170,7 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
+            # Fast-path fallback to () avoids generator allocation overhead for edge nodes
             dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
