@@ -58,3 +58,11 @@ Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for 
 
  Action:
  In hot path execution graphs, use `tuple(tasks[d] for d in deps) if deps else ()` to bypass generator allocations for edge nodes entirely. Combine dictionary lookups with the walrus operator to avoid double-lookups or KeyError risks.
+
+## 2026-05-17 — Safe Dependency Upgrades
+
+Learning:
+Continuous dependency upgrades are essential for security and reliability, but strict static analysis tools like `mypy` should have their major versions constrained to prevent sudden CI breakage.
+
+Action:
+Upgraded locked dependencies using `uv lock --upgrade` while explicitly constraining mypy<2.
