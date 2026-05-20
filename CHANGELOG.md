@@ -2,13 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.26] - 2026-05-08
+## [0.1.27] - 2026-05-20
 
 * **[QA Status]**: Verified structural soundness of the DAG execution engine optimization. Passing a mutable dictionary of `asyncio.Task` objects to `_run_node` created a memory-leaking reference cycle. The transition to pre-resolved tuples safely breaks this cycle without breaking fail-fast behavior.
 * **[Entropy Pruned]**: 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
 * **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Updated minor packages securely.
 * **[Docs Updated]**: Documented memory reference cycle micro-optimization guidelines in `.jules/warden.md` ledger.
-* **[Release]**: v0.1.26 cut, tagged, and ready.
+* **[Release]**: v0.1.27 cut, tagged, and ready.
+
+## [0.1.26] - 2026-05-12
+
+* **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
+* **[Entropy Pruned]:** 0 lines. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Successfully locked `mypy<2` to preserve strict typing while allowing other dependencies to bump minor/patch versions safely via `uv lock --upgrade`.
+* **[Docs Updated]:** Appended ledger record to `.jules/warden.md` validating the memory pipeline corrections.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
 
 ## [0.1.25] - 2026-05-07
 
