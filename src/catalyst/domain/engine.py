@@ -131,6 +131,7 @@ class WorkflowEngine:
                             )
 
         try:
+            # Fast-path: Retrieve and validate func in a single step via walrus operator
             if (func := self.tasks.get(node)) is None:
                 raise KeyError(f"Task {node!r} not found")
             timeout = self._timeouts.get(node)
@@ -165,6 +166,7 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
+            # Fast-path: Avoid generator and tuple allocation overhead for root nodes
             dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
