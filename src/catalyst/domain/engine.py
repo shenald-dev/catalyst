@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import inspect
+import types
 import logging
 import graphlib
 from typing import Any, Callable, Iterable
@@ -79,10 +80,14 @@ class WorkflowEngine:
             base_func = func
             while isinstance(base_func, functools.partial):
                 base_func = base_func.func
-            if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
-                base_func.__call__
+            if not isinstance(
+                base_func,
+                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
-                is_async = True
+                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+                    base_func.__call__
+                ):
+                    is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
@@ -93,7 +98,7 @@ class WorkflowEngine:
     async def _run_node(
         self,
         node: str,
-        dep_tasks: list[asyncio.Task[Any]],
+        dep_tasks: tuple[asyncio.Task[Any], ...],
     ) -> Any:
         """Evaluate and execute a single node in the DAG.
 
@@ -163,7 +168,8 @@ class WorkflowEngine:
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         for node in self._cached_topo_order:
-            dep_tasks = [tasks[dep] for dep in self._predecessors.get(node, [])]
+            deps = self._predecessors.get(node, [])
+            dep_tasks = tuple(tasks[dep] for dep in deps)
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:
