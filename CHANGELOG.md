@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-* **[QA Status]:** Verified BOLT's optimization, safely upgraded dependencies (uvicorn, ruff, idna), and synced docs.
+## [0.1.26] - 2026-05-12
+
+* **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
+* **[Entropy Pruned]:** 0 lines. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Successfully locked `mypy<2` to preserve strict typing while allowing other dependencies to bump minor/patch versions safely via `uv lock --upgrade`.
+* **[Docs Updated]:** Appended ledger record to `.jules/warden.md` validating the memory pipeline corrections.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
 
 ## [0.1.25] - 2026-05-07
 
