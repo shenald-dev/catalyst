@@ -82,6 +82,8 @@ class WorkflowEngine:
             # are not supported in task execution hot paths.
             while type(base_func) is functools.partial:
                 base_func = base_func.func
+            # Bypass slow inspect.iscoroutinefunction(__call__) for standard functions
+            # to avoid expensive class hierarchy/MRO searches on the __call__ wrapper.
             if not isinstance(
                 base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
