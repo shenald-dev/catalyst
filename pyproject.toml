@@ -17,6 +17,7 @@ dev = [
     "pytest>=8.0.2",
     "pytest-asyncio>=0.23.5",
     "pytest-cov>=4.1.0",
+    # Constrain mypy<2 to prevent strict checking rules from breaking CI on major bumps
     "mypy>=1.8.0,<2",
     "ruff>=0.3.0",
     "httpx>=0.27.0"
