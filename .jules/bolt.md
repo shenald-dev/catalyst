@@ -50,7 +50,15 @@ Ensure strict type checking is isolated to paths where subclassing is intentiona
 Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
 
-2026-05-12 — Memory leak via cyclic task dictionary in asyncio DAG
+## 2026-05-17 — Safe Dependency Upgrades
+
+Learning:
+Continuous dependency upgrades are essential for security and reliability, but strict static analysis tools like `mypy` should have their major versions constrained to prevent sudden CI breakage.
+
+Action:
+Upgraded locked dependencies using `uv lock --upgrade` while explicitly constraining mypy<2.
+
+2026-05-20 — Memory leak via cyclic task dictionary in asyncio DAG
 
 Learning:
 Passing a mutable dictionary containing asyncio.Task objects into a coroutine creates a memory-leaking reference cycle (dictionary -> Task -> Coroutine -> dictionary) in long-running parallel workflows.
