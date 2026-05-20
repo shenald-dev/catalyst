@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 * **[Entropy Pruned]**: 0 lines. Codebase remains at zero bloat, with FastAPI routing endpoints validated as false positives from `vulture` scans.
 * **[Dependencies Bumped]**: Safely bumped `idna` to v3.15 and constrained `mypy<2`.
 * **[Docs Updated]**: Documented changes in `.jules/warden.md` and `CHANGELOG.md`.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
 
 ## [0.1.25] - 2026-05-07
 
