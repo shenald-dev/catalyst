@@ -1,3 +1,11 @@
+## 2026-05-06 — Memory Optimization / Reference Cycle
+
+Learning:
+Passing a shared mutable dictionary containing `asyncio.Task` objects directly into an inner coroutine creates a circular reference (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict). This prevents standard garbage collection and forces the GC to work harder to clean up the cycle.
+
+Action:
+Pass only pre-resolved lists of specific dependency tasks to execution coroutines. Avoid passing the entire application task dictionary into individual nodes to maintain a functional data flow and break reference cycles automatically.
+
 ## 2024-04-25 — Optimize DAG Execution Engine `_run_node` by replacing manual check loop with `asyncio.wait`
 
 Learning:
@@ -45,3 +53,11 @@ Passing a mutable state dictionary (like the `tasks` dict mapping task names to 
 
 Action:
 Break reference cycles in node execution by extracting pre-resolved, immutable, and highly efficient structures (like a `tuple` of specific dependent `Task` objects) before passing them into the coroutine context.
+
+## 2026-05-17 — Safe Dependency Upgrades
+
+Learning:
+Continuous dependency upgrades are essential for security and reliability, but strict static analysis tools like `mypy` should have their major versions constrained to prevent sudden CI breakage.
+
+Action:
+Upgraded locked dependencies using `uv lock --upgrade` while explicitly constraining mypy<2.
