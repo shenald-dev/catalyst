@@ -9,6 +9,14 @@ All notable changes to this project will be documented in this file.
 * **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions via `uv lock --upgrade`, updating packages like `mypy` to `2.0.0`, `pydantic` to `2.13.4` and `pydantic-core` to `2.46.4`.
 * **[Docs Updated]:** Logged optimization and bugfix details in `warden.md` ledger.
 * **[Release]:** v0.1.25 cut, tagged, and ready.
+## [0.1.26] - 2026-05-12
+
+* **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
+* **[Entropy Pruned]:** 0 lines. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Successfully locked `mypy<2` to preserve strict typing while allowing other dependencies to bump minor/patch versions safely via `uv lock --upgrade`.
+* **[Docs Updated]:** Appended ledger record to `.jules/warden.md` validating the memory pipeline corrections.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
+
 ## [0.1.25] - 2026-05-07
 
 * **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. The exact type checking (`type(...) is functools.partial`) was evaluated to safely handle the hot-path execution loop without introducing regressions or breaking fast-fail mechanisms.

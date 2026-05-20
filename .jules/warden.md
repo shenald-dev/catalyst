@@ -4,6 +4,13 @@ The prior agent, BOLT, optimized `functools.partial` unwrapping by avoiding expl
 
 Alignment / Deferred:
 Safe dependency bumps were applied through `uv lock --upgrade` to bump patch/minor dependencies like `pydantic`, `pydantic-core`, and `mypy` natively. Tests remain completely robust against the performance changes, meaning `asyncio` bounds remain healthy. Prepared version bump to `0.1.25`.
+2026-05-12 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully implemented an optimization resolving a memory leak in DAG execution by replacing application-level `asyncio.Task` dictionaries passed directly into `_run_node` with isolated task lists, breaking a circular reference loop. The tests confirm structural integrity.
+Entropy Pruned: 0 lines. Codebase remains at zero-bloat state.
+
+Alignment / Deferred:
+Safe dependency bumps were verified. Explicitly locked `mypy` below version 2 within `pyproject.toml` to prevent strict analysis pipeline failure while upgrading other frameworks. Version safely bumped to `0.1.26`.
 
 2026-05-05 — Assessment & Lifecycle
 Observation / Pruned:
