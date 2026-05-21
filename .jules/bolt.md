@@ -66,4 +66,15 @@ Continuous dependency upgrades are essential for security and reliability, but s
 
 Action:
 Upgraded locked dependencies using `uv lock --upgrade` while explicitly constraining mypy<2.
+<<<<<<< HEAD
+>>>>>>> origin/main
+=======
+
+## 2026-05-20 — Error Observability & Logging Tracebacks
+
+Learning:
+When handling failures gracefully inside a DAG execution engine (where exceptions are caught and wrapped into `TaskError` objects rather than crashing the process), logging only `logger.error("... %s", e)` discards the stack traceback. This severely limits observability and forces developers to guess where the task actually failed inside their custom logic.
+
+Action:
+Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
 >>>>>>> origin/main
