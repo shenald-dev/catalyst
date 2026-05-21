@@ -55,3 +55,19 @@ Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for 
 Learning: Calling `inspect.iscoroutinefunction(func.__call__)` is very slow when dealing with standard functions, because it searches the class hierarchy and raises/catches internal errors or searches the MRO. We can bypass this by checking if the object is a standard function, method, or builtin function type before attempting to introspect its `__call__` method.
 
 Action: In hot paths where we check if an object is an async callable class by inspecting its `__call__` method, avoid doing so if the object is already known to be a standard function/method that `inspect.iscoroutinefunction(func)` would have already handled.
+
+## 2026-05-17 — Safe Dependency Upgrades
+
+Learning:
+Continuous dependency upgrades are essential for security and reliability, but strict static analysis tools like `mypy` should have their major versions constrained to prevent sudden CI breakage.
+
+Action:
+Upgraded locked dependencies using `uv lock --upgrade` while explicitly constraining mypy<2.
+
+## 2026-05-20 — Error Observability & Logging Tracebacks
+
+Learning:
+When handling failures gracefully inside a DAG execution engine (where exceptions are caught and wrapped into `TaskError` objects rather than crashing the process), logging only `logger.error("... %s", e)` discards the stack traceback. This severely limits observability and forces developers to guess where the task actually failed inside their custom logic.
+
+Action:
+Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.

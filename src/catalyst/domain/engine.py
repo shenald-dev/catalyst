@@ -154,7 +154,7 @@ class WorkflowEngine:
 
             return result
         except Exception as e:
-            logger.error("Task %r failed: %s", node, e)
+            logger.exception("Task %r failed", node)
             return TaskError(node, e)
 
     async def execute(self) -> dict[str, Any]:
