@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.27] - 2026-05-16
+## [0.1.28] - 2026-05-21
 
 * **[QA Status]:** Verified structural soundness of the `asyncio.wait` optimization in the DAG execution engine. The task reference cycle is broken, and fail-fast constraints hold perfectly without regressions.
 * **[Entropy Pruned]:** 0 lines. Evaluated repository with vulture; only FastAPI endpoints flagged (expected false positives). The codebase zero-bloat state remains fully intact.
 * **[Dependencies Bumped]:** Safely upgraded compatible locked dependencies (ruff, uvicorn, idna) while deferring `mypy` major upgrades.
 * **[Docs Updated]:** Logged optimization assessment and dependency deferral strategy in `warden.md` ledger.
-* **[Release]:** v0.1.27 cut, tagged, and ready.
+* **[Release]:** v0.1.28 cut, tagged, and ready.
 
 ## [0.1.26] - 2026-05-12
 
