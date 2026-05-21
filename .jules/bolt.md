@@ -58,10 +58,10 @@ Continuous dependency upgrades are essential for security and reliability, but s
 Action:
 Upgraded locked dependencies using `uv lock --upgrade` while explicitly constraining mypy<2.
 
-## 2026-05-15 — Tuple allocation overhead in hot paths
+## 2026-05-20 — Error Observability & Logging Tracebacks
 
 Learning:
-Unconditional generator expressions like `tuple(tasks[dep] for dep in deps)` create overhead even when `deps` is empty. This adds up when executing many independent DAG nodes. Also, replacing dictionary `.get()` with raw bracket lookups can be risky if defaults were relied on for missing values (e.g. for boolean async flags or edge nodes missing predecessor lists), which causes KeyError regressions and degrades clarity if explicit error handling is bypassed.
+When handling failures gracefully inside a DAG execution engine (where exceptions are caught and wrapped into `TaskError` objects rather than crashing the process), logging only `logger.error("... %s", e)` discards the stack traceback. This severely limits observability and forces developers to guess where the task actually failed inside their custom logic.
 
 Action:
-Used a safe ternary fallback `if deps else ()` to bypass generator creation entirely for tasks without dependencies, yielding measurable performance gains on independent tasks while preserving safe dict access defaults for other lookups.
+Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
