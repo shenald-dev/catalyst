@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.25] - 2026-05-10
+## [0.1.26] - 2026-05-12
+
+* **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
+* **[Entropy Pruned]:** 0 lines. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Successfully locked `mypy<2` to preserve strict typing while allowing other dependencies to bump minor/patch versions safely via `uv lock --upgrade`.
+* **[Docs Updated]:** Appended ledger record to `.jules/warden.md` validating the memory pipeline corrections.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
+
+## [0.1.25] - 2026-05-07
+
 
 * **[QA Status]:** Verified structural soundness of the `functools.partial` exact type checking micro-optimization in `WorkflowEngine.add_task`.
 * **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
