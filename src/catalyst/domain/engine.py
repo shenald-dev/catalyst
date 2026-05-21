@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import inspect
+import types
 import logging
 import graphlib
 from typing import Any, Callable, Iterable
@@ -81,10 +82,14 @@ class WorkflowEngine:
             # are not supported in task execution hot paths.
             while type(base_func) is functools.partial:
                 base_func = base_func.func
-            if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
-                base_func.__call__
+            if not isinstance(
+                base_func,
+                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
-                is_async = True
+                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+                    base_func.__call__
+                ):
+                    is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
@@ -149,7 +154,7 @@ class WorkflowEngine:
 
             return result
         except Exception as e:
-            logger.error("Task %r failed: %s", node, e)
+            logger.exception("Task %r failed", node)
             return TaskError(node, e)
 
     async def execute(self) -> dict[str, Any]:
