@@ -1,11 +1,9 @@
-
 2026-05-18 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, JULES/BOLT, optimized the `WorkflowEngine._run_node` by replacing the internal `tasks` dictionary lookup with an intermediate `tuple` to break a reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict). This correctly resolved memory leaks during heavy DAG failure workloads without allocating slow lists. Scanned for dead code with vulture; findings in FastAPI routes are standard false positives. 0 lines pruned.
 
 Alignment / Deferred:
 Safe dependency bumps were applied up to their latest patch/minor versions. Constrained the `mypy` major version bump natively in `pyproject.toml` to prevent strict analysis breakages as per guidelines. Cut the release and manually prepared version bump to `0.1.26`.
-
 
 2026-05-05 — Assessment & Lifecycle
 Observation / Pruned:
@@ -180,3 +178,9 @@ Observation / Pruned:
 Assessed micro-optimization for `functools.partial` using exact type checking. No dead code pruned today; codebase maintains structural zero-bloat state.
 Alignment / Deferred:
 Deferred major version bumps for strict analysis tooling (`mypy<2`) as standard procedure. Documented strict type checking exception rules for hot-path evaluation constraints.
+
+2026-05-12 — Assessment & Lifecycle
+Observation / Pruned:
+No dead code observed; BOLT's _run_node optimization and fail-fast test coverage are structurally sound.
+Alignment / Deferred:
+Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
