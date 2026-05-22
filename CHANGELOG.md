@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.27] - 2026-05-21
+
+### Changed
+- **[Dependencies Bumped]:** Safely bumped `certifi` to `v2026.5.20`, `ruff` to `v0.15.14`, and `starlette` to `v1.0.1`.
+- **[QA Status]:** Verified BOLT's fast-path optimization (`if deps else ()`) for task dependencies during DAG execution to eliminate tuple generator overhead. Passed strict static checks and fail-fast unit tests.
+- **[Entropy Pruned]:** No structural dead code required pruning in this run (-0 lines).
+
 ## [0.1.26] - 2026-05-12
 
 * **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
