@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.28] - 2026-05-23
+
+### Changed
+- **[Dependencies Bumped]:** Safely bumped `click` to `v8.4.1`, `fastapi` to `v0.136.3`, `idna` to `v3.16`, and `starlette` to `v1.1.0`. Maintained `mypy<2` constraint.
+- **[QA Status]:** Verified structural soundness of the application after minor dependency updates. Core test suites, mypy, and ruff checks all passed successfully.
+- **[Entropy Pruned]:** 0 lines. Evaluated vulture scans and confirmed flags on FastAPI components were false positives.
+
+
 ## [0.1.27] - 2026-05-21
 
 ### Changed
