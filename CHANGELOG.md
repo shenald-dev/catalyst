@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.28] - 2026-05-22
+
+* **[QA Status]:** Verified. Vulture results correctly identified as FastAPI false positives.
+* **[Entropy Pruned]:** -0 lines (Codebase remains at zero bloat).
+* **[Dependencies Bumped]:** `pydantic-core` bumped from 2.46.4 to 2.47.0. `click` from 8.4.0 to 8.4.1. `fastapi` from 0.136.1 to 0.136.3. `idna` from 3.15 to 3.16. `starlette` from 1.0.1 to 1.1.0. `uvicorn` from 0.47.0 to 0.48.0.
+* **[Docs Updated]:** None.
+* **[Release]:** v0.1.28 cut, tagged, and ready.
+
 ## [0.1.27] - 2026-05-21
 
 ### Changed

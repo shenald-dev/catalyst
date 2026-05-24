@@ -1,3 +1,9 @@
+2026-05-22 — Assessment & Lifecycle
+Observation / Pruned:
+Assessed BOLT's changes. No unused variables or dead code found to prune.
+Alignment / Deferred:
+Safely bumped dependencies (`pydantic-core`, `click`, `fastapi`, `idna`, `starlette`, `uvicorn`). Mypy was already constrained to `<2` per strict constraint rules. Verified all tests passed. Version bumped to 0.1.28.
+
 2026-05-21 — Assessment & Lifecycle
 Observation / Pruned:
 Assessed BOLT's optimization to avoid measurable generator creation overhead for independent tasks without dependencies using a ternary fast path (`if deps else ()`). No unused variables or dead code found to prune.
