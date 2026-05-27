@@ -2,13 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.28] - 2026-05-21
+## [0.1.29] - 2026-05-26
 
 * **[QA Status]**: Verified structural soundness of the DAG execution engine optimization. Passing a mutable dictionary of `asyncio.Task` objects to `_run_node` created a memory-leaking reference cycle. The transition to pre-resolved tuples safely breaks this cycle without breaking fail-fast behavior.
 * **[Entropy Pruned]**: 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
 * **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Updated minor packages securely.
 * **[Docs Updated]**: Documented memory reference cycle micro-optimization guidelines in `.jules/warden.md` ledger.
 * **[Release]**: v0.1.27 cut, tagged, and ready.
+
+* **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
+* **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
+* **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
+* **[Docs Updated]**: Versioned `pyproject.toml`, FastAPI definitions, and synchronized architectural shifts in `.jules/warden.md`.
+
+## [0.1.27] - 2026-05-21
 
 - **[Dependencies Bumped]:** Safely bumped `certifi` to `v2026.5.20`, `ruff` to `v0.15.14`, and `starlette` to `v1.0.1`.
 - **[QA Status]:** Verified BOLT's fast-path optimization (`if deps else ()`) for task dependencies during DAG execution to eliminate tuple generator overhead. Passed strict static checks and fail-fast unit tests.
