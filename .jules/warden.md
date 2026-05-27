@@ -1,3 +1,41 @@
+2026-05-26 — Assessment & Lifecycle
+Observation / Pruned:
+Assessed previous agent BOLT's changes. Bolstered memory optimizations. No dead code lines were pruned as codebase maintains zero bloat.
+Alignment / Deferred:
+Safely bumped minor dependencies (click, coverage, fastapi, idna, pytest-asyncio, starlette, uvicorn) using `uv lock --upgrade` while preserving the `<2` constraint for `mypy`. Tests and static analysis passing perfectly. Prepared release v0.1.28.
+
+2026-05-21 — Assessment & Lifecycle
+Observation / Pruned:
+Assessed BOLT's optimization to avoid measurable generator creation overhead for independent tasks without dependencies using a ternary fast path (`if deps else ()`). No unused variables or dead code found to prune.
+Alignment / Deferred:
+Safely bumped `certifi`, `ruff` and `starlette` dependencies. Mypy was already constrained to `<2` per strict constraint rules. Verified all tests passed. Version bumped to 0.1.27.
+
+2026-05-20 — Assessment & Lifecycle
+Observation / Pruned:
+When handling failures gracefully inside a DAG execution engine (where exceptions are caught and wrapped into `TaskError` objects rather than crashing the process), logging only `logger.error("... %s", e)` discards the stack traceback. This severely limits observability and forces developers to guess where the task actually failed inside their custom logic.
+Alignment / Deferred:
+Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
+
+2026-05-17 — Assessment & Lifecycle
+Observation / Pruned:
+Continuous dependency upgrades are essential for security and reliability, but strict static analysis tools like `mypy` should have their major versions constrained to prevent sudden CI breakage.
+Alignment / Deferred:
+Upgraded locked dependencies using `uv lock --upgrade` while explicitly constraining mypy<2.
+
+2026-05-16 — Assessment & Lifecycle
+Observation / Pruned:
+Verified structural soundness of the `asyncio.wait` optimization that broke the task reference cycle in DAG engine execution. The fail-fast constraint remains fully intact, eliminating memory leaks without regressions.
+Alignment / Deferred:
+Documented optimization in ledger. Safely bumped compatible locked dependencies using uv, deferring `mypy` major upgrades to avoid strict static analysis breakage.
+
+2026-05-12 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, successfully implemented an optimization resolving a memory leak in DAG execution by replacing application-level `asyncio.Task` dictionaries passed directly into `_run_node` with isolated task lists, breaking a circular reference loop. The tests confirm structural integrity. No dead code observed; BOLT's _run_node optimization and fail-fast test coverage are structurally sound.
+Entropy Pruned: 0 lines. Codebase remains at zero-bloat state.
+
+Alignment / Deferred:
+Safe dependency bumps were verified. Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; explicitly pinned mypy to <2 to prevent breaking changes. Version safely bumped to `0.1.26`.
+
 2026-05-05 — Assessment & Lifecycle
 Observation / Pruned:
 Verified structural soundness of the codebase. The fast-fail mechanism correctly utilizes `asyncio.wait` ensuring no unawaited coroutines leak. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
@@ -171,17 +209,3 @@ Observation / Pruned:
 Assessed micro-optimization for `functools.partial` using exact type checking. No dead code pruned today; codebase maintains structural zero-bloat state.
 Alignment / Deferred:
 Deferred major version bumps for strict analysis tooling (`mypy<2`) as standard procedure. Documented strict type checking exception rules for hot-path evaluation constraints.
-
-2026-05-12 — Assessment & Lifecycle
-Observation / Pruned:
-The prior agent, BOLT, successfully implemented an optimization resolving a memory leak in DAG execution by replacing application-level `asyncio.Task` dictionaries passed directly into `_run_node` with isolated task lists, breaking a circular reference loop. The tests confirm structural integrity. No dead code observed; BOLT's _run_node optimization and fail-fast test coverage are structurally sound.
-Entropy Pruned: 0 lines. Codebase remains at zero-bloat state.
-
-Alignment / Deferred:
-Safe dependency bumps were verified. Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; explicitly pinned mypy to <2 to prevent breaking changes. Version safely bumped to `0.1.26`.
-
-2026-05-16 — Assessment & Lifecycle
-Observation / Pruned:
-Verified structural soundness of the `asyncio.wait` optimization that broke the task reference cycle in DAG engine execution. The fail-fast constraint remains fully intact, eliminating memory leaks without regressions.
-Alignment / Deferred:
-Documented optimization in ledger. Safely bumped compatible locked dependencies using uv, deferring `mypy` major upgrades to avoid strict static analysis breakage.
