@@ -9,6 +9,19 @@ All notable changes to this project will be documented in this file.
 * **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions via `uv lock --upgrade`, updating packages like `mypy` to `2.0.0`, `pydantic` to `2.13.4` and `pydantic-core` to `2.46.4`.
 * **[Docs Updated]:** Logged optimization and bugfix details in `warden.md` ledger.
 * **[Release]:** v0.1.25 cut, tagged, and ready.
+## [0.1.28] - 2026-05-26
+* **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
+* **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
+* **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
+* **[Docs Updated]**: Versioned `pyproject.toml`, FastAPI definitions, and synchronized architectural shifts in `.jules/warden.md`.
+
+## [0.1.27] - 2026-05-21
+
+### Changed
+- **[Dependencies Bumped]:** Safely bumped `certifi` to `v2026.5.20`, `ruff` to `v0.15.14`, and `starlette` to `v1.0.1`.
+- **[QA Status]:** Verified BOLT's fast-path optimization (`if deps else ()`) for task dependencies during DAG execution to eliminate tuple generator overhead. Passed strict static checks and fail-fast unit tests.
+- **[Entropy Pruned]:** No structural dead code required pruning in this run (-0 lines).
+
 ## [0.1.26] - 2026-05-12
 
 * **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
