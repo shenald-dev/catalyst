@@ -151,7 +151,7 @@ class WorkflowEngine:
 
             return result
         except Exception as e:
-            logger.error("Task %r failed: %s", node, e)
+            logger.exception("Task %r failed", node)
             return TaskError(node, e)
 
     async def execute(self) -> dict[str, Any]:
@@ -171,7 +171,7 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
-            dep_tasks = tuple(tasks[dep] for dep in deps)
+            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:
