@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import inspect
+import types
 import logging
 import graphlib
 from typing import Any, Callable, Iterable
@@ -81,10 +82,14 @@ class WorkflowEngine:
             # are not supported in task execution hot paths.
             while type(base_func) is functools.partial:
                 base_func = base_func.func
-            if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
-                base_func.__call__
+            if not isinstance(
+                base_func,
+                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
-                is_async = True
+                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+                    base_func.__call__
+                ):
+                    is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
@@ -102,9 +107,6 @@ class WorkflowEngine:
         Uses a fast-path for single dependencies. For multiple dependencies,
         evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
         to implement clean fail-fast behavior without leaving un-awaited wrapper coroutines.
-
-        Note: `dependency_tasks` is passed as an immutable tuple rather than a dictionary
-        to break circular references between tasks and coroutine locals.
         """
         if dep_tasks:
             if len(dep_tasks) == 1:
@@ -149,7 +151,7 @@ class WorkflowEngine:
 
             return result
         except Exception as e:
-            logger.error("Task %r failed: %s", node, e)
+            logger.exception("Task %r failed", node)
             return TaskError(node, e)
 
     async def execute(self) -> dict[str, Any]:
@@ -169,7 +171,7 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
-            dep_tasks = tuple(tasks[dep] for dep in deps)
+            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:

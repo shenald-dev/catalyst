@@ -66,7 +66,7 @@ When handling failures gracefully inside a DAG execution engine (where exception
 Action:
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
 
-2026-05-27 — Memory leak via cyclic task dictionary in asyncio DAG
+2026-05-28 — Memory leak via cyclic task dictionary in asyncio DAG
 
 Learning:
 Passing a mutable dictionary containing asyncio.Task objects into a coroutine creates a memory-leaking reference cycle (dictionary -> Task -> Coroutine -> dictionary) in long-running parallel workflows.
