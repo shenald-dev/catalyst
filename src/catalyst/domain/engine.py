@@ -174,7 +174,7 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
-            deps_tasks = tuple(tasks[d] for d in deps)
+            deps_tasks = tuple(tasks[d] for d in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, deps_tasks))
 
         if tasks:
