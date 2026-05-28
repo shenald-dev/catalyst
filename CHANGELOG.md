@@ -3,13 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 <<<<<<< HEAD
-=======
-## [0.1.28] - 2026-05-26
+=======## [0.1.28] - 2026-05-26
 * **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 * **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
 * **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
 * **[Docs Updated]**: Versioned `pyproject.toml`, FastAPI definitions, and synchronized architectural shifts in `.jules/warden.md`.
 
+<<<<<<< HEAD
+>>>>>>> origin/main
+=======
 >>>>>>> origin/main
 ## [0.1.27] - 2026-05-21
 

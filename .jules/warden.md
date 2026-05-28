@@ -1,10 +1,12 @@
 =======
+>>>>>>> origin/main
 2026-05-26 — Assessment & Lifecycle
 Observation / Pruned:
 Assessed previous agent BOLT's changes. Bolstered memory optimizations. No dead code lines were pruned as codebase maintains zero bloat.
 Alignment / Deferred:
 Safely bumped minor dependencies (click, coverage, fastapi, idna, pytest-asyncio, starlette, uvicorn) using `uv lock --upgrade` while preserving the `<2` constraint for `mypy`. Tests and static analysis passing perfectly. Prepared release v0.1.28.
 
+<<<<<<< HEAD=======
 >>>>>>> origin/main
 2026-05-21 — Assessment & Lifecycle
 Observation / Pruned:
@@ -200,8 +202,12 @@ Observation / Pruned:
 Upgraded dependencies in uv.lock.
 Alignment / Deferred:
 No documentation changes needed.
+>>>>>>> origin/main
 2026-05-12 — Assessment & Lifecycle
 Observation / Pruned:
 No dead code observed; BOLT's _run_node optimization and fail-fast test coverage are structurally sound.
 Alignment / Deferred:
+<<<<<<< HEAD
+Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
+=======
 Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
