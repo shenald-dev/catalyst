@@ -136,6 +136,7 @@ class WorkflowEngine:
                             )
 
         try:
+            # Combine dictionary lookup and validation to prevent redundant access overhead
             if (func := self.tasks.get(node)) is None:
                 raise KeyError(f"Task {node!r} not found")
             timeout = self._timeouts.get(node)
