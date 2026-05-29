@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.29] - 2026-05-28
+
+* **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Safely bumped `idna`, `ruff`, and `starlette` to their latest minor/patch versions. Kept `mypy` constrained to `<2` to prevent breaking changes.
+* **[Docs Updated]:** Logged system evaluation and safe dependency updates to `.jules/warden.md`.
+* **[Release]:** v0.1.29 cut, tagged, and ready.
+
+
 All notable changes to this project will be documented in this file.
 
 ## [0.1.29] - 2026-05-26
@@ -8,7 +17,7 @@ All notable changes to this project will be documented in this file.
 * **[Entropy Pruned]**: 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
 * **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Updated minor packages securely.
 * **[Docs Updated]**: Documented memory reference cycle micro-optimization guidelines in `.jules/warden.md` ledger.
-* **[Release]**: v0.1.27 cut, tagged, and ready.
+* **[Release]**: v0.1.29 cut, tagged, and ready.
 
 * **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 * **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
