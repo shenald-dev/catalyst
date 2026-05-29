@@ -50,13 +50,6 @@ Ensure strict type checking is isolated to paths where subclassing is intentiona
 Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
 
-## 2024-05-14 — Optimization lesson for graph root memory allocation minimization
-
- Learning:
- Generator expressions passed directly to tuple constructors (`tuple(x for x in y)`) can still incur unnecessary object allocations and overhead when the input iterable `y` is empty (e.g., in DAG graph roots with no dependencies). In hot loops resolving topological order, this adds significant cumulative micro-overhead.
-
- Action:
- When aggressively optimizing node evaluation loops in DAGs, combine generator-to-tuple constructors with a fast-path ternary empty fallback (e.g., `tuple(...) if iterable else ()`) to avoid the function call and generator allocation overhead entirely for leaf/root nodes.
 ## 2026-05-17 — Safe Dependency Upgrades
 
 Learning:
