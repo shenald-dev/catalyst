@@ -10,6 +10,15 @@
 * **[Documentation]:** Updated `README.md` to reflect proper fail-fast optimization architecture avoiding task leaks, synced internal `.jules/warden.md` ledger.
 * **[Release]:** v0.1.26 cut, tagged, and ready.
 
+## [0.1.29] - 2026-05-28
+
+* **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Safely bumped `idna`, `ruff`, and `starlette` to their latest minor/patch versions. Kept `mypy` constrained to `<2` to prevent breaking changes.
+* **[Docs Updated]:** Logged system evaluation and safe dependency updates to `.jules/warden.md`.
+* **[Release]:** v0.1.29 cut, tagged, and ready.
+
+
 All notable changes to this project will be documented in this file.
 
 ## [0.1.28] - 2026-05-26
