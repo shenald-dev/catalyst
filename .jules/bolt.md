@@ -67,4 +67,7 @@ When handling failures gracefully inside a DAG execution engine (where exception
 
 Action:
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
+<<<<<<< HEAD
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
+=======
+>>>>>>> origin/main
