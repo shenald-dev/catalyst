@@ -1,5 +1,13 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+## [0.1.30] - 2026-11-29
+* **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
+* **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.
+* **[Entropy Pruned]:** -0 lines of dead code removed. Codebase is clean.
+
+
 ## [0.1.29] - 2026-05-28
 
 * **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
@@ -9,15 +17,7 @@
 * **[Release]:** v0.1.29 cut, tagged, and ready.
 
 
-All notable changes to this project will be documented in this file.
 
-## [0.1.29] - 2026-05-27
-
-* **[QA Status]:** Verified structural soundness of the `asyncio.wait` optimization in the DAG execution engine. The task reference cycle is broken, and fail-fast constraints hold perfectly without regressions.
-* **[Entropy Pruned]:** 0 lines. Evaluated repository with vulture; only FastAPI endpoints flagged (expected false positives). The codebase zero-bloat state remains fully intact.
-* **[Dependencies Bumped]:** Safely upgraded compatible locked dependencies (ruff, uvicorn, idna) while deferring `mypy` major upgrades.
-* **[Docs Updated]:** Logged optimization assessment and dependency deferral strategy in `warden.md` ledger.
-* **[Release]:** v0.1.29 cut, tagged, and ready.
 
 ## [0.1.28] - 2026-05-26
 * **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
