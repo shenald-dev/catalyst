@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.30] - 2026-11-29
+* **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
+* **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.
+* **[Entropy Pruned]:** -0 lines of dead code removed. Codebase is clean.
+
+
 ## [0.1.29] - 2026-05-28
 
 * **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
@@ -11,7 +17,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.30] - 2026-05-26
+## [0.1.31] - 2026-05-26
 * **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 * **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
 * **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
