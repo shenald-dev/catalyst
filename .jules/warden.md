@@ -218,12 +218,14 @@ Observation / Pruned:
 No dead code observed; BOLT's _run_node optimization and fail-fast test coverage are structurally sound.
 Alignment / Deferred:
 Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
-<<<<<<< HEAD
+2026-05-29 — Assessment & Lifecycle
+Observation / Pruned:
+Assessed optimizations for execution hot-path tuple allocation and exception stack trace logging. Upgraded core locked dependencies. Codebase maintains structural zero-bloat state. No dead code pruned today.
+Alignment / Deferred:
+Deferred major version bumps for strict analysis tooling (`mypy<2`) as standard procedure. Tagged and released v0.1.29.
 
 2026-05-06 — Assessment & Lifecycle
 Observation / Pruned:
 Verified BOLT's `type(base_func) is functools.partial` hot-path optimization. Upgraded pydantic and pydantic-core to minor/patch versions. Deferred major bump of mypy.
 Alignment / Deferred:
 No code pruning was necessary as remaining vulture flags are FastAPI false positives.
-=======
->>>>>>> origin/main
