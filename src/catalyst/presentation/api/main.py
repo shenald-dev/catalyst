@@ -53,4 +53,3 @@ async def execute_workflow() -> dict[str, Any]:
             serializable_results[task_name] = result
 
     return {"status": "success", "results": serializable_results}
-```
