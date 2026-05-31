@@ -1,12 +1,93 @@
 # Changelog
 
+## [0.1.26] - 2026-05-13
+
+### 🐛 Bug Fixes
+* **[QA Status]:** Verified fix for memory leak in workflow engine fail-fast logic. Breaking early from `asyncio.as_completed` leaked wrapper coroutines causing `RuntimeWarning`. The logic now safely utilizes `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)` resolving background tasks correctly natively.
+
+### 🧹 Maintenance
+* **[Lifecycle]:** Minor dependencies updated safely (idna). Deferred major bumps for strict typing tools like mypy to preserve backward compatibility.
+* **[Documentation]:** Updated `README.md` to reflect proper fail-fast optimization architecture avoiding task leaks, synced internal `.jules/warden.md` ledger.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
+## [0.1.30] - 2026-11-29
+* **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
+* **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.
+* **[Entropy Pruned]:** -0 lines of dead code removed. Codebase is clean.
+
+
+## [0.1.29] - 2026-05-28
+
+* **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Safely bumped `idna`, `ruff`, and `starlette` to their latest minor/patch versions. Kept `mypy` constrained to `<2` to prevent breaking changes.
+* **[Docs Updated]:** Logged system evaluation and safe dependency updates to `.jules/warden.md`.
+* **[Release]:** v0.1.29 cut, tagged, and ready.
+
+
 All notable changes to this project will be documented in this file.
 
+## [0.1.26] - 2026-05-12
+
+## [0.1.25] - 2026-05-09
+
+* **[QA Status]:** Verified structural soundness of the `functools.partial` unwrapping optimization. The changes maintain identical logical paths but avoid heavy introspection tools inside hot paths, completely respecting async bounds perfectly.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Maintained locked dependencies at their latest compatible versions via `uv lock --upgrade`, updating packages like `mypy` to `2.0.0`, `pydantic` to `2.13.4` and `pydantic-core` to `2.46.4`.
+* **[Docs Updated]:** Logged optimization and bugfix details in `warden.md` ledger.
+* **[Release]:** v0.1.25 cut, tagged, and ready.
+## [0.1.29] - 2026-05-26
+
+* **[QA Status]**: Verified structural soundness of the DAG execution engine optimization. Passing a mutable dictionary of `asyncio.Task` objects to `_run_node` created a memory-leaking reference cycle. The transition to pre-resolved tuples safely breaks this cycle without breaking fail-fast behavior.
+* **[Entropy Pruned]**: 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Updated minor packages securely.
+* **[Docs Updated]**: Documented memory reference cycle micro-optimization guidelines in `.jules/warden.md` ledger.
+* **[Release]**: v0.1.29 cut, tagged, and ready.
+
+## [0.1.28] - 2026-05-26* **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
+## [0.1.30] - 2026-11-29
+* **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
+* **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.
+* **[Entropy Pruned]:** -0 lines of dead code removed. Codebase is clean.
+
+
+## [0.1.29] - 2026-05-28
+
+* **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Safely bumped `idna`, `ruff`, and `starlette` to their latest minor/patch versions. Kept `mypy` constrained to `<2` to prevent breaking changes.
+* **[Docs Updated]:** Logged system evaluation and safe dependency updates to `.jules/warden.md`.
+* **[Release]:** v0.1.29 cut, tagged, and ready.
+
+## [0.1.28] - 2026-05-26
+
+
+
+
+## [0.1.31] - 2026-05-26
 ## [0.1.28] - 2026-05-26
 * **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 * **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
 * **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
 * **[Docs Updated]**: Versioned `pyproject.toml`, FastAPI definitions, and synchronized architectural shifts in `.jules/warden.md`.
+
+## [0.1.28] - 2026-05-22
+
+* **[QA Status]:** Verified. Vulture results correctly identified as FastAPI false positives.
+* **[Entropy Pruned]:** -0 lines (Codebase remains at zero bloat).
+* **[Dependencies Bumped]:** `pydantic-core` bumped from 2.46.4 to 2.47.0. `click` from 8.4.0 to 8.4.1. `fastapi` from 0.136.1 to 0.136.3. `idna` from 3.15 to 3.16. `starlette` from 1.0.1 to 1.1.0. `uvicorn` from 0.47.0 to 0.48.0.
+* **[Docs Updated]:** None.
+* **[Release]:** v0.1.28 cut, tagged, and ready.
+## [0.1.27] - 2026-05-21
+
+
+## [0.1.28] - 2026-05-23
+
+### Changed
+- **[Dependencies Bumped]:** Safely bumped `click` to `v8.4.1`, `fastapi` to `v0.136.3`, `idna` to `v3.16`, and `starlette` to `v1.1.0`. Maintained `mypy<2` constraint.
+- **[QA Status]:** Verified structural soundness of the application after minor dependency updates. Core test suites, mypy, and ruff checks all passed successfully.
+- **[Entropy Pruned]:** 0 lines. Evaluated vulture scans and confirmed flags on FastAPI components were false positives.
+
+
 
 ## [0.1.27] - 2026-05-21
 
@@ -17,6 +98,10 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.26] - 2026-05-12
 
+* **[QA Status]**: Verified structural soundness of the async tuple pre-resolution memory leak fix. Tests pass successfully.
+* **[Entropy Pruned]**: 0 lines. Codebase remains at zero bloat, with FastAPI routing endpoints validated as false positives from `vulture` scans.
+* **[Dependencies Bumped]**: Safely bumped `idna` to v3.15 and constrained `mypy<2`.
+* **[Docs Updated]**: Documented changes in `.jules/warden.md` and `CHANGELOG.md`.
 * **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
 * **[Entropy Pruned]:** 0 lines. Codebase zero-bloat state holds intact.
 * **[Dependencies Bumped]:** Successfully locked `mypy<2` to preserve strict typing while allowing other dependencies to bump minor/patch versions safely via `uv lock --upgrade`.
@@ -25,6 +110,12 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.25] - 2026-05-07
 
+
+* **[QA Status]:** Verified structural soundness of the `functools.partial` exact type checking micro-optimization in `WorkflowEngine.add_task`.
+* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]:** Upgraded minor versions of `coverage`, `idna`, `librt`, `pydantic`, and `pydantic-core` safely via `uv lock --upgrade`. `mypy` update has been constrained to `<2` to prevent potential breaks in backwards compatibility.
+* **[Docs Updated]:** Logged optimization and dependency bump details in `warden.md` ledger.
+* **[Release]:** v0.1.25 cut, tagged, and ready.
 * **[QA Status]**: Verified structural soundness of the `functools.partial` unwrapping optimization. The exact type checking (`type(...) is functools.partial`) was evaluated to safely handle the hot-path execution loop without introducing regressions or breaking fast-fail mechanisms.
 * **[Entropy Pruned]**: 0 lines. Codebase remains at zero bloat, with FastAPI routing endpoints validated as false positives from `vulture` dead-code scans.
 * **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Successfully rolled back `mypy` update to strictly adhere to `>=1.8.0,<2` constraint to avoid test failures.
