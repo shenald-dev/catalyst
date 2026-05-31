@@ -258,6 +258,11 @@ Assessed micro-optimization for `functools.partial` using exact type checking. N
 Alignment / Deferred:
 Deferred major version bumps for strict analysis tooling (`mypy<2`) as standard procedure. Documented strict type checking exception rules for hot-path evaluation constraints.
 
+2026-05-12 — Assessment & Lifecycle
+Observation / Pruned:
+Assessed previous agent\'s memory optimization using pre-resolved tuples for dependencies. No dead code pruned today; codebase maintains structural zero-bloat state.
+Alignment / Deferred:
+Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes. Documented FastAPI routing false positive exceptions for vulture.
 2026-05-16 — Assessment & Lifecycle
 Observation / Pruned:
 Upgraded dependencies in uv.lock.

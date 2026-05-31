@@ -80,6 +80,10 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.26] - 2026-05-12
 
+* **[QA Status]**: Verified structural soundness of the async tuple pre-resolution memory leak fix. Tests pass successfully.
+* **[Entropy Pruned]**: 0 lines. Codebase remains at zero bloat, with FastAPI routing endpoints validated as false positives from `vulture` scans.
+* **[Dependencies Bumped]**: Safely bumped `idna` to v3.15 and constrained `mypy<2`.
+* **[Docs Updated]**: Documented changes in `.jules/warden.md` and `CHANGELOG.md`.
 * **[QA Status]:** Verified structural soundness of the circular reference / memory leak fix within DAG evaluation. Core tests pass seamlessly without introducing side effects.
 * **[Entropy Pruned]:** 0 lines. Codebase zero-bloat state holds intact.
 * **[Dependencies Bumped]:** Successfully locked `mypy<2` to preserve strict typing while allowing other dependencies to bump minor/patch versions safely via `uv lock --upgrade`.

@@ -85,8 +85,8 @@ class WorkflowEngine:
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
                 if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
-                    base_func.__call__                ):
-                    is_async = True
+                    base_func.__call__
+                ):                    is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
@@ -168,8 +168,8 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
-            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()            tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
-
+            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
+            tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
         if tasks:
             try:
                 await asyncio.gather(*tasks.values())
