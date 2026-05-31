@@ -88,7 +88,9 @@ class WorkflowEngine:
                     base_func.__call__
                 ):
                     is_async = True
+=======
 =======>>>>>>> origin/main
+>>>>>>> origin/main
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
@@ -169,8 +171,12 @@ class WorkflowEngine:
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         for node in self._cached_topo_order:
-            deps = self._predecessors.get(node, [])
-            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
+<<<<<<< HEAD
+            # We use an explicit tuple comprehension here instead of passing the entire `tasks`
+            # dictionary to `_run_node`. Passing the entire dictionary creates a massive memory-leaking
+            # reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
+            # Resolving dependencies into a lightweight tuple immediately breaks this cycle.
+            deps = self._predecessors.get(node)            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:            try:
