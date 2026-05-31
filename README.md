@@ -3,7 +3,7 @@
 > A high-performance workflow engine for complex pipelines. Parallel DAG execution. Zero bloat.
 
 ## Features
-- **⚡ Parallel DAG Execution**: Blazing fast topology resolution with fail-fast optimization avoiding closure allocation overhead and preventing background task wrapper leaks.
+- **⚡ Parallel DAG Execution**: Blazing fast topology resolution with fail-fast optimization avoiding closure allocation overhead.
 - **🏗️ Domain-Driven Design**: Clean, decoupled architecture.
 - **🌐 FastAPI Dashboard**: Optional API and visualization endpoints.
 - **🛡️ Strict Typing**: Fully typed with Python 3.10+ and `mypy`, leveraging built-in generic types.
