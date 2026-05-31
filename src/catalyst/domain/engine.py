@@ -82,12 +82,7 @@ class WorkflowEngine:
             # are not supported in task execution hot paths.
             while type(base_func) is functools.partial:
                 base_func = base_func.func
-=======
-<<<<<<< HEAD
-
-            # Avoid expensive inspect.iscoroutinefunction(base_func.__call__) for standard functions/methods.
-            # It's intended only for callable class instances.            if not isinstance(
-                base_func,
+            if not isinstance(                base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
                 if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
