@@ -48,6 +48,9 @@ Exact type checking (`type(...) is functools.partial`) can provide a microscopic
 Action:
 Ensure strict type checking is isolated to paths where subclassing is intentionally non-applicable to avoid breaking observability and compatibility.
 
+2024-05-11 — DAG Execution Memory Optimization
+Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
+Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
 ## 2024-05-07 — Optimize Memory Cycles and Partial Type Checks
 
 Learning:
@@ -118,6 +121,14 @@ When handling failures gracefully inside a DAG execution engine (where exception
 
 Action:
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
+
+2026-05-29 — Memory leak via cyclic task dictionary in asyncio DAG
+
+Learning:
+Passing a mutable dictionary containing asyncio.Task objects into a coroutine creates a memory-leaking reference cycle (dictionary -> Task -> Coroutine -> dictionary) in long-running parallel workflows.
+
+Action:
+Pass pre-resolved tuples of required tasks instead of mutable state dictionaries into execution hot paths to break the cycle without introducing synchronous list allocations.
 ## 2026-05-13 — Do not remove explicit fast-paths for single dependencies
 
 Learning: Removing `if len(dep_tasks) == 1:` and replacing it entirely with `asyncio.wait(set(dep_tasks))` introduces unnecessary overhead (set allocations, internal task management) for linear workflow chains, causing a performance regression. Also, consolidating state dictionaries while keeping the original creates duplicate state.
