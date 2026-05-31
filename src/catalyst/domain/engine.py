@@ -82,7 +82,8 @@ class WorkflowEngine:
             # are not supported in task execution hot paths.
             while type(base_func) is functools.partial:
                 base_func = base_func.func
-            if not isinstance(                base_func,
+            if not isinstance(
+                base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
                 if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
@@ -178,7 +179,8 @@ class WorkflowEngine:
                 await asyncio.gather(*tasks.values())
             except BaseException:
                 for task in tasks.values():
-                    task.cancel()
+                    if not task.done():
+                        task.cancel()
                 await asyncio.gather(*tasks.values(), return_exceptions=True)
                 raise
 

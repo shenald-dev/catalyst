@@ -10,6 +10,7 @@ app = FastAPI(
     version="0.1.30",
 )
 
+
 class StatusResponse(BaseModel):
     status: str
     message: str
