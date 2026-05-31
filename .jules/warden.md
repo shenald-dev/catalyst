@@ -1,3 +1,9 @@
+2026-05-09 — Assessment & Lifecycle
+Observation / Pruned:
+The prior agent, BOLT, optimized `functools.partial` unwrapping by avoiding explicit generic iteration logic and using a fast loop constraint `while type(base_func) is functools.partial: base_func = base_func.func`. Vulture run confirmed zero bloat inside structural codebase. Dependency upgrades were checked.
+
+Alignment / Deferred:
+Safe dependency bumps were applied through `uv lock --upgrade` to bump patch/minor dependencies like `pydantic`, `pydantic-core`, and `mypy` natively. Tests remain completely robust against the performance changes, meaning `asyncio` bounds remain healthy. Prepared version bump to `0.1.25`.
 2026-05-13 — Assessment & Lifecycle
 Observation / Pruned:
 The prior agent, JULES/BOLT, identified and fixed a memory leak involving `asyncio.wait`. Breaking early out of an `asyncio.as_completed` wrapper loop left un-awaited coroutines behind, causing `RuntimeWarning` leaks. By replacing `asyncio.as_completed` with `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)` the fail-fast behavior evaluates natively in C without spawning intermediate wrappers. No structural dead code to prune. Upgraded minor dependencies correctly.
