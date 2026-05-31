@@ -450,3 +450,17 @@ async def test_string_dependency_is_handled_correctly() -> None:
     results = await engine.execute()
     assert results["task_a"] == "A"
     assert results["task_b"] == "B"
+
+
+@pytest.mark.asyncio
+async def test_functools_partial_wrapped_sync_function() -> None:
+    engine = WorkflowEngine()
+
+    def my_sync_task(arg: str) -> str:
+        return arg
+
+    partial_task = functools.partial(my_sync_task, "sync_partial_arg")
+    engine.add_task("test_sync_partial", partial_task)
+
+    results = await engine.execute()
+    assert results["test_sync_partial"] == "sync_partial_arg"
