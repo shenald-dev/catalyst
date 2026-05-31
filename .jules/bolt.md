@@ -50,12 +50,6 @@ Ensure strict type checking is isolated to paths where subclassing is intentiona
 Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
 
-## 2026-05-18 — FunctionType fast path for iscoroutinefunction
-
-Learning: Calling `inspect.iscoroutinefunction(func.__call__)` is very slow when dealing with standard functions, because it searches the class hierarchy and raises/catches internal errors or searches the MRO. We can bypass this by checking if the object is a standard function, method, or builtin function type before attempting to introspect its `__call__` method.
-
-Action: In hot paths where we check if an object is an async callable class by inspecting its `__call__` method, avoid doing so if the object is already known to be a standard function/method that `inspect.iscoroutinefunction(func)` would have already handled.
-
 ## 2026-05-17 — Safe Dependency Upgrades
 
 Learning:
