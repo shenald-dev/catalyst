@@ -88,9 +88,10 @@ wheels = [
 [[package]]
 name = "catalyst"
 version = "0.1.29"
-source = { editable = "." }dependencies = [
-    { name = "fastapi" },    { name = "pydantic" },
-    { name = "uvicorn" },
+source = { editable = "." }
+dependencies = [
+    { name = "fastapi" },
+    { name = "pydantic" },    { name = "uvicorn" },
 ]
 
 [package.optional-dependencies]

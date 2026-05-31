@@ -73,4 +73,9 @@ When handling failures gracefully inside a DAG execution engine (where exception
 
 Action:
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
+## 2026-05-13 — Do not remove explicit fast-paths for single dependencies
+
+Learning: Removing `if len(dep_tasks) == 1:` and replacing it entirely with `asyncio.wait(set(dep_tasks))` introduces unnecessary overhead (set allocations, internal task management) for linear workflow chains, causing a performance regression. Also, consolidating state dictionaries while keeping the original creates duplicate state.
+
+Action: Preserve explicit fast-path checks in hot loops (like DAG node execution). Do not consolidate internal state dictionaries into combined structures if original public-facing dictionaries must be maintained for backwards compatibility.
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.

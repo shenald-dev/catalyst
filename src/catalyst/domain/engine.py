@@ -73,10 +73,8 @@ class WorkflowEngine:
         self.tasks[name] = func
         self._timeouts[name] = timeout
 
-        is_async = False
-        if inspect.iscoroutinefunction(func):
-            is_async = True
-        else:
+        is_async = inspect.iscoroutinefunction(func)
+        if not is_async:
             base_func = func
             # Use exact type checking for performance. Subclasses of partial
             # are not supported in task execution hot paths.
@@ -86,8 +84,8 @@ class WorkflowEngine:
                 base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ):
-                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(                    base_func.__call__
-                ):
+                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+                    base_func.__call__                ):
                     is_async = True
 
         self._is_async[name] = is_async
@@ -170,10 +168,7 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
-=======
-<<<<<<< HEAD
-            # Fast-path: Avoid generator and tuple allocation overhead for root nodes            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
-            tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
+            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()            tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
         if tasks:
             try:
