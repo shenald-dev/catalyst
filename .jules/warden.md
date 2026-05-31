@@ -19,6 +19,17 @@ Assessed previous agent BOLT's changes. Bolstered memory optimizations. No dead 
 Alignment / Deferred:
 Safely bumped minor dependencies (click, coverage, fastapi, idna, pytest-asyncio, starlette, uvicorn) using `uv lock --upgrade` while preserving the `<2` constraint for `mypy`. Tests and static analysis passing perfectly. Prepared release v0.1.28.
 
+2026-05-21 — Assessment & Lifecycle
+Observation / Pruned:
+Verified structural soundness of the DAG engine performance optimization. The previous implementation passed a mutable dictionary of `asyncio.Task` objects directly into the `_run_node` coroutine, which resulted in a memory-leaking circular reference (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict). Extracting explicit dependencies into pre-resolved, efficient tuples successfully broke this cycle without impacting correct fail-fast execution. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact. Entropy Pruned: 0 lines.
+
+
+Assessed BOLT's optimization to avoid measurable generator creation overhead for independent tasks without dependencies using a ternary fast path (`if deps else ()`). No unused variables or dead code found to prune.
+Alignment / Deferred:
+Maintained core locked dependencies within `uv.lock`. Updated minor packages securely. Synced `CHANGELOG.md` with release notes detailing the reference cycle fix and safely cut the release, bumping version to 0.1.29.
+
+Safely bumped `certifi`, `ruff` and `starlette` dependencies. Mypy was already constrained to `<2` per strict constraint rules. Verified all tests passed. Version bumped to 0.1.27.
+
 Safely bumped minor dependencies (click, coverage, fastapi, idna, pytest-asyncio, starlette, uvicorn) using `uv lock --upgrade` while preserving the `<2` constraint for `mypy`. Tests and static analysis passing perfectly. Prepared release v0.1.29.
 
 2026-05-23 — Assessment & Lifecycle

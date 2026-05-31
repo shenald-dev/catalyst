@@ -17,6 +17,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.29] - 2026-05-26
+
+* **[QA Status]**: Verified structural soundness of the DAG execution engine optimization. Passing a mutable dictionary of `asyncio.Task` objects to `_run_node` created a memory-leaking reference cycle. The transition to pre-resolved tuples safely breaks this cycle without breaking fail-fast behavior.
+* **[Entropy Pruned]**: 0 lines. Scanned for dead code via `vulture`; remaining flags are confirmed as FastAPI/Pydantic false positives. Codebase zero-bloat state holds intact.
+* **[Dependencies Bumped]**: Maintained core locked dependencies within `uv.lock`. Updated minor packages securely.
+* **[Docs Updated]**: Documented memory reference cycle micro-optimization guidelines in `.jules/warden.md` ledger.
+* **[Release]**: v0.1.29 cut, tagged, and ready.
+
 ## [0.1.28] - 2026-05-26* **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 ## [0.1.30] - 2026-11-29
 * **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
@@ -41,6 +49,8 @@ All notable changes to this project will be documented in this file.
 * **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
 * **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
 * **[Docs Updated]**: Versioned `pyproject.toml`, FastAPI definitions, and synchronized architectural shifts in `.jules/warden.md`.
+
+## [0.1.27] - 2026-05-21
 
 
 ## [0.1.28] - 2026-05-23
