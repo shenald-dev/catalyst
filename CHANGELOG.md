@@ -18,6 +18,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.1.31] - 2026-05-26
+## [0.1.28] - 2026-05-26
 * **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 * **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
 * **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
