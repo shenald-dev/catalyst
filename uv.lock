@@ -49,10 +49,8 @@ wheels = [
 
 [[package]]
 name = "catalyst"
-version = "0.1.30"
-source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
+version = "0.1.30"source = { editable = "." }
+dependencies = [    { name = "fastapi" },
     { name = "pydantic" },
     { name = "uvicorn" },
 ]
