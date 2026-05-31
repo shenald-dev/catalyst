@@ -51,8 +51,7 @@ wheels = [
 name = "catalyst"
 version = "0.1.29"
 source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
+dependencies = [    { name = "fastapi" },
     { name = "pydantic" },
     { name = "uvicorn" },
 ]
