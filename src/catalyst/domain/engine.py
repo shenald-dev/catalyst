@@ -179,8 +179,7 @@ class WorkflowEngine:
                 await asyncio.gather(*tasks.values())
             except BaseException:
                 for task in tasks.values():
-                    if not task.done():
-                        task.cancel()
+                    task.cancel()
                 await asyncio.gather(*tasks.values(), return_exceptions=True)
                 raise
 
