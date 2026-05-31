@@ -17,6 +17,7 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.28] - 2026-05-26* **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 ## [0.1.30] - 2026-11-29
 * **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
 * **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.

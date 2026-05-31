@@ -9,6 +9,7 @@ Observation / Pruned:
 Assessed recent merge conflict resolutions and verified the integrity of the `WorkflowEngine` and FastAPI endpoints. The system continues to operate securely. No dead code required pruning as Vulture flags inside `main.py` are FastAPI route false positives. The zero-bloat state is perfectly maintained.
 
 Alignment / Deferred:
+Safely upgraded minor dependencies (`idna`, `ruff`, `starlette`) while adhering strictly to `mypy<2` limits. Synced the changelog and bumped the version to 0.1.29.
 Safely upgraded minor dependencies (`idna`, `ruff`, `starlette`) while adhering strictly to `mypy<2` limits. Synced the changelog and bumped the version to 0.1.30.
 Safely upgraded minor dependencies (`idna`, `ruff`, `starlette`) while adhering strictly to `mypy<2` limits. Synced the changelog and bumped the version to 0.1.29.
 
@@ -16,6 +17,8 @@ Safely upgraded minor dependencies (`idna`, `ruff`, `starlette`) while adhering 
 Observation / Pruned:
 Assessed previous agent BOLT's changes. Bolstered memory optimizations. No dead code lines were pruned as codebase maintains zero bloat.
 Alignment / Deferred:
+Safely bumped minor dependencies (click, coverage, fastapi, idna, pytest-asyncio, starlette, uvicorn) using `uv lock --upgrade` while preserving the `<2` constraint for `mypy`. Tests and static analysis passing perfectly. Prepared release v0.1.28.
+
 Safely bumped minor dependencies (click, coverage, fastapi, idna, pytest-asyncio, starlette, uvicorn) using `uv lock --upgrade` while preserving the `<2` constraint for `mypy`. Tests and static analysis passing perfectly. Prepared release v0.1.29.
 
 2026-05-23 — Assessment & Lifecycle
@@ -237,10 +240,18 @@ Assessed micro-optimization for `functools.partial` using exact type checking. N
 Alignment / Deferred:
 Deferred major version bumps for strict analysis tooling (`mypy<2`) as standard procedure. Documented strict type checking exception rules for hot-path evaluation constraints.
 
+2026-05-16 — Assessment & Lifecycle
+Observation / Pruned:
+Upgraded dependencies in uv.lock.
+Alignment / Deferred:
+No documentation changes needed.=======
 2026-05-12 — Assessment & Lifecycle
 Observation / Pruned:
 No dead code observed; BOLT's _run_node optimization and fail-fast test coverage are structurally sound.
 Alignment / Deferred:
+Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
+Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
+Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
 Safely bumped uvicorn, ruff, and idna to latest minor/patch versions; pinned mypy to <2 to prevent breaking changes.
 
 2026-11-29 — Assessment & Lifecycle
