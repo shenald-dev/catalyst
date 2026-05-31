@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.26] - 2026-05-13
+
+### 🐛 Bug Fixes
+* **[QA Status]:** Verified fix for memory leak in workflow engine fail-fast logic. Breaking early from `asyncio.as_completed` leaked wrapper coroutines causing `RuntimeWarning`. The logic now safely utilizes `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)` resolving background tasks correctly natively.
+
+### 🧹 Maintenance
+* **[Lifecycle]:** Minor dependencies updated safely (idna). Deferred major bumps for strict typing tools like mypy to preserve backward compatibility.
+* **[Documentation]:** Updated `README.md` to reflect proper fail-fast optimization architecture avoiding task leaks, synced internal `.jules/warden.md` ledger.
+* **[Release]:** v0.1.26 cut, tagged, and ready.
 ## [0.1.30] - 2026-11-29
 * **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
 * **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.
