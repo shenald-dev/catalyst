@@ -73,10 +73,8 @@ class WorkflowEngine:
         self.tasks[name] = func
         self._timeouts[name] = timeout
 
-        is_async = False
-        if inspect.iscoroutinefunction(func):
-            is_async = True
-        else:
+        is_async = inspect.iscoroutinefunction(func)
+        if not is_async:
             base_func = func
             # Use exact type checking for performance. Subclasses of partial
             # are not supported in task execution hot paths.
@@ -88,12 +86,11 @@ class WorkflowEngine:
             ):
                 if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
                     base_func.__call__
-                ):
-                    is_async = True
+                ):                    is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
-            list(dependencies) if dependencies is not None else []
+            dependencies if dependencies is not None else []
         )
         self._cached_topo_order = None
 
@@ -136,8 +133,8 @@ class WorkflowEngine:
                             )
 
         try:
-            func = self.tasks.get(node)
-            if func is None:
+            # Fast-path: Retrieve and validate func in a single step via walrus operator
+            if (func := self.tasks.get(node)) is None:
                 raise KeyError(f"Task {node!r} not found")
             timeout = self._timeouts.get(node)
             is_async = self._is_async.get(node, False)
@@ -173,14 +170,12 @@ class WorkflowEngine:
             deps = self._predecessors.get(node, [])
             dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
-
         if tasks:
             try:
                 await asyncio.gather(*tasks.values())
             except BaseException:
                 for task in tasks.values():
-                    if not task.done():
-                        task.cancel()
+                    task.cancel()
                 await asyncio.gather(*tasks.values(), return_exceptions=True)
                 raise
 
