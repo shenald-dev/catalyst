@@ -84,8 +84,7 @@ class WorkflowEngine:
                 base_func = base_func.func
             if not isinstance(
                 base_func,
-                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
-            ):
+                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),            ):
                 if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
                     base_func.__call__
                 ):
@@ -93,7 +92,7 @@ class WorkflowEngine:
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
-            list(dependencies) if dependencies is not None else []
+            dependencies if dependencies is not None else []
         )
         self._cached_topo_order = None
 
@@ -179,8 +178,7 @@ class WorkflowEngine:
                 await asyncio.gather(*tasks.values())
             except BaseException:
                 for task in tasks.values():
-                    if not task.done():
-                        task.cancel()
+                    task.cancel()
                 await asyncio.gather(*tasks.values(), return_exceptions=True)
                 raise
 
