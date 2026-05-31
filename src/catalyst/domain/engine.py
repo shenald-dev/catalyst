@@ -85,15 +85,14 @@ class WorkflowEngine:
             if not isinstance(
                 base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
-            ):
-                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+            ):                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
                     base_func.__call__
                 ):
                     is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
-            list(dependencies) if dependencies is not None else []
+            dependencies if dependencies is not None else []
         )
         self._cached_topo_order = None
 
@@ -171,7 +170,10 @@ class WorkflowEngine:
 
         for node in self._cached_topo_order:
             deps = self._predecessors.get(node, [])
+<<<<<<< HEAD
             # Fast-path: Avoid generator and tuple allocation overhead for root nodes
+=======
+>>>>>>> origin/main
             dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
 
@@ -180,8 +182,7 @@ class WorkflowEngine:
                 await asyncio.gather(*tasks.values())
             except BaseException:
                 for task in tasks.values():
-                    if not task.done():
-                        task.cancel()
+                    task.cancel()
                 await asyncio.gather(*tasks.values(), return_exceptions=True)
                 raise
 
