@@ -66,6 +66,14 @@ Break reference cycles in node execution by extracting pre-resolved, immutable, 
 Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
 
+
+## 2026-05-15 — Performance Optimizations in Workflow Engine
+
+ Learning:
+ We optimized engine execution by using generator expressions with empty fallback fast-paths (`tuple(x for x in y) if y else ()`) to avoid tuple memory allocations, and using the walrus operator (`:=`) to combine dictionary `get` lookups and validation.
+
+ Action:
+ In hot path execution graphs, use `tuple(tasks[d] for d in deps) if deps else ()` to bypass generator allocations for edge nodes entirely. Combine dictionary lookups with the walrus operator to avoid double-lookups or KeyError risks.
 ## 2026-05-18 — FunctionType fast path for iscoroutinefunction
 
 Learning: Calling `inspect.iscoroutinefunction(func.__call__)` is very slow when dealing with standard functions, because it searches the class hierarchy and raises/catches internal errors or searches the MRO. We can bypass this by checking if the object is a standard function, method, or builtin function type before attempting to introspect its `__call__` method.
