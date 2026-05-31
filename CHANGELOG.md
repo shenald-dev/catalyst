@@ -1,11 +1,5 @@
 # Changelog
 
-## [0.1.30] - 2026-11-29
-* **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
-* **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.
-* **[Entropy Pruned]:** -0 lines of dead code removed. Codebase is clean.
-
-
 ## [0.1.29] - 2026-05-28
 
 * **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
@@ -17,42 +11,17 @@
 
 All notable changes to this project will be documented in this file.
 
+<<<<<<< HEAD
+=======## [0.1.28] - 2026-05-26
 ## [0.1.28] - 2026-05-26* **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
-## [0.1.30] - 2026-11-29
-* **[QA Status]:** Verified. The latest parallel DAG execution improvements are structurally sound and handle faults properly.
-* **[Dependencies Bumped]:** Safely updated minor and patch dependencies in the lockfile.
-* **[Entropy Pruned]:** -0 lines of dead code removed. Codebase is clean.
-
-
-## [0.1.29] - 2026-05-28
-
-* **[QA Status]:** Verified the structural soundness of `WorkflowEngine` and its fail-fast asynchronous evaluation. No regressions were found during test suite execution.
-* **[Entropy Pruned]:** 0 lines. Scanned for dead code via `vulture`; FastAPI router instances flagged are false positives. Codebase zero-bloat state holds intact.
-* **[Dependencies Bumped]:** Safely bumped `idna`, `ruff`, and `starlette` to their latest minor/patch versions. Kept `mypy` constrained to `<2` to prevent breaking changes.
-* **[Docs Updated]:** Logged system evaluation and safe dependency updates to `.jules/warden.md`.
-* **[Release]:** v0.1.29 cut, tagged, and ready.
-
-
-
-
-## [0.1.31] - 2026-05-26
-## [0.1.28] - 2026-05-26
-* **[QA Status]**: Verified. Checked BOLT's optimization passes across the test suite and engine hot paths. No anomalies detected.
 * **[Entropy Pruned]**: -0 lines of dead code removed. The repository remains highly optimized and free of unused imports and variables.
 * **[Dependencies Bumped]**: Upgraded click, coverage, fastapi, idna, pytest-asyncio, starlette, and uvicorn. Maintained mypy constraint to prevent CI failure.
 * **[Docs Updated]**: Versioned `pyproject.toml`, FastAPI definitions, and synchronized architectural shifts in `.jules/warden.md`.
 
-
-## [0.1.28] - 2026-05-23
-
-### Changed
-- **[Dependencies Bumped]:** Safely bumped `click` to `v8.4.1`, `fastapi` to `v0.136.3`, `idna` to `v3.16`, and `starlette` to `v1.1.0`. Maintained `mypy<2` constraint.
-- **[QA Status]:** Verified structural soundness of the application after minor dependency updates. Core test suites, mypy, and ruff checks all passed successfully.
-- **[Entropy Pruned]:** 0 lines. Evaluated vulture scans and confirmed flags on FastAPI components were false positives.
-
-
-
-## [0.1.27] - 2026-05-21
+<<<<<<< HEAD
+>>>>>>> origin/main
+>>>>>>> origin/main
+=======## [0.1.27] - 2026-05-21
 
 ### Changed
 - **[Dependencies Bumped]:** Safely bumped `certifi` to `v2026.5.20`, `ruff` to `v0.15.14`, and `starlette` to `v1.0.1`.
