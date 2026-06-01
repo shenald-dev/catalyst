@@ -471,13 +471,12 @@ async def test_memory_leak_fix() -> None:
     tasks_dict_ref = None
 
     # We need to capture the reference inside the execution scope
-    original_execute = engine.execute
 
     async def mock_execute() -> dict[str, typing.Any]:
         nonlocal tasks_dict_ref
         engine._cached_topo_order = ["A", "B"]
 
-        class TasksDict(dict):
+        class TasksDict(dict[str, asyncio.Task[typing.Any]]):
             pass
         tasks = TasksDict()
         tasks_dict_ref = weakref.ref(tasks)
@@ -501,7 +500,7 @@ async def test_memory_leak_fix() -> None:
 
     gc.collect()
 
-    assert tasks_dict_ref() is None, (
+    assert tasks_dict_ref is not None and tasks_dict_ref() is None, (
         "Memory leak: tasks dictionary was not garbage collected"
     )
 

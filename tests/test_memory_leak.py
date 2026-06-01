@@ -1,8 +1,9 @@
+import typing
 import asyncio
 import gc
 import weakref
 import pytest
-from catalyst.domain.engine import WorkflowEngine, TaskError
+from catalyst.domain.engine import WorkflowEngine
 
 
 @pytest.mark.asyncio
@@ -43,7 +44,7 @@ async def test_reference_cycle_is_broken() -> None:
     """Ensure that the execution dictionary is not held in a reference cycle."""
     engine = WorkflowEngine()
 
-    async def my_task():
+    async def my_task() -> str:
         return "success"
 
     engine.add_task("task_a", my_task)
@@ -52,22 +53,25 @@ async def test_reference_cycle_is_broken() -> None:
     results = await engine.execute()
     assert results["task_a"] == "success"
 
-    weak_dep = None
+    weak_dep: typing.Any = None
 
     orig_run_node = engine._run_node
 
     # We create a dummy class to hold a reference to tasks so we can weakref it
     class TaskHolder:
-        def __init__(self, tasks):
+        def __init__(self, tasks: tuple[asyncio.Task[typing.Any], ...]) -> None:
             self.tasks = tasks
 
-    async def wrapped_run_node(node: str, dep_tasks: tuple[asyncio.Task, ...]):
+
+
+
+    async def wrapped_run_node(node: str, dep_tasks: tuple[asyncio.Task[typing.Any], ...]) -> typing.Any:
         nonlocal weak_dep
         holder = TaskHolder(dep_tasks)
         weak_dep = weakref.ref(holder)
         return await orig_run_node(node, dep_tasks)
 
-    engine._run_node = wrapped_run_node
+    engine._run_node = wrapped_run_node  # type: ignore
 
     await engine.execute()
     gc.collect()
