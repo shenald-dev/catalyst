@@ -73,14 +73,10 @@ class WorkflowEngine:
         self.tasks[name] = func
         self._timeouts[name] = timeout
 
-        is_async = False
-        if inspect.iscoroutinefunction(func):
-            is_async = True
-        else:
+        is_async = inspect.iscoroutinefunction(func)
+        if not is_async:
             base_func = func
-            # Use exact type checking for performance. Subclasses of partial
-            # are not supported in task execution hot paths.
-            while type(base_func) is functools.partial:
+            while isinstance(base_func, functools.partial):
                 base_func = base_func.func
             if not isinstance(
                 base_func,
@@ -103,6 +99,9 @@ class WorkflowEngine:
         dep_tasks: tuple[asyncio.Task[Any], ...],
     ) -> Any:
         """Evaluate and execute a single node in the DAG.
+
+        Accepts a tuple of specific dependency tasks instead of the entire tasks dictionary
+        to prevent memory-leaking reference cycles (tasks dict -> Task object -> Coroutine -> tasks dict).
 
         Uses a fast-path for single dependencies. For multiple dependencies,
         evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
@@ -136,8 +135,8 @@ class WorkflowEngine:
                             )
 
         try:
-            func = self.tasks.get(node)
-            if func is None:
+            # Combine dictionary lookup and validation to prevent redundant access overhead
+            if (func := self.tasks.get(node)) is None:
                 raise KeyError(f"Task {node!r} not found")
             timeout = self._timeouts.get(node)
             is_async = self._is_async.get(node, False)
@@ -179,8 +178,7 @@ class WorkflowEngine:
                 await asyncio.gather(*tasks.values())
             except BaseException:
                 for task in tasks.values():
-                    if not task.done():
-                        task.cancel()
+                    task.cancel()
                 await asyncio.gather(*tasks.values(), return_exceptions=True)
                 raise
 
