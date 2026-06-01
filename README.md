@@ -1,6 +1,14 @@
-# ✨ Catalyst Engine
+<div align="center">
+  <img src="assets/logo.png" alt="Catalyst Engine Logo" width="250" />
+  
+  <br/>
 
-> A high-performance workflow engine for complex pipelines. Parallel DAG execution. Zero bloat.
+  <h1>✨ Catalyst Engine</h1>
+  <p><b>Parallel DAG Workflow Engine</b></p>
+  <i>A high-performance workflow engine for complex pipelines. Parallel DAG execution. Zero bloat.</i>
+
+  <br/>
+</div>
 
 ## Features
 - **⚡ Parallel DAG Execution**: Blazing fast topology resolution with fail-fast optimization avoiding closure allocation overhead and preventing background task wrapper leaks.
