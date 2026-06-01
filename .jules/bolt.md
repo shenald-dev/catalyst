@@ -1,5 +1,3 @@
-a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-           Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
 ## 2026-05-06 — Memory Optimization / Reference Cycle
 
 Learning:
@@ -11,10 +9,10 @@ Pass only pre-resolved lists of specific dependency tasks to execution coroutine
 ## 2024-04-25 — Optimize DAG Execution Engine `_run_node` by replacing manual check loop with `asyncio.wait`
 
 Learning:
-In asynchronous programming wi
+In asynchronous programming with `asyncio`, doing manual checks like `if task.done(): res = task.result()` followed by `else: pending_set.add(task)` before using `asyncio.wait` introduces Python-level overhead and duplicates error-checking logic. `asyncio.wait` is implemented in C and can natively and safely evaluate sets of tasks, whether they are already complete or pending, handling the queue much more efficiently.
 
-// ... 3287 characters truncated (middle section) ...
-
+Action:
+Always delegate state evaluation for sets of asyncio Futures/Tasks directly to `asyncio.wait` rather than pre-filtering or manual synchronous probing, eliminating redundant Python-level logic and keeping loops simpler and faster.
 
 ## 2024-05-18 — Prevent silent iterator exhaustion in workflow dependency registration
 
@@ -51,73 +49,6 @@ Ensure strict type checking is isolated to paths where subclassing is intentiona
 2024-05-11 — DAG Execution Memory Optimization
 Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
 Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
-## 2024-05-19 — Resolve memory leak / reference cycle in _run_node
-
-Learning:
-Passing a dictionary of `asyncio.Task` objects into a coroutine creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-
-Action:
-Instead, pass a pre-resolved, highly efficient tuple of specific dependency tasks (e.g., `tuple(tasks[d] for d in deps)`) to the coroutine to break the cycle without introducing synchronous list/set allocations.
-2024-05-11 — DAG Execution Memory Optimization
-Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
-2024-05-11 — DAG Execution Memory Optimization
-Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
-## 2024-05-07 — Optimize Memory Cycles and Partial Type Checks
-
-Learning:
-Passing a full dictionary of asyncio.Task objects into a task execution coroutine creates a memory-leaking reference cycle (tasks dict -> Task object -> Coroutine -> tasks dict). Additionally, exact type checking (e.g. `type(func) is functools.partial`) is brittle and breaks inheritance logic; standard `isinstance` is preferred.
-
-Action:
-## 2024-05-07 — Optimize Memory Cycles and Partial Type Checks
-
-Learning:
-Passing a full dictionary of asyncio.Task objects into a task execution coroutine creates a memory-leaking reference cycle (tasks dict -> Task object -> Coroutine -> tasks dict). Additionally, exact type checking (e.g. `type(func) is functools.partial`) is brittle and breaks inheritance logic; standard `isinstance` is preferred.
-
-Action:
-Refactored `_run_node` to break the memory reference cycle by explicitly passing only a list of needed dependency tasks (`dep_tasks`) rather than the entire execution dictionary. Updated type checks for partial unwrapping to use `isinstance` for robustness without sacrificing performance.
-2024-05-11 — DAG Execution Memory Optimization
-Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
-## 2024-06-10 — Eliminate asyncio.Task Reference Cycles in execution engines
-
-Learning:
-Passing a full dictionary of running `asyncio.Task` objects down into nested coroutines (like a DAG node executor) causes each spawned coroutine to hold a reference to the entire collection of all tasks. This creates massive memory-leaking reference cycles (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-
-Action:
-Pre-resolve dependencies directly in the loop that spawns the tasks. Pass highly efficient sequences (e.g., tuples like `dep_tasks = tuple(tasks[d] for d in deps)`) into the coroutine rather than the whole registry dictionary. This cleanly breaks the reference cycle and completely avoids dictionary lookups inside the hot-path async execution context without adding new synchronous allocation overhead.
-## 2024-05-11 — Memory optimization in DAG execution loop
-
-Learning:
-Passing a mutable dictionary of all running `asyncio.Task` objects into a coroutine (like a node execution function in a DAG engine) creates a memory-leaking reference cycle: the dictionary references the task, the task executes the coroutine, and the coroutine closure captures the dictionary.
-
-Action:
-Instead of passing the entire task state dictionary through the execution hot path, pre-resolve dependency tasks into a static, highly efficient tuple (e.g., `tuple(tasks[d] for d in deps)`) before executing the coroutine. This breaks the reference cycle, prevents memory leaks, and avoids additional synchronous allocations.
-## 2024-05-10 — Prevent Memory Leaks via Reference Cycles in DAG Node Execution
-
-Learning:
-Passing a mutable state dictionary (like the `tasks` dict mapping task names to `asyncio.Task` objects) deep into execution hot paths, specifically as an argument to the coroutine that is stored *within* that dictionary, creates a significant reference cycle memory leak (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict) that the garbage collector struggles to clean up rapidly under heavy DAG execution load.
-
-Action:
-Break reference cycles in node execution by extracting pre-resolved, immutable, and highly efficient structures (like a `tuple` of specific dependent `Task` objects) before passing them into the coroutine context.
-2024-05-11 — DAG Execution Memory Optimization
-Learning: Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-Action: Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
-
-
-## 2026-05-15 — Performance Optimizations in Workflow Engine
-
- Learning:
- We optimized engine execution by using generator expressions with empty fallback fast-paths (`tuple(x for x in y) if y else ()`) to avoid tuple memory allocations, and using the walrus operator (`:=`) to combine dictionary `get` lookups and validation.
-
- Action:
- In hot path execution graphs, use `tuple(tasks[d] for d in deps) if deps else ()` to bypass generator allocations for edge nodes entirely. Combine dictionary lookups with the walrus operator to avoid double-lookups or KeyError risks.
-## 2026-05-18 — FunctionType fast path for iscoroutinefunction
-
-Learning: Calling `inspect.iscoroutinefunction(func.__call__)` is very slow when dealing with standard functions, because it searches the class hierarchy and raises/catches internal errors or searches the MRO. We can bypass this by checking if the object is a standard function, method, or builtin function type before attempting to introspect its `__call__` method.
-
-Action: In hot paths where we check if an object is an async callable class by inspecting its `__call__` method, avoid doing so if the object is already known to be a standard function/method that `inspect.iscoroutinefunction(func)` would have already handled.
 
 ## 2026-05-17 — Safe Dependency Upgrades
 
@@ -133,25 +64,4 @@ Learning:
 When handling failures gracefully inside a DAG execution engine (where exceptions are caught and wrapped into `TaskError` objects rather than crashing the process), logging only `logger.error("... %s", e)` discards the stack traceback. This severely limits observability and forces developers to guess where the task actually failed inside their custom logic.
 
 Action:
-Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
-## 2024-05-11 — DAG Execution Memory Optimization
-
-Learning:
-Passing a mutable dictionary of `asyncio.Task` objects through execution hot paths (like `_run_node`) creates a memory-leaking reference cycle (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict).
-
-Action:
-Use pre-resolved tuples (e.g., `tuple(tasks[dep] for dep in deps)`) for dependencies when evaluating nodes. This isolates the references safely, prevents the cycle, and marginally improves hot path performance by reducing dictionary lookups.
-
-2026-05-29 — Memory leak via cyclic task dictionary in asyncio DAG
-
-Learning:
-Passing a mutable dictionary containing asyncio.Task objects into a coroutine creates a memory-leaking reference cycle (dictionary -> Task -> Coroutine -> dictionary) in long-running parallel workflows.
-
-Action:
-Pass pre-resolved tuples of required tasks instead of mutable state dictionaries into execution hot paths to break the cycle without introducing synchronous list allocations.
-## 2026-05-13 — Do not remove explicit fast-paths for single dependencies
-
-Learning: Removing `if len(dep_tasks) == 1:` and replacing it entirely with `asyncio.wait(set(dep_tasks))` introduces unnecessary overhead (set allocations, internal task management) for linear workflow chains, causing a performance regression. Also, consolidating state dictionaries while keeping the original creates duplicate state.
-
-Action: Preserve explicit fast-path checks in hot loops (like DAG node execution). Do not consolidate internal state dictionaries into combined structures if original public-facing dictionaries must be maintained for backwards compatibility.
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
