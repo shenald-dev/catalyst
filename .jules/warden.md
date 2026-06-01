@@ -311,3 +311,9 @@ Observation / Pruned:
 Assessed recent merge conflict resolutions and verified the integrity of the `WorkflowEngine` and FastAPI endpoints. The system continues to operate securely. No dead code required pruning as Vulture flags inside `main.py` are FastAPI route false positives. The zero-bloat state is perfectly maintained.
 Alignment / Deferred:
 Safely upgraded minor dependencies (`idna`, `ruff`, `starlette`) while adhering strictly to `mypy<2` limits. Synced the changelog and bumped the version to 0.1.29.
+
+2026-05-31 — Assessment & Lifecycle
+Observation / Pruned:
+Identified invalid Git merge conflict markers (`<<<<<<< HEAD`, `=======`, `>>>>>>> origin/main`) left behind in `pyproject.toml`, `src/catalyst/domain/engine.py`, and `tests/test_fail_fast.py`. Also identified dangling newlines and unclosed array bracket in `uv.lock`. Pruned all broken syntax to restore testability.
+Alignment / Deferred:
+Repaired files manually and ran full test suite and coverage to ensure stability (-0 lines of actual code, pruned bad merge syntax). Bumped version to 0.1.31.
