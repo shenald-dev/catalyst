@@ -162,6 +162,11 @@ All notable changes to this project will be documented in this file.
 * **[Docs Updated]:** Logged optimization and refactoring details in `warden.md` ledger.
 * **[Release]:** v0.1.20 cut, tagged, and ready.
 
+## [0.1.21] - 2024-05-11
+
+* **[Optimization]:** Refactored `_run_node` to accept pre-resolved dependency tuples instead of the mutable `tasks` dictionary. This breaks a circular reference (`tasks` dict -> `Task` object -> `Coroutine` -> `tasks` dict) and permanently resolves a background memory leak during heavy concurrent DAG execution.
+
+
 ## [0.1.19] - 2026-04-29
 
 * **[QA Status]:** Verified structural soundness of the fast path optimizations in `add_task` and the loop simplifications in `_run_node`. The system evaluates the simplified bytecode early-return pattern perfectly, retaining fail-fast guarantees.
