@@ -73,11 +73,15 @@ class WorkflowEngine:
         self.tasks[name] = func
         self._timeouts[name] = timeout
 
+        # Check if the function is asynchronous, correctly unwrapping partials
+        # and checking __call__ for async callable objects.
         is_async = inspect.iscoroutinefunction(func)
         if not is_async:
             base_func = func
             while isinstance(base_func, functools.partial):
                 base_func = base_func.func
+            # inspect.iscoroutinefunction naturally handles functions, methods, and builtins.
+            # Only objects implementing __call__ might incorrectly return False.
             if not isinstance(
                 base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
