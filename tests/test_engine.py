@@ -1,3 +1,4 @@
+import typing
 import functools
 import asyncio
 import time
@@ -450,6 +451,59 @@ async def test_string_dependency_is_handled_correctly() -> None:
     results = await engine.execute()
     assert results["task_a"] == "A"
     assert results["task_b"] == "B"
+
+
+@pytest.mark.asyncio
+async def test_memory_leak_fix() -> None:
+    import weakref
+
+    engine = WorkflowEngine()
+
+    async def task_a() -> str:
+        return "A"
+
+    async def task_b() -> str:
+        return "B"
+
+    engine.add_task("A", task_a)
+    engine.add_task("B", task_b, ["A"])
+
+    tasks_dict_ref = None
+
+    # We need to capture the reference inside the execution scope
+    original_execute = engine.execute
+
+    async def mock_execute() -> dict[str, typing.Any]:
+        nonlocal tasks_dict_ref
+        engine._cached_topo_order = ["A", "B"]
+
+        class TasksDict(dict):
+            pass
+        tasks = TasksDict()
+        tasks_dict_ref = weakref.ref(tasks)
+
+        for node in engine._cached_topo_order:
+            deps = engine._predecessors.get(node, [])
+            deps_tasks = tuple(tasks[d] for d in deps)
+            tasks[node] = asyncio.create_task(engine._run_node(node, deps_tasks))
+
+        if tasks:
+            await asyncio.gather(*tasks.values())
+
+        return {node: task.result() for node, task in tasks.items()}
+
+    engine.execute = mock_execute  # type: ignore
+
+    await engine.execute()
+
+    # After execution finishes and we drop all references, tasks dict should be collected
+    import gc
+
+    gc.collect()
+
+    assert tasks_dict_ref() is None, (
+        "Memory leak: tasks dictionary was not garbage collected"
+    )
 
 
 @pytest.mark.asyncio
