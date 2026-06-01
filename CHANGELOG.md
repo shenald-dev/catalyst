@@ -339,3 +339,5 @@ All notable changes to this project will be documented in this file.
 ## 2026-06-01 - v0.1.32
 
 * **Maintainability:** Exported core engine primitives at package root for better DX, and dynamically resolved FastAPI app version to prevent drift.
+
+* **Lifecycle:** Cleaned up root project scratchpads, upgraded minor dependencies, and verified core logic.
