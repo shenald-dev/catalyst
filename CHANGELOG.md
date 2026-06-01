@@ -335,3 +335,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.31] - 2026-05-31
 * **Bugfix:** Auto-resolved git merge conflict syntax errors, ensuring safe dependency fetching logic and proper code indentations.
+
+## 2026-06-01 - v0.1.32
+
+* **Maintainability:** Exported core engine primitives at package root for better DX, and dynamically resolved FastAPI app version to prevent drift.

@@ -2,13 +2,21 @@ from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from catalyst.domain.engine import TaskError, WorkflowEngine
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("catalyst")
+except PackageNotFoundError:
+    __version__ = "0.0.0-dev"
+
+from catalyst import TaskError, WorkflowEngine
 
 app = FastAPI(
     title="Catalyst Workflow API",
     description="High-performance DAG execution engine interface",
-    version="0.1.29",
+    version=__version__,
 )
+
 
 class StatusResponse(BaseModel):
     status: str
