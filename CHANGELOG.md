@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.34] - 2026-06-07
+
+- 8a1b823 chore(sentinel): update monitoring log
+- 0751111 Merge pull request #136 from shenald-dev/jules-warden-release-0.1.33-6450149706948955292
+- aa8bb36 chore(release): v0.1.33
+- 3fcc901 Merge pull request #135 from shenald-dev/jules/apex-forge-maintainability-2430603911627901522
+- b4b0596 Overhaul README with enterprise documentation
+- e68699f Update README with awesome new logo and formatting
+- 40fdda0 feat(maintainability): export engine primitives and sync API version
+- 7091c57 Merge pull request #134 from shenald-dev/apex-forge-repo-improvement-7929688882270510647
+- 8c0dcc6 fix: resolve mypy type check and ruff linting errors in test suite
+- 9d71590 Merge pull request #94 from shenald-dev/jules-warden-release-0-1-25-3847883659067729078
+
+
 ## [0.1.26] - 2026-05-13
 
 ### 🐛 Bug Fixes
