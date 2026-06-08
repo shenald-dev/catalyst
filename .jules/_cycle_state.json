@@ -24,7 +24,7 @@
     "docs_updated": [
       "src/catalyst/domain/engine.py"
     ],
-    "release_version": "0.1.36",
+    "release_version": null,
     "blockers": []
   }
 }
