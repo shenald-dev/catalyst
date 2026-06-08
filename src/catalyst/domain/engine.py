@@ -104,64 +104,68 @@ class WorkflowEngine:
         self._predecessors[name] = list(dependencies) if dependencies else []
         self._cached_topo_order = None
 
-    async def run(self, inputs: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def run(self, **kwargs: Any) -> dict[str, Any]:
         """Execute the registered tasks in topological order.
 
         Args:
-            inputs: Optional dictionary of initial inputs for tasks.
+            **kwargs: Initial inputs or arguments to be passed to tasks without dependencies.
 
         Returns:
             A dictionary mapping task names to their results or `TaskError` instances.
-            
-        Raises:
-            ValueError: If a cyclic dependency is detected in the workflow.
         """
-        if inputs is None:
-            inputs = {}
+        if not self.tasks:
+            return {}
 
         results: dict[str, Any] = {}
+        graph = {name: set(deps) for name, deps in self._predecessors.items()}
         
-        try:
-            topo_sorter = graphlib.TopologicalSorter(self._predecessors)
-            topo_order = list(topo_sorter.static_order())
-        except graphlib.CycleError as e:
-            raise ValueError(f"Cyclic dependency detected in workflow: {e}") from e
-
-        for task_name in topo_order:
-            deps = self._predecessors[task_name]
+        sorter = graphlib.TopologicalSorter(graph)
+        sorter.prepare()
+        
+        while sorter.is_active():
+            ready_tasks = tuple(sorter.get_ready())
             
-            # Check if any dependency failed
-            failed_dep = None
-            for dep in deps:
-                if dep in results and isinstance(results[dep], TaskError):
-                    failed_dep = dep
-                    break
-            
-            if failed_dep is not None:
-                results[task_name] = TaskError(
-                    task_name, 
-                    RuntimeError(f"Dependency '{failed_dep}' failed")
-                )
-                continue
-
-            func = self.tasks[task_name]
-            kwargs = {dep: results[dep] for dep in deps if dep in results}
-            
-            # Merge with initial inputs if provided
-            if task_name in inputs:
-                kwargs.update(inputs[task_name])
-
-            try:
-                if self._is_async[task_name]:
-                    if self._timeouts[task_name] is not None:
-                        results[task_name] = await asyncio.wait_for(
-                            func(**kwargs), timeout=self._timeouts[task_name]
+            async def run_task(task_name: str) -> tuple[str, Any]:
+                func = self.tasks[task_name]
+                is_async = self._is_async[task_name]
+                timeout = self._timeouts[task_name]
+                
+                task_kwargs = {}
+                for pred in self._predecessors[task_name]:
+                    pred_result = results.get(pred)
+                    if isinstance(pred_result, TaskError):
+                        return task_name, TaskError(
+                            task_name, 
+                            RuntimeError(f"Dependency '{pred}' failed: {pred_result.exception}")
                         )
+                    task_kwargs[pred] = pred_result
+                
+                if not self._predecessors[task_name]:
+                    task_kwargs.update(kwargs)
+                
+                try:
+                    if is_async:
+                        if timeout:
+                            res = await asyncio.wait_for(func(**task_kwargs), timeout=timeout)
+                        else:
+                            res = await func(**task_kwargs)
                     else:
-                        results[task_name] = await func(**kwargs)
-                else:
-                    results[task_name] = func(**kwargs)
-            except Exception as e:
-                results[task_name] = TaskError(task_name, e)
+                        if timeout:
+                            loop = asyncio.get_running_loop()
+                            res = await asyncio.wait_for(
+                                loop.run_in_executor(None, functools.partial(func, **task_kwargs)),
+                                timeout=timeout
+                            )
+                        else:
+                            res = func(**task_kwargs)
+                    return task_name, res
+                except Exception as e:
+                    return task_name, TaskError(task_name, e)
 
+            task_results = await asyncio.gather(*(run_task(t) for t in ready_tasks))
+            
+            for task_name, result in task_results:
+                results[task_name] = result
+                sorter.done(task_name)
+                
         return results
