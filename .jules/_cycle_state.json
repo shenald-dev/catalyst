@@ -22,10 +22,9 @@
     "security_medium": 0,
     "security_low": 0,
     "docs_updated": [
-      "src/catalyst/domain/engine.py (generation failed)",
-      "README.md (generation failed)"
+      "src/catalyst/domain/engine.py"
     ],
-    "release_version": "0.1.35",
+    "release_version": "0.1.36",
     "blockers": []
   }
 }
