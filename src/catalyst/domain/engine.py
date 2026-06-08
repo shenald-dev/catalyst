@@ -87,111 +87,81 @@ class WorkflowEngine:
         """Register a task and its dependencies within the workflow.
 
         Args:
-            name: A unique identifier for the task.
-            func: The callable (synchronous or asynchronous) to execute.
-            dependencies: An iterable of task names that this task depends on.
-            timeout: An optional timeout in seconds. If the task execution exceeds
-                     this duration, it is cancelled and recorded as a `TaskError`.
+            name: The unique identifier for the task.
+            func: The callable to execute for this task.
+            dependencies: An iterable of task names that must complete before this task runs.
+            timeout: Optional timeout in seconds for the task execution.
 
         Raises:
-            ValueError: If any dependency references a task that has not yet been
-                        registered with the engine.
+            ValueError: If a task with the given name is already registered.
         """
-        if dependencies is not None:
-            # Convert dependencies to a list to prevent exhausting iterators/generators
-            if isinstance(dependencies, str):
-                dependencies = [dependencies]
-            else:
-                dependencies = list(dependencies)
-
-        # Validate dependencies exist before adding
-        if dependencies:
-            missing = [dep for dep in dependencies if dep not in self.tasks]
-            if missing:
-                raise ValueError(
-                    f"Task {name!r} depends on unregistered tasks: {missing}"
-                )
-
+        if name in self.tasks:
+            raise ValueError(f"Task '{name}' is already registered.")
+        
         self.tasks[name] = func
         self._timeouts[name] = timeout
-        self._is_async[name] = inspect.iscoroutinefunction(func)
+        self._is_async[name] = asyncio.iscoroutinefunction(func)
         self._predecessors[name] = list(dependencies) if dependencies else []
         self._cached_topo_order = None
 
-    def _get_topological_order(self) -> list[str]:
-        """Compute and cache the topological execution order of tasks.
-
-        Returns:
-            A list of task names ordered such that all dependencies of a task
-            appear before the task itself.
-
-        Raises:
-            graphlib.CycleError: If the registered task dependencies contain a cycle.
-        """
-        if self._cached_topo_order is None:
-            graph = {name: tuple(deps) for name, deps in self._predecessors.items()}
-            sorter = graphlib.TopologicalSorter(graph)
-            self._cached_topo_order = list(sorter.static_order())
-        return self._cached_topo_order
-
-    async def run(self, **kwargs: Any) -> dict[str, Any]:
-        """Execute the registered workflow and return results for all tasks.
-
-        Tasks are executed in topological order. If a task fails or times out,
-        it is recorded as a `TaskError`, and all dependent tasks are automatically
-        skipped and also recorded as `TaskError`s to prevent cascading failures.
+    async def run(self, inputs: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Execute the registered tasks in topological order.
 
         Args:
-            **kwargs: Initial keyword arguments to pass to root tasks (tasks with
-                      no dependencies).
+            inputs: Optional dictionary of initial inputs for tasks.
 
         Returns:
-            A dictionary mapping each task name to its execution result, or a
-            `TaskError` instance if the task failed, timed out, or was skipped
-            due to a dependency failure.
+            A dictionary mapping task names to their results or `TaskError` instances.
+            
+        Raises:
+            ValueError: If a cyclic dependency is detected in the workflow.
         """
+        if inputs is None:
+            inputs = {}
+
         results: dict[str, Any] = {}
-        topo_order = self._get_topological_order()
+        
+        try:
+            topo_sorter = graphlib.TopologicalSorter(self._predecessors)
+            topo_order = list(topo_sorter.static_order())
+        except graphlib.CycleError as e:
+            raise ValueError(f"Cyclic dependency detected in workflow: {e}") from e
 
         for task_name in topo_order:
-            func = self.tasks[task_name]
             deps = self._predecessors[task_name]
-
-            # Check if any dependency resulted in a TaskError
-            if any(isinstance(results.get(dep), TaskError) for dep in deps):
+            
+            # Check if any dependency failed
+            failed_dep = None
+            for dep in deps:
+                if dep in results and isinstance(results[dep], TaskError):
+                    failed_dep = dep
+                    break
+            
+            if failed_dep is not None:
                 results[task_name] = TaskError(
-                    task_name,
-                    RuntimeError("Skipped due to dependency failure")
+                    task_name, 
+                    RuntimeError(f"Dependency '{failed_dep}' failed")
                 )
                 continue
 
-            # Prepare arguments for the task
-            task_kwargs = {dep: results[dep] for dep in deps}
-            if not deps:
-                task_kwargs.update(kwargs)
+            func = self.tasks[task_name]
+            kwargs = {dep: results[dep] for dep in deps if dep in results}
+            
+            # Merge with initial inputs if provided
+            if task_name in inputs:
+                kwargs.update(inputs[task_name])
 
             try:
-                timeout = self._timeouts[task_name]
                 if self._is_async[task_name]:
-                    if timeout is not None:
+                    if self._timeouts[task_name] is not None:
                         results[task_name] = await asyncio.wait_for(
-                            func(**task_kwargs), timeout=timeout
+                            func(**kwargs), timeout=self._timeouts[task_name]
                         )
                     else:
-                        results[task_name] = await func(**task_kwargs)
+                        results[task_name] = await func(**kwargs)
                 else:
-                    if timeout is not None:
-                        results[task_name] = await asyncio.wait_for(
-                            asyncio.to_thread(func, **task_kwargs), timeout=timeout
-                        )
-                    else:
-                        # Run synchronous functions in a thread to avoid blocking the event loop
-                        results[task_name] = await asyncio.to_thread(func, **task_kwargs)
-            except asyncio.TimeoutError as e:
-                logger.warning("Task %r timed out after %s seconds", task_name, timeout)
-                results[task_name] = TaskError(task_name, e)
+                    results[task_name] = func(**kwargs)
             except Exception as e:
-                logger.exception("Task %r failed with exception", task_name)
                 results[task_name] = TaskError(task_name, e)
 
         return results
