@@ -15,16 +15,17 @@
   },
   "warden": {
     "qa_status": "verified",
-    "dead_code_removed_lines": 6,
+    "dead_code_removed_lines": 0,
     "dependencies_bumped": [],
     "security_critical": 0,
     "security_high": 0,
     "security_medium": 0,
     "security_low": 0,
     "docs_updated": [
-      "src/catalyst/domain/engine.py"
+      "src/catalyst/domain/engine.py (generation failed)",
+      "README.md (generation failed)"
     ],
-    "release_version": "0.1.34",
+    "release_version": "0.1.35",
     "blockers": []
   }
 }
