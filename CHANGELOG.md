@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.36] - 2026-06-08
+
+- be6aeac chore(sentinel): update monitoring log
+- b5bee7d chore(warden): update ledger
+- 19a0b4c chore(release): v0.1.35
+- 7bae13e chore(sentinel): update monitoring log
+- 5e6f9bc chore(warden): update ledger
+- fecf572 chore(release): v0.1.34
+- 8a1b823 chore(sentinel): update monitoring log
+- 0751111 Merge pull request #136 from shenald-dev/jules-warden-release-0.1.33-6450149706948955292
+- aa8bb36 chore(release): v0.1.33
+- 3fcc901 Merge pull request #135 from shenald-dev/jules/apex-forge-maintainability-2430603911627901522
+
+
 ## [0.1.35] - 2026-06-08
 
 - 7bae13e chore(sentinel): update monitoring log
