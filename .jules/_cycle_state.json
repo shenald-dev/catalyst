@@ -21,9 +21,7 @@
     "security_high": 0,
     "security_medium": 0,
     "security_low": 0,
-    "docs_updated": [
-      "src/catalyst/domain/engine.py"
-    ],
+    "docs_updated": [],
     "release_version": null,
     "blockers": []
   }
