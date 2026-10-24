@@ -439,3 +439,14 @@ Docs Updated: none
 Release: none
 
 AI Summary: AI analysis failed, running basic checks only
+
+## 2026-06-25 — WARDEN Correction Run
+
+QA Status: verified
+Dead Code Removed: 0 lines
+Dependencies Bumped: 0
+Security: Critical=0, High=0
+Docs Updated: src/catalyst/domain/engine.py
+Release: none
+
+AI Summary: Reverted an aggressive over-write made in a previous Warden run that destructively replaced src/catalyst/domain/engine.py with an outdated, unoptimized version. Restored proper DAG execution logic (with topological generations), memory cycle fixes (using tuple passing to _run_node), and re-exposed the backward-compatible `execute()` method. Tests now pass fully again.
