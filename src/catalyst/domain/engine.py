@@ -1,16 +1,3 @@
-# src/catalyst/domain/engine.py
-"""
-Catalyst Domain Engine
-
-This module provides the core execution engine for Catalyst workflows.
-It exposes the following primitives for building and running directed acyclic graphs (DAGs) of tasks:
-
-- `TaskError`: A structured representation of a failed task, containing the task name
-  and the exception that caused the failure.
-- `WorkflowEngine`: The core domain logic for parallel DAG execution. It handles task
-  failures gracefully, ensuring that a failing task produces a `TaskError` result and
-  dependent tasks are skipped rather than crashing the entire workflow.
-"""
 import asyncio
 import functools
 import inspect
@@ -21,56 +8,29 @@ from typing import Any, Callable, Iterable
 
 logger = logging.getLogger(__name__)
 
-__all__ = [
-    "TaskError",
-    "WorkflowEngine",
-]
-
 
 class TaskError:
-    """Structured representation of a failed task.
-
-    This class encapsulates the identity of the failed task and the specific
-    exception that caused the failure, allowing the workflow engine to propagate
-    errors gracefully without halting the entire execution graph.
-
-    Attributes:
-        task_name (str): The unique identifier of the task that failed.
-        exception (BaseException): The exception instance raised during task execution.
-    """
+    """Structured representation of a failed task."""
 
     __slots__ = ("task_name", "exception")
 
     def __init__(self, task_name: str, exception: BaseException) -> None:
-        """Initialize a TaskError instance.
-
-        Args:
-            task_name: The unique identifier of the failed task.
-            exception: The exception that caused the task to fail.
-        """
         self.task_name = task_name
         self.exception = exception
 
     def __repr__(self) -> str:
-        """Return a string representation of the TaskError."""
         return f"TaskError({self.task_name!r}, {self.exception!r})"
 
 
 class WorkflowEngine:
     """Core domain logic for parallel DAG execution.
 
-    The WorkflowEngine manages the registration, dependency resolution, and
-    execution of tasks within a directed acyclic graph (DAG). It handles task
-    failures gracefully: a failing task produces a `TaskError` result, and
-    dependent tasks are skipped (also producing `TaskError`s) rather than
+    Handles task failures gracefully: a failing task produces a TaskError result,
+    and dependent tasks are skipped (also producing TaskErrors) rather than
     crashing the entire workflow.
-
-    Attributes:
-        tasks: A mapping of task names to their corresponding callable functions.
     """
 
     def __init__(self) -> None:
-        """Initialize a new WorkflowEngine instance."""
         self.tasks: dict[str, Callable[..., Any]] = {}
         self._timeouts: dict[str, float | None] = {}
         self._is_async: dict[str, bool] = {}
@@ -84,88 +44,143 @@ class WorkflowEngine:
         dependencies: Iterable[str] | None = None,
         timeout: float | None = None,
     ) -> None:
-        """Register a task and its dependencies within the workflow.
+        """Register a task and its dependencies.
 
         Args:
-            name: The unique identifier for the task.
-            func: The callable to execute for this task.
-            dependencies: An iterable of task names that must complete before this task runs.
-            timeout: Optional timeout in seconds for the task execution.
+            name: Unique task identifier.
+            func: Callable (sync or async) to execute.
+            dependencies: Iterable of task names this task depends on.
+            timeout: Optional timeout in seconds. If the task exceeds this,
+                     it is cancelled and recorded as a TaskError.
 
         Raises:
-            ValueError: If a task with the given name is already registered.
+            ValueError: If a dependency references a task not yet registered.
         """
-        if name in self.tasks:
-            raise ValueError(f"Task '{name}' is already registered.")
-        
+        if dependencies is not None:
+            # Convert dependencies to a list to prevent exhausting iterators/generators
+            if isinstance(dependencies, str):
+                dependencies = [dependencies]
+            else:
+                dependencies = list(dependencies)
+
+        # Validate dependencies exist before adding
+        if dependencies:
+            missing = [dep for dep in dependencies if dep not in self.tasks]
+            if missing:
+                raise ValueError(
+                    f"Task {name!r} depends on unregistered tasks: {missing}"
+                )
         self.tasks[name] = func
         self._timeouts[name] = timeout
-        self._is_async[name] = asyncio.iscoroutinefunction(func)
-        self._predecessors[name] = list(dependencies) if dependencies else []
+
+        is_async = inspect.iscoroutinefunction(func)
+        if not is_async:
+            base_func = func
+            while isinstance(base_func, functools.partial):
+                base_func = base_func.func
+            if not isinstance(
+                base_func,
+                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
+            ):
+                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
+                    base_func.__call__
+                ):
+                    is_async = True
+
+        self._is_async[name] = is_async
+        self._predecessors[name] = (
+            list(dependencies) if dependencies is not None else []
+        )
         self._cached_topo_order = None
 
-    async def run(self, **kwargs: Any) -> dict[str, Any]:
-        """Execute the registered tasks in topological order.
+    async def _run_node(
+        self,
+        node: str,
+        dep_tasks: tuple[asyncio.Task[Any], ...],
+    ) -> Any:
+        """Evaluate and execute a single node in the DAG.
 
-        Args:
-            **kwargs: Initial inputs or arguments to be passed to tasks without dependencies.
-
-        Returns:
-            A dictionary mapping task names to their results or `TaskError` instances.
+        Uses a fast-path for single dependencies. For multiple dependencies,
+        evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
+        to implement clean fail-fast behavior without leaving un-awaited wrapper coroutines.
         """
-        if not self.tasks:
-            return {}
+        if dep_tasks:
+            if len(dep_tasks) == 1:
+                res = await dep_tasks[0]
+                if isinstance(res, TaskError):
+                    return TaskError(
+                        node,
+                        RuntimeError(
+                            f"Skipped: upstream task {res.task_name!r} failed"
+                        ),
+                    )
+            else:
+                pending_set = set(dep_tasks)
 
-        results: dict[str, Any] = {}
-        graph = {name: set(deps) for name, deps in self._predecessors.items()}
-        
-        sorter = graphlib.TopologicalSorter(graph)
-        sorter.prepare()
-        
-        while sorter.is_active():
-            ready_tasks = tuple(sorter.get_ready())
-            
-            async def run_task(task_name: str) -> tuple[str, Any]:
-                func = self.tasks[task_name]
-                is_async = self._is_async[task_name]
-                timeout = self._timeouts[task_name]
-                
-                task_kwargs = {}
-                for pred in self._predecessors[task_name]:
-                    pred_result = results.get(pred)
-                    if isinstance(pred_result, TaskError):
-                        return task_name, TaskError(
-                            task_name, 
-                            RuntimeError(f"Dependency '{pred}' failed: {pred_result.exception}")
-                        )
-                    task_kwargs[pred] = pred_result
-                
-                if not self._predecessors[task_name]:
-                    task_kwargs.update(kwargs)
-                
-                try:
-                    if is_async:
-                        if timeout:
-                            res = await asyncio.wait_for(func(**task_kwargs), timeout=timeout)
-                        else:
-                            res = await func(**task_kwargs)
-                    else:
-                        if timeout:
-                            loop = asyncio.get_running_loop()
-                            res = await asyncio.wait_for(
-                                loop.run_in_executor(None, functools.partial(func, **task_kwargs)),
-                                timeout=timeout
+                while pending_set:
+                    done, pending_set = await asyncio.wait(
+                        pending_set, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    for t in done:
+                        res = t.result()
+                        if isinstance(res, TaskError):
+                            return TaskError(
+                                node,
+                                RuntimeError(
+                                    f"Skipped: upstream task {res.task_name!r} failed"
+                                ),
                             )
-                        else:
-                            res = func(**task_kwargs)
-                    return task_name, res
-                except Exception as e:
-                    return task_name, TaskError(task_name, e)
 
-            task_results = await asyncio.gather(*(run_task(t) for t in ready_tasks))
-            
-            for task_name, result in task_results:
-                results[task_name] = result
-                sorter.done(task_name)
-                
-        return results
+        try:
+            # Combine dictionary lookup and validation to prevent redundant access overhead
+            if (func := self.tasks.get(node)) is None:
+                raise KeyError(f"Task {node!r} not found")
+            timeout = self._timeouts.get(node)
+            is_async = self._is_async.get(node, False)
+
+            coro = func() if is_async else asyncio.to_thread(func)
+
+            if timeout is not None:
+                result = await asyncio.wait_for(coro, timeout=timeout)
+            else:
+                result = await coro
+
+            return result
+        except Exception as e:
+            logger.exception("Task %r failed", node)
+            return TaskError(node, e)
+
+    async def execute(self) -> dict[str, Any]:
+        """Execute the DAG in topological order, parallelizing independent tasks.
+
+        Failed tasks produce TaskError results. Dependent tasks are skipped
+        and also produce TaskErrors referencing the upstream failure.
+        """
+        if self._cached_topo_order is None:
+            try:
+                ts = graphlib.TopologicalSorter(self._predecessors)
+                self._cached_topo_order = list(ts.static_order())
+            except graphlib.CycleError:
+                raise ValueError("Workflow must be a Directed Acyclic Graph (DAG)")
+
+        tasks: dict[str, asyncio.Task[Any]] = {}
+
+        for node in self._cached_topo_order:
+            deps = self._predecessors.get(node, [])
+            dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
+            tasks[node] = asyncio.create_task(self._run_node(node, dep_tasks))
+
+        if tasks:
+            try:
+                await asyncio.gather(*tasks.values())
+            except BaseException:
+                for task in tasks.values():
+                    task.cancel()
+                await asyncio.gather(*tasks.values(), return_exceptions=True)
+                raise
+
+        return {node: task.result() for node, task in tasks.items()}
+
+    async def run(self, **kwargs: Any) -> dict[str, Any]:
+        """Alias for execute() to maintain compatibility."""
+        return await self.execute()
