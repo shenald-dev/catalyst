@@ -450,3 +450,11 @@ Docs Updated: none
 Release: 0.1.37
 
 AI Summary: Identified and reverted a breaking architectural regression in `src/catalyst/domain/engine.py` introduced by automated systems. The regression replaced `execute()` and `_run_node()` with a single `run()` primitive, completely breaking the test suite (fail-fast guarantees, memory leak validations, and routing implementations). Restored the performant, last known good state from `536eb65`, and added a `run` alias for backwards compatibility. Tests completely pass. Preparing patch release v0.1.37.
+
+## 2026-06-25 — WARDEN Run
+QA Status: verified
+Dead Code Removed: 0 lines
+Dependencies Bumped: 0
+Security: Critical=0, High=0
+
+AI Summary: The user provided feedback directing me to revert the optimization made to `_run_node` due to typing concerns raised by `mypy`. I restored `src/catalyst/domain/engine.py` to its last known good state that preserves `execute()` and `_run_node()`. The codebase passes all tests in its original state. Opening PR with changes reverted as requested.
