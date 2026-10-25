@@ -1,8 +1,10 @@
-import typing
-import functools
 import asyncio
+import functools
 import time
+import typing
+
 import pytest
+
 from catalyst.domain.engine import TaskError, WorkflowEngine
 
 
@@ -517,3 +519,15 @@ async def test_functools_partial_wrapped_sync_function() -> None:
 
     results = await engine.execute()
     assert results["test_sync_partial"] == "sync_partial_arg"
+
+@pytest.mark.asyncio
+async def test_run_alias_compatibility() -> None:
+    engine = WorkflowEngine()
+
+    async def task_a() -> str:
+        return "a"
+
+    engine.add_task("A", task_a)
+
+    results = await engine.run(some_unexpected_kwarg=True)
+    assert results["A"] == "a"

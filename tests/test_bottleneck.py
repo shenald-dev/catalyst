@@ -1,6 +1,8 @@
 import asyncio
 import time
+
 import pytest
+
 from catalyst.domain.engine import WorkflowEngine
 
 

@@ -1,10 +1,11 @@
 import asyncio
 import functools
-import inspect
-import types
-import logging
 import graphlib
-from typing import Any, Callable, Iterable
+import inspect
+import logging
+import types
+from collections.abc import Callable, Iterable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class TaskError:
     """Structured representation of a failed task."""
 
-    __slots__ = ("task_name", "exception")
+    __slots__ = ("exception", "task_name")
 
     def __init__(self, task_name: str, exception: BaseException) -> None:
         self.task_name = task_name
@@ -181,6 +182,6 @@ class WorkflowEngine:
 
         return {node: task.result() for node, task in tasks.items()}
 
-    async def run(self, **kwargs: Any) -> dict[str, Any]:
+    async def run(self, **_kwargs: Any) -> dict[str, Any]:
         """Alias for execute() to maintain compatibility."""
         return await self.execute()

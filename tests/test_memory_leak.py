@@ -1,8 +1,10 @@
-import typing
 import asyncio
 import gc
+import typing
 import weakref
+
 import pytest
+
 from catalyst.domain.engine import WorkflowEngine
 
 

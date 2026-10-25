@@ -1,6 +1,8 @@
 import asyncio
+
 import pytest
-from catalyst.domain.engine import WorkflowEngine, TaskError
+
+from catalyst.domain.engine import TaskError, WorkflowEngine
 
 
 @pytest.mark.asyncio

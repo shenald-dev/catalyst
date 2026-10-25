@@ -1,6 +1,8 @@
 import asyncio
-import pytest
 import sys
+
+import pytest
+
 from catalyst.domain.engine import WorkflowEngine
 
 

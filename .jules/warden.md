@@ -450,3 +450,14 @@ Docs Updated: none
 Release: 0.1.37
 
 AI Summary: Identified and reverted a breaking architectural regression in `src/catalyst/domain/engine.py` introduced by automated systems. The regression replaced `execute()` and `_run_node()` with a single `run()` primitive, completely breaking the test suite (fail-fast guarantees, memory leak validations, and routing implementations). Restored the performant, last known good state from `536eb65`, and added a `run` alias for backwards compatibility. Tests completely pass. Preparing patch release v0.1.37.
+
+## 2026-06-21 — WARDEN Run
+
+QA Status: verified
+Dead Code Removed: 0 lines
+Dependencies Bumped: 13 packages
+Security: Critical=0, High=0
+Docs Updated: CHANGELOG.md
+Release: 0.1.37
+
+AI Summary: Verified CI stability post-merge of engine execution reversion. Wrote `test_run_alias_compatibility` missing edge-case unit test to protect the restored `run()` alias. Pruned `kwargs` unused variable flagged by Vulture in `run()` using `_kwargs` standard to maintain signature. Safely upgraded patch and minor package dependencies across the board via uv. Prepared patch release v0.1.37.
