@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.37] - 2026-06-21
+
+- **[Added]:** Wrote missing unit test `test_run_alias_compatibility` to guarantee the restored `run()` alias functions exactly as `execute()`.
+- **[Pruned]:** Renamed `**kwargs` to `**_kwargs` in `run()` to satisfy static analysis and remove entropy without breaking public signatures.
+- **[Optimized]:** Safely bumped minor and patch dependencies via `uv lock --upgrade`.
+
 ## [0.1.36] - 2026-06-08
 
 - be6aeac chore(sentinel): update monitoring log

@@ -1,8 +1,8 @@
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from importlib.metadata import version, PackageNotFoundError
 
 try:
     __version__ = version("catalyst")
