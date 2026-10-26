@@ -116,21 +116,15 @@ class WorkflowEngine:
                         ),
                     )
             else:
-                pending_set = set(dep_tasks)
-
-                while pending_set:
-                    done, pending_set = await asyncio.wait(
-                        pending_set, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for t in done:
-                        res = t.result()
-                        if isinstance(res, TaskError):
-                            return TaskError(
-                                node,
-                                RuntimeError(
-                                    f"Skipped: upstream task {res.task_name!r} failed"
-                                ),
-                            )
+                for coro in asyncio.as_completed(dep_tasks):
+                    res = await coro
+                    if isinstance(res, TaskError):
+                        return TaskError(
+                            node,
+                            RuntimeError(
+                                f"Skipped: upstream task {res.task_name!r} failed"
+                            ),
+                        )
 
         try:
             # Combine dictionary lookup and validation to prevent redundant access overhead
@@ -139,7 +133,10 @@ class WorkflowEngine:
             timeout = self._timeouts.get(node)
             is_async = self._is_async.get(node, False)
 
-            coro = func() if is_async else asyncio.to_thread(func)
+            if is_async:
+                coro = func()
+            else:
+                coro = asyncio.to_thread(func)  # type: ignore[assignment]
 
             if timeout is not None:
                 result = await asyncio.wait_for(coro, timeout=timeout)
