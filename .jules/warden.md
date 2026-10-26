@@ -461,3 +461,14 @@ Docs Updated: CHANGELOG.md
 Release: 0.1.37
 
 AI Summary: Verified CI stability post-merge of engine execution reversion. Wrote `test_run_alias_compatibility` missing edge-case unit test to protect the restored `run()` alias. Pruned `kwargs` unused variable flagged by Vulture in `run()` using `_kwargs` standard to maintain signature. Safely upgraded patch and minor package dependencies across the board via uv. Prepared patch release v0.1.37.
+
+## 2026-10-26 — WARDEN Run
+
+QA Status: verified
+Dead Code Removed: 0 lines
+Dependencies Bumped: 0 packages
+Security: Critical=0, High=0
+Docs Updated: README.md, CHANGELOG.md
+Release: none
+
+AI Summary: Resolved ruff linter warnings (SIM102, B004) in `src/catalyst/domain/engine.py` without breaking fast paths or type checking logic. Safely bypassed Vulture flags on `FastAPI` routes and Pydantic models since they are externally invoked. Corrected outdated `DAGEngine` references in the `README.md` to properly point to `WorkflowEngine`. Tests all pass successfully. No new release warranted immediately.
