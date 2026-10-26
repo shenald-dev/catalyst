@@ -155,3 +155,8 @@ Learning: Removing `if len(dep_tasks) == 1:` and replacing it entirely with `asy
 
 Action: Preserve explicit fast-path checks in hot loops (like DAG node execution). Do not consolidate internal state dictionaries into combined structures if original public-facing dictionaries must be maintained for backwards compatibility.
 Inside `except` blocks dealing with arbitrary user-code failures, always use `logger.exception(...)` instead of `logger.error(...)`. This natively appends the full traceback to the application logs while still safely swallowing the exception at runtime to prevent process crashes.
+
+## 2026-10-26 — Optimize asyncio fast-fail iteration pattern
+
+- **Learning:** Using `while pending_set:` with `asyncio.wait(return_when=asyncio.FIRST_COMPLETED)` introduces unnecessary overhead and O(n^2) callback management for tracking dependencies waiting for task failure.
+- **Action:** Replace `asyncio.wait` manual polling loop with `asyncio.as_completed` when awaiting task results that need to fail-fast. It's more efficient, readable, and Pythonic.
