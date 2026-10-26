@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.110.0",
     "uvicorn>=0.27.1",
-    "pydantic>=2.6.3"
+    "pydantic>=2.6.3",
 ]
 
 [project.optional-dependencies]
@@ -34,3 +34,8 @@ strict = true
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
+
+[dependency-groups]
+dev = [
+    "vulture>=2.16",
+]

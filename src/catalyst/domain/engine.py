@@ -82,11 +82,10 @@ class WorkflowEngine:
             if not isinstance(
                 base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
+            ) and callable(base_func) and inspect.iscoroutinefunction(
+                base_func.__call__
             ):
-                if hasattr(base_func, "__call__") and inspect.iscoroutinefunction(
-                    base_func.__call__
-                ):
-                    is_async = True
+                is_async = True
 
         self._is_async[name] = is_async
         self._predecessors[name] = (

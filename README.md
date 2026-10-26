@@ -98,8 +98,7 @@ You can bypass the API and use Catalyst entirely as a library within your own Py
 
 ```python
 import asyncio
-from catalyst.domain.engine import DAGEngine
-from catalyst.domain.models import TaskNode
+from catalyst.domain.engine import WorkflowEngine
 
 async def fetch_data():
     return {"status": "fetched"}
@@ -108,12 +107,10 @@ async def process_data(data):
     return {"status": "processed", "input": data}
 
 async def main():
-    engine = DAGEngine()
+    engine = WorkflowEngine()
     
-    node_a = TaskNode(id="task_1", func=fetch_data)
-    node_b = TaskNode(id="task_2", func=process_data, dependencies=["task_1"])
-    
-    engine.add_nodes([node_a, node_b])
+    engine.add_task("task_1", fetch_data)
+    engine.add_task("task_2", process_data, dependencies=["task_1"])
     
     results = await engine.execute()
     print(results)
