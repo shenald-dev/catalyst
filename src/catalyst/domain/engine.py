@@ -83,7 +83,7 @@ class WorkflowEngine:
                 base_func,
                 (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
             ) and callable(base_func) and inspect.iscoroutinefunction(
-                base_func.__call__
+                base_func.__call__  # type: ignore[operator]
             ):
                 is_async = True
 
