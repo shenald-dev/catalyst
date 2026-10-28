@@ -472,3 +472,14 @@ Docs Updated: README.md, CHANGELOG.md
 Release: none
 
 AI Summary: Resolved ruff linter warnings (SIM102, B004) in `src/catalyst/domain/engine.py` without breaking fast paths or type checking logic. Safely bypassed Vulture flags on `FastAPI` routes and Pydantic models since they are externally invoked. Corrected outdated `DAGEngine` references in the `README.md` to properly point to `WorkflowEngine`. Tests all pass successfully. No new release warranted immediately.
+
+## 2026-11-29 — WARDEN Run
+
+QA Status: verified
+Dead Code Removed: 0 lines
+Dependencies Bumped: 2 packages
+Security: Critical=0, High=0
+Docs Updated: none
+Release: 0.1.38
+
+AI Summary: Verified CI stability post-merge. No application dead code required pruning as Vulture flags inside `main.py` and `engine.py` are framework false positives. Safely upgraded minor dependencies (pytest and ruff) without structural regressions. Version bumped to 0.1.38.

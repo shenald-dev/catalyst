@@ -79,11 +79,15 @@ class WorkflowEngine:
             base_func = func
             while isinstance(base_func, functools.partial):
                 base_func = base_func.func
-            if not isinstance(
-                base_func,
-                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
-            ) and callable(base_func) and inspect.iscoroutinefunction(
-                base_func.__call__  # type: ignore[operator]
+            if (
+                not isinstance(
+                    base_func,
+                    (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
+                )
+                and callable(base_func)
+                and inspect.iscoroutinefunction(
+                    base_func.__call__  # type: ignore[operator]
+                )
             ):
                 is_async = True
 

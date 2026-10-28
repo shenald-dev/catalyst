@@ -1,4 +1,9 @@
 # Changelog
+## [0.1.38] - 2026-11-29
+
+- **[Optimized]:** Safely bumped minor dependencies (`pytest` and `ruff`) via `uv lock --upgrade`.
+- **[Pruned]:** No code changes required. Verified that flags from Vulture for `run` and FastAPI endpoints are intentional aliases or framework false positives.
+
 
 ## [0.1.37] - 2026-06-21
 
