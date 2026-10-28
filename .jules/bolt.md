@@ -160,3 +160,8 @@ Inside `except` blocks dealing with arbitrary user-code failures, always use `lo
 
 - **Learning:** Using `while pending_set:` with `asyncio.wait(return_when=asyncio.FIRST_COMPLETED)` introduces unnecessary overhead and O(n^2) callback management for tracking dependencies waiting for task failure.
 - **Action:** Replace `asyncio.wait` manual polling loop with `asyncio.as_completed` when awaiting task results that need to fail-fast. It's more efficient, readable, and Pythonic.
+
+## 2026-10-27 — Memory leak via un-awaited coroutines in as_completed
+
+- **Learning:** Breaking early out of `asyncio.as_completed()` proxy generator loop leaves internally-spawned un-awaited coroutines behind. This raises `RuntimeWarning: coroutine was never awaited` (task leak) upon garbage collection on heavy fail-fast DAG execution.
+- **Action:** For multiple tasks needing fail-fast logic, bypass `asyncio.as_completed`. Use a `while pending_set:` loop directly with `asyncio.wait(pending_set, return_when=asyncio.FIRST_COMPLETED)` and `.result()` checks. This manages wait states inherently without generating un-awaited proxy coroutines.
