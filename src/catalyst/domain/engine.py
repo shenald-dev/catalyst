@@ -79,11 +79,15 @@ class WorkflowEngine:
             base_func = func
             while isinstance(base_func, functools.partial):
                 base_func = base_func.func
-            if not isinstance(
-                base_func,
-                (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
-            ) and callable(base_func) and inspect.iscoroutinefunction(
-                base_func.__call__  # type: ignore[operator]
+            if (
+                not isinstance(
+                    base_func,
+                    (types.FunctionType, types.MethodType, types.BuiltinFunctionType),
+                )
+                and callable(base_func)
+                and inspect.iscoroutinefunction(
+                    base_func.__call__  # type: ignore[operator]
+                )
             ):
                 is_async = True
 
@@ -115,15 +119,20 @@ class WorkflowEngine:
                         ),
                     )
             else:
-                for coro in asyncio.as_completed(dep_tasks):
-                    res = await coro
-                    if isinstance(res, TaskError):
-                        return TaskError(
-                            node,
-                            RuntimeError(
-                                f"Skipped: upstream task {res.task_name!r} failed"
-                            ),
-                        )
+                pending_set = set(dep_tasks)
+                while pending_set:
+                    done, pending_set = await asyncio.wait(
+                        pending_set, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    for t in done:
+                        res = t.result()
+                        if isinstance(res, TaskError):
+                            return TaskError(
+                                node,
+                                RuntimeError(
+                                    f"Skipped: upstream task {res.task_name!r} failed"
+                                ),
+                            )
 
         try:
             # Combine dictionary lookup and validation to prevent redundant access overhead
@@ -135,7 +144,7 @@ class WorkflowEngine:
             if is_async:
                 coro = func()
             else:
-                coro = asyncio.to_thread(func)  # type: ignore[assignment]
+                coro = asyncio.to_thread(func)
 
             if timeout is not None:
                 result = await asyncio.wait_for(coro, timeout=timeout)
