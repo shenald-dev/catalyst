@@ -119,20 +119,41 @@ class WorkflowEngine:
                         ),
                     )
             else:
-                pending_set = set(dep_tasks)
-                while pending_set:
-                    done, pending_set = await asyncio.wait(
-                        pending_set, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for t in done:
+                loop = asyncio.get_running_loop()
+                fut: asyncio.Future[Any] = loop.create_future()
+                pending_count = len(dep_tasks)
+
+                def _on_dep_done(t: asyncio.Task[Any]) -> None:
+                    nonlocal pending_count
+                    if fut.done():
+                        return
+                    try:
                         res = t.result()
                         if isinstance(res, TaskError):
-                            return TaskError(
-                                node,
-                                RuntimeError(
-                                    f"Skipped: upstream task {res.task_name!r} failed"
-                                ),
-                            )
+                            fut.set_result(res)
+                            return
+                    except BaseException as e:  # noqa: BLE001
+                        fut.set_exception(e)
+                        return
+
+                    pending_count -= 1
+                    if pending_count == 0:
+                        fut.set_result(None)
+
+                for t in dep_tasks:
+                    if t.done():
+                        _on_dep_done(t)
+                    else:
+                        t.add_done_callback(_on_dep_done)
+
+                res = await fut
+                if isinstance(res, TaskError):
+                    return TaskError(
+                        node,
+                        RuntimeError(
+                            f"Skipped: upstream task {res.task_name!r} failed"
+                        ),
+                    )
 
         try:
             # Combine dictionary lookup and validation to prevent redundant access overhead
