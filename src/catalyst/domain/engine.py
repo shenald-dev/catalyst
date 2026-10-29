@@ -105,8 +105,8 @@ class WorkflowEngine:
         """Evaluate and execute a single node in the DAG.
 
         Uses a fast-path for single dependencies. For multiple dependencies,
-        evaluates them safely using `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`
-        to implement clean fail-fast behavior without leaving un-awaited wrapper coroutines.
+        evaluates them efficiently using callbacks for true O(n) polling rather than O(n^2) loop overhead,
+        while maintaining clean fail-fast behavior and preventing un-awaited coroutine leaks.
         """
         if dep_tasks:
             if len(dep_tasks) == 1:
@@ -119,20 +119,43 @@ class WorkflowEngine:
                         ),
                     )
             else:
-                pending_set = set(dep_tasks)
-                while pending_set:
-                    done, pending_set = await asyncio.wait(
-                        pending_set, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for t in done:
+                loop = asyncio.get_running_loop()
+                fut = loop.create_future()
+                remaining = len(dep_tasks)
+
+                def _on_done(t: asyncio.Task[Any]) -> None:
+                    nonlocal remaining
+                    if fut.done():
+                        return
+                    try:
                         res = t.result()
                         if isinstance(res, TaskError):
-                            return TaskError(
-                                node,
-                                RuntimeError(
-                                    f"Skipped: upstream task {res.task_name!r} failed"
-                                ),
-                            )
+                            fut.set_result(res)
+                            return
+                    except BaseException as e:  # noqa: BLE001
+                        fut.set_exception(e)
+                        return
+                    remaining -= 1
+                    if remaining == 0:
+                        fut.set_result(None)
+
+                for t in dep_tasks:
+                    # Check done explicitly to avoid event loop callback overhead for already completed tasks
+                    if t.done():
+                        _on_done(t)
+                        if fut.done():
+                            break
+                    else:
+                        t.add_done_callback(_on_done)
+
+                res = await fut
+                if isinstance(res, TaskError):
+                    return TaskError(
+                        node,
+                        RuntimeError(
+                            f"Skipped: upstream task {res.task_name!r} failed"
+                        ),
+                    )
 
         try:
             # Combine dictionary lookup and validation to prevent redundant access overhead
