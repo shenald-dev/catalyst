@@ -165,3 +165,7 @@ Inside `except` blocks dealing with arbitrary user-code failures, always use `lo
 
 - **Learning:** Breaking early out of `asyncio.as_completed()` proxy generator loop leaves internally-spawned un-awaited coroutines behind. This raises `RuntimeWarning: coroutine was never awaited` (task leak) upon garbage collection on heavy fail-fast DAG execution.
 - **Action:** For multiple tasks needing fail-fast logic, bypass `asyncio.as_completed`. Use a `while pending_set:` loop directly with `asyncio.wait(pending_set, return_when=asyncio.FIRST_COMPLETED)` and `.result()` checks. This manages wait states inherently without generating un-awaited proxy coroutines.
+
+2026-11-30 — Run Node Memory Leak Fix
+- **Learning:** Using `add_done_callback` for event-driven fast-failure leaks closure variables if the callbacks aren't explicitly removed. If downstream task fails-fast on one dependency, slow running sibling dependencies hold the callback in memory until they finish.
+- **Action:** Future usage of `asyncio.Future` fast-resolution wrappers should always utilize a `try...finally` block to call `remove_done_callback` on all long-running tasks.

@@ -146,14 +146,18 @@ class WorkflowEngine:
                     else:
                         t.add_done_callback(_on_dep_done)
 
-                res = await fut
-                if isinstance(res, TaskError):
-                    return TaskError(
-                        node,
-                        RuntimeError(
-                            f"Skipped: upstream task {res.task_name!r} failed"
-                        ),
-                    )
+                try:
+                    res = await fut
+                    if isinstance(res, TaskError):
+                        return TaskError(
+                            node,
+                            RuntimeError(
+                                f"Skipped: upstream task {res.task_name!r} failed"
+                            ),
+                        )
+                finally:
+                    for t in dep_tasks:
+                        t.remove_done_callback(_on_dep_done)
 
         try:
             # Combine dictionary lookup and validation to prevent redundant access overhead
