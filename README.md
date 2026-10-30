@@ -11,7 +11,7 @@
   
   [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
   [![FastAPI](https://img.shields.io/badge/FastAPI-Dashboard-009688.svg)](https://fastapi.tiangolo.com/)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  [![License: MIT](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 </div>
 
 ---
@@ -128,3 +128,7 @@ Join the flow state and help us make Catalyst even faster! 🚀
 
 ---
 > *Built by a Vibe Coder. Focused on Performance.*
+
+
+## 📄 License
+This project is licensed under the [GNU General Public License v3.0 (GPL-3.0-or-later)](LICENSE).
