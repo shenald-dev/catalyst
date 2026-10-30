@@ -390,6 +390,7 @@ All notable changes to this project will be documented in this file.
 
 **[Optimized]:** Replaced O(n^2) polling loop with O(n) event-driven dependency resolution for fast-fail execution.
 **[Fixed]:** Upgraded minor/patch dependencies securely.
+**[Fixed]:** Repaired memory leak in workflow engine fail-fast polling by cleanly unregistering callbacks from unresolved dependency tasks.
 
 ### Changed
 - **Optimized**: Resolved `ruff` warnings in `src/catalyst/domain/engine.py` (SIM102 and B004) by flattening nested `if` statements and replacing `hasattr(x, "__call__")` with `callable()`.
