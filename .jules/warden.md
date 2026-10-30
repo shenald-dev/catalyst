@@ -494,3 +494,8 @@ Docs Updated: CHANGELOG.md
 Release: none
 
 AI Summary: QA Verified the recent engine fast-fail polling optimization regression, converting an O(n^2) `asyncio.wait` loop into an O(1) `asyncio.Future` event-driven dependency resolution. Added edge-case test for massive dependencies. Removed zero dead code lines as all flags were known false positives. Applied safe dependency upgrades.
+
+## 2026-10-30 — Lifecycle & Assurance Ledger
+- **QA & Veto Actions:** Fixed memory leak in WorkflowEngine's _run_node by explicitly removing done callbacks from remaining dependent tasks after fail-fast future resolution.
+- **Entropy Pruned:** 0 lines.
+- **Deferred / Blocked:** None.
