@@ -38,7 +38,9 @@ async def test_run_node_reference_cycle_prevention() -> None:
     gc.collect()
 
     # The engine should be fully collected, as no cyclic references should exist
-    assert engine_ref() is None, "WorkflowEngine memory leak detected: circular reference preventing garbage collection."
+    assert engine_ref() is None, (
+        "WorkflowEngine memory leak detected: circular reference preventing garbage collection."
+    )
 
 
 @pytest.mark.asyncio
@@ -64,10 +66,9 @@ async def test_reference_cycle_is_broken() -> None:
         def __init__(self, tasks: tuple[asyncio.Task[typing.Any], ...]) -> None:
             self.tasks = tasks
 
-
-
-
-    async def wrapped_run_node(node: str, dep_tasks: tuple[asyncio.Task[typing.Any], ...]) -> typing.Any:
+    async def wrapped_run_node(
+        node: str, dep_tasks: tuple[asyncio.Task[typing.Any], ...]
+    ) -> typing.Any:
         nonlocal weak_dep
         holder = TaskHolder(dep_tasks)
         weak_dep = weakref.ref(holder)

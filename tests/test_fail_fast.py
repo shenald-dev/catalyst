@@ -40,7 +40,9 @@ async def test_fail_fast_massive_dependencies() -> None:
 
     from typing import Any
 
-    async def wrapped_run_node(node: str, dep_tasks: tuple[asyncio.Task[Any], ...]) -> Any:
+    async def wrapped_run_node(
+        node: str, dep_tasks: tuple[asyncio.Task[Any], ...]
+    ) -> Any:
         nonlocal downstream_eval_time
         res = await orig_run_node(node, dep_tasks)
         if node == "downstream":
@@ -88,7 +90,9 @@ async def test_true_fail_fast_multiple_deps() -> None:
 
     from typing import Any
 
-    async def wrapped_run_node(node: str, dep_tasks: tuple[asyncio.Task[Any], ...]) -> Any:
+    async def wrapped_run_node(
+        node: str, dep_tasks: tuple[asyncio.Task[Any], ...]
+    ) -> Any:
         nonlocal downstream_eval_time
         res = await orig_run_node(node, dep_tasks)
         if node == "downstream":
