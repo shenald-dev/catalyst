@@ -1,4 +1,10 @@
 # Changelog
+## [Unreleased]
+
+- **[Optimized]:** Short-circuit dependency callback registration loop in `_run_node` when fail-fast future is already resolved.
+- **[Added]:** Unit tests covering multi-dependency diamond DAG execution, mixed sync/async dependencies, and pre-completed fail-fast task handling.
+- **[Fixed]:** Safely upgraded direct patch dependencies (`pydantic`, `pydantic-core`, `opentelemetry-api`) via `uv lock --upgrade`.
+
 ## [0.1.38] - 2026-11-29
 
 - **[Optimized]:** Safely bumped minor dependencies (`pytest` and `ruff`) via `uv lock --upgrade`.

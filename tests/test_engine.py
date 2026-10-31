@@ -480,6 +480,7 @@ async def test_memory_leak_fix() -> None:
 
         class TasksDict(dict[str, asyncio.Task[typing.Any]]):
             pass
+
         tasks = TasksDict()
         tasks_dict_ref = weakref.ref(tasks)
 
@@ -520,6 +521,7 @@ async def test_functools_partial_wrapped_sync_function() -> None:
     results = await engine.execute()
     assert results["test_sync_partial"] == "sync_partial_arg"
 
+
 @pytest.mark.asyncio
 async def test_run_alias_compatibility() -> None:
     engine = WorkflowEngine()
@@ -531,3 +533,97 @@ async def test_run_alias_compatibility() -> None:
 
     results = await engine.run(some_unexpected_kwarg=True)
     assert results["A"] == "a"
+
+
+@pytest.mark.asyncio
+async def test_multiple_dependencies_all_succeed() -> None:
+    """Verify diamond DAG where all upstream tasks complete successfully."""
+    engine = WorkflowEngine()
+    execution_order: list[str] = []
+
+    async def task_a() -> str:
+        await asyncio.sleep(0.01)
+        execution_order.append("A")
+        return "result_a"
+
+    async def task_b() -> str:
+        await asyncio.sleep(0.01)
+        execution_order.append("B")
+        return "result_b"
+
+    async def task_c() -> str:
+        await asyncio.sleep(0.01)
+        execution_order.append("C")
+        return "result_c"
+
+    async def task_d() -> str:
+        execution_order.append("D")
+        return "result_d"
+
+    engine.add_task("A", task_a)
+    engine.add_task("B", task_b, ["A"])
+    engine.add_task("C", task_c, ["A"])
+    engine.add_task("D", task_d, ["B", "C"])
+
+    results = await engine.execute()
+
+    assert execution_order[0] == "A"
+    assert "B" in execution_order[1:3]
+    assert "C" in execution_order[1:3]
+    assert execution_order[-1] == "D"
+    assert results == {
+        "A": "result_a",
+        "B": "result_b",
+        "C": "result_c",
+        "D": "result_d",
+    }
+
+
+@pytest.mark.asyncio
+async def test_mixed_sync_async_multiple_dependencies() -> None:
+    """Verify node with both sync and async dependencies resolves properly."""
+    engine = WorkflowEngine()
+
+    def sync_upstream() -> str:
+        return "sync_val"
+
+    async def async_upstream() -> str:
+        await asyncio.sleep(0.01)
+        return "async_val"
+
+    async def downstream() -> str:
+        return "downstream_val"
+
+    engine.add_task("sync_dep", sync_upstream)
+    engine.add_task("async_dep", async_upstream)
+    engine.add_task("downstream", downstream, ["sync_dep", "async_dep"])
+
+    results = await engine.execute()
+    assert results["sync_dep"] == "sync_val"
+    assert results["async_dep"] == "async_val"
+    assert results["downstream"] == "downstream_val"
+
+
+@pytest.mark.asyncio
+async def test_pre_completed_dependency_short_circuits_callback_registration() -> None:
+    """Ensure pre-completed failing dependencies cleanly stop callback attachment on pending tasks."""
+    engine = WorkflowEngine()
+
+    async def failing_first() -> str:
+        raise ValueError("instant fail")
+
+    async def slow_pending() -> str:
+        await asyncio.sleep(0.2)
+        return "slow"
+
+    async def downstream() -> str:
+        return "skipped"
+
+    engine.add_task("fail", failing_first)
+    engine.add_task("slow", slow_pending)
+    engine.add_task("downstream", downstream, ["fail", "slow"])
+
+    results = await engine.execute()
+    assert isinstance(results["fail"], TaskError)
+    assert isinstance(results["downstream"], TaskError)
+    assert "upstream task 'fail' failed" in str(results["downstream"].exception)

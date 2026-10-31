@@ -141,6 +141,8 @@ class WorkflowEngine:
                         fut.set_result(None)
 
                 for t in dep_tasks:
+                    if fut.done():
+                        break
                     if t.done():
                         _on_dep_done(t)
                     else:
