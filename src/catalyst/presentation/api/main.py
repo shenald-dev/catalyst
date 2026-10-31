@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 try:
     __version__ = version("catalyst")
-except PackageNotFoundError:
+except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0-dev"
 
 from catalyst import TaskError, WorkflowEngine
