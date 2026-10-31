@@ -1,6 +1,11 @@
 # Changelog
 ## [Unreleased]
 
+## [0.1.39] - 2026-11-30
+- **[Added]:** Unit test checking that having duplicate string dependencies on a node does not stall execution.
+- **[Optimized]:** Safely bumped patch dependencies using `uv lock --upgrade`.
+- **[Pruned]:** Validated zero structural codebase bloat; Vulture flags inside `main.py` and `engine.py` are framework false positives and backwards-compatible aliases.
+
 - **[Optimized]:** Short-circuit dependency callback registration loop in `_run_node` when fail-fast future is already resolved.
 - **[Added]:** Unit tests covering multi-dependency diamond DAG execution, mixed sync/async dependencies, and pre-completed fail-fast task handling.
 - **[Fixed]:** Safely upgraded direct patch dependencies (`pydantic`, `pydantic-core`, `opentelemetry-api`) via `uv lock --upgrade`.

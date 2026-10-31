@@ -499,3 +499,8 @@ AI Summary: QA Verified the recent engine fast-fail polling optimization regress
 - **QA & Veto Actions:** Fixed memory leak in WorkflowEngine's _run_node by explicitly removing done callbacks from remaining dependent tasks after fail-fast future resolution.
 - **Entropy Pruned:** 0 lines.
 - **Deferred / Blocked:** None.
+
+## 2026-11-30 — Lifecycle & Assurance Ledger
+- **QA & Veto Actions:** Added a unit test for duplicate dependencies.
+- **Entropy Pruned:** 0 lines. Checked vulture flags inside `main.py` and `engine.py` - they are framework false positives and aliases.
+- **Deferred / Blocked:** Safely patched dependencies via uv lock --upgrade.

@@ -627,3 +627,21 @@ async def test_pre_completed_dependency_short_circuits_callback_registration() -
     assert isinstance(results["fail"], TaskError)
     assert isinstance(results["downstream"], TaskError)
     assert "upstream task 'fail' failed" in str(results["downstream"].exception)
+
+
+@pytest.mark.asyncio
+async def test_duplicate_dependencies_in_task() -> None:
+    """Ensure that listing the same dependency multiple times does not break the pending_count logic."""
+    engine = WorkflowEngine()
+
+    async def upstream() -> str:
+        return "up"
+
+    async def downstream() -> str:
+        return "down"
+
+    engine.add_task("upstream", upstream)
+    engine.add_task("downstream", downstream, ["upstream", "upstream"])
+
+    results = await engine.execute()
+    assert results["downstream"] == "down"
