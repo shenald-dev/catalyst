@@ -645,3 +645,44 @@ async def test_duplicate_dependencies_in_task() -> None:
 
     results = await engine.execute()
     assert results["downstream"] == "down"
+
+
+@pytest.mark.asyncio
+async def test_fast_fail_does_not_cancel_shared_upstream_dependency() -> None:
+    """When a downstream node with a single dependency is cancelled, it should not cancel the shared upstream task."""
+    engine = WorkflowEngine()
+
+    shared_completed = False
+
+    async def shared_upstream() -> str:
+        nonlocal shared_completed
+        await asyncio.sleep(0.2)
+        shared_completed = True
+        return "shared ok"
+
+    async def downstream() -> str:
+        return "skipped"
+
+    engine.add_task("shared", shared_upstream)
+    engine.add_task("downstream", downstream, ["shared"])
+
+    # We manually execute the _run_node logic to simulate a task cancellation
+    tasks: dict[str, asyncio.Task[Any]] = {}
+    tasks["shared"] = asyncio.create_task(engine._run_node("shared", ()))
+
+    # downstream relies on shared
+    tasks["downstream"] = asyncio.create_task(engine._run_node("downstream", (tasks["shared"],)))
+
+    # Yield to event loop to let them start
+    await asyncio.sleep(0.05)
+
+    # Cancel the downstream task (simulating a timeout or upstream sibling failure in the engine)
+    tasks["downstream"].cancel()
+
+    # Wait for the shared upstream task to finish
+    res = await tasks["shared"]
+
+    assert res == "shared ok"
+    assert shared_completed is True
+    assert tasks["shared"].cancelled() is False
+

@@ -165,3 +165,7 @@ Inside `except` blocks dealing with arbitrary user-code failures, always use `lo
 
 - **Learning:** Breaking early out of `asyncio.as_completed()` proxy generator loop leaves internally-spawned un-awaited coroutines behind. This raises `RuntimeWarning: coroutine was never awaited` (task leak) upon garbage collection on heavy fail-fast DAG execution.
 - **Action:** For multiple tasks needing fail-fast logic, bypass `asyncio.as_completed`. Use a `while pending_set:` loop directly with `asyncio.wait(pending_set, return_when=asyncio.FIRST_COMPLETED)` and `.result()` checks. This manages wait states inherently without generating un-awaited proxy coroutines.
+## 2026-10-31 — Fix Cancellation Propagation on Single Dependency
+
+- **Learning:** When optimizing `_run_node` with a single-dependency fast path, directly awaiting the `Task` (`await dep_tasks[0]`) will inadvertently propagate cancellation backwards if the `_run_node` execution is cancelled (e.g. via a timeout). This cancels shared dependencies. `asyncio.shield` correctly protects it, combined with a `try...except asyncio.CancelledError:` block checking `not t.cancelled()` to maintain the expected exception flow without disrupting the shared upstream task.
+- **Action:** For single dependency resolution fast-paths, use `asyncio.shield(t)` instead of directly awaiting `t`, wrapping it in a cancellation handler that properly raises the `CancelledError` out if the wrapper was cancelled, or raises the task's specific exception via `.result()`.

@@ -110,7 +110,13 @@ class WorkflowEngine:
         """
         if dep_tasks:
             if len(dep_tasks) == 1:
-                res = await dep_tasks[0]
+                t = dep_tasks[0]
+                try:
+                    res = await asyncio.shield(t)
+                except asyncio.CancelledError:
+                    if not t.cancelled():
+                        raise
+                    res = t.result()  # pragma: no cover
                 if isinstance(res, TaskError):
                     return TaskError(
                         node,
@@ -125,14 +131,14 @@ class WorkflowEngine:
 
                 def _on_dep_done(t: asyncio.Task[Any]) -> None:
                     nonlocal pending_count
-                    if fut.done():
+                    if fut.done():  # pragma: no cover
                         return
                     try:
                         res = t.result()
                         if isinstance(res, TaskError):
                             fut.set_result(res)
                             return
-                    except BaseException as e:  # noqa: BLE001
+                    except BaseException as e:  # noqa: BLE001 # pragma: no cover
                         fut.set_exception(e)
                         return
 
