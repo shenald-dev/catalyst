@@ -116,7 +116,10 @@ class WorkflowEngine:
                 except asyncio.CancelledError:
                     if not t.cancelled():
                         raise
-                    res = t.result()  # pragma: no cover
+                    try:
+                        res = t.result()  # pragma: no cover
+                    except asyncio.CancelledError as e:
+                        res = TaskError(t.get_name() or "upstream", e)
                 if isinstance(res, TaskError):
                     return TaskError(
                         node,
@@ -138,6 +141,9 @@ class WorkflowEngine:
                         if isinstance(res, TaskError):
                             fut.set_result(res)
                             return
+                    except asyncio.CancelledError as e:
+                        fut.set_result(TaskError(t.get_name() or "upstream", e))
+                        return
                     except BaseException as e:  # noqa: BLE001 # pragma: no cover
                         fut.set_exception(e)
                         return
@@ -185,6 +191,8 @@ class WorkflowEngine:
                 result = await coro
 
             return result
+        except asyncio.CancelledError as e:
+            return TaskError(node, e)
         except Exception as e:
             logger.exception("Task %r failed", node)
             return TaskError(node, e)

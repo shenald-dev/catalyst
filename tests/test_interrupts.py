@@ -3,21 +3,22 @@ import sys
 
 import pytest
 
-from catalyst.domain.engine import WorkflowEngine
+from catalyst.domain.engine import TaskError, WorkflowEngine
 
 
 @pytest.mark.asyncio
-async def test_cancelled_error_propagates() -> None:
+async def test_cancelled_error_becomes_task_error() -> None:
     engine = WorkflowEngine()
 
     async def raise_cancel() -> str:
-        # Simulate asyncio.gather cancelling a task
+        # Simulate a task failing due to a cancellation exception
         raise asyncio.CancelledError()
 
     engine.add_task("cancel", raise_cancel)
 
-    with pytest.raises(asyncio.CancelledError):
-        await engine.execute()
+    results = await engine.execute()
+    assert isinstance(results["cancel"], TaskError)
+    assert isinstance(results["cancel"].exception, asyncio.CancelledError)
 
 
 @pytest.mark.asyncio

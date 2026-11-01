@@ -29,5 +29,6 @@ async def test_execute_base_exception_cancellation_coverage() -> None:
     engine.add_task("a", task_a)
     engine.add_task("b", task_b)
 
-    with pytest.raises(asyncio.CancelledError):
-        await engine.execute()
+    results = await engine.execute()
+    assert isinstance(results["a"], TaskError)
+    assert isinstance(results["a"].exception, asyncio.CancelledError)

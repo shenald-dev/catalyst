@@ -667,7 +667,7 @@ async def test_fast_fail_does_not_cancel_shared_upstream_dependency() -> None:
     engine.add_task("downstream", downstream, ["shared"])
 
     # We manually execute the _run_node logic to simulate a task cancellation
-    tasks: dict[str, asyncio.Task[Any]] = {}
+    tasks: dict[str, asyncio.Task[typing.Any]] = {}
     tasks["shared"] = asyncio.create_task(engine._run_node("shared", ()))
 
     # downstream relies on shared
