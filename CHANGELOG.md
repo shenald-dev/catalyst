@@ -400,6 +400,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 **[Optimized]:** Replaced O(n^2) polling loop with O(n) event-driven dependency resolution for fast-fail execution.
+**[Fixed]:** Prevented cancellation propagation to shared upstream dependencies in fast path execution.
 **[Fixed]:** Upgraded minor/patch dependencies securely.
 **[Fixed]:** Repaired memory leak in workflow engine fail-fast polling by cleanly unregistering callbacks from unresolved dependency tasks.
 
