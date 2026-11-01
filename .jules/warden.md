@@ -504,3 +504,8 @@ AI Summary: QA Verified the recent engine fast-fail polling optimization regress
 - **QA & Veto Actions:** Added a unit test for duplicate dependencies.
 - **Entropy Pruned:** 0 lines. Checked vulture flags inside `main.py` and `engine.py` - they are framework false positives and aliases.
 - **Deferred / Blocked:** Safely patched dependencies via uv lock --upgrade.
+
+## 2026-11-01 — Lifecycle & Assurance Ledger
+- **QA & Veto Actions:** QA Verified `APEX-BOLT`'s recent fix to prevent cancellation propagation to shared upstream dependencies in the fast path execution. Tests and structure are sound. No veto action necessary.
+- **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives or legacy backwards-compatible aliases.
+- **Deferred / Blocked:** Safely upgraded minor/patch dependencies without structural regressions.
