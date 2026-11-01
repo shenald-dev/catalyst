@@ -1,4 +1,18 @@
 # Changelog
+
+## [1.0.0] - 2026-11-01
+
+### Major Evolution (v1.0 Enterprise) - Parallel DAG Workflow Platform
+* **Dynamic Data Flow & Upstream Result Injection:** Downstream tasks automatically receive upstream return values via parameter name matching, positional single inputs, `*args`, or dictionary context while maintaining 100% backward compatibility for zero-arg callables.
+* **Intelligent Retry Policy:** Added `RetryPolicy` supporting configurable max retries, base delay, exponential backoff, jitter, and selective exception filtering before recording a `TaskError`.
+* **Concurrency Limiting:** Added `max_concurrency` throttling to `WorkflowEngine` using async semaphores to cap simultaneous worker executions and prevent socket/memory exhaustion.
+* **Ergonomic Decorator Syntax:** Introduced `@engine.task(...)` decorator for clean, intuitive pipeline definitions.
+* **Enriched WorkflowResult Telemetry:** `WorkflowResult` subclasses `dict[str, Any]` for seamless dictionary compatibility while surfacing per-task execution metrics (`TaskMetrics`), overall duration in milliseconds, and status.
+* **Real-Time Visual Command Center (`/dashboard`):** Self-contained, glassmorphic dark-mode dashboard featuring live SVG topological DAG rendering, execution waterfalls, run history, and interactive execution triggers.
+* **Server-Sent Events (SSE) Stream:** Added `/api/v1/stream` delivering real-time lifecycle events (`task_started`, `task_completed`, `task_failed`, `task_skipped`, `task_retrying`, `workflow_completed`).
+* **Declarative Workflow REST API:** Added `/api/v1/workflows/run`, `/runs`, `/runs/{id}`, and `/health` for running dynamic DAG definitions over HTTP and inspecting telemetry.
+* **Developer CLI (`catalyst`):** Added a dedicated terminal CLI with `benchmark`, `run`, `validate`, `serve`, and `version` subcommands.
+
 ## [Unreleased]
 - **[Fixed]:** Fixed undefined `Any` type annotation in `test_fast_fail_does_not_cancel_shared_upstream_dependency` preventing linter and typechecker regressions.
 - **[Optimized]:** Deduplicated task dependencies in `add_task` preserving insertion order, enabling single-dependency fast paths and eliminating redundant done-callbacks when duplicate dependencies are passed.

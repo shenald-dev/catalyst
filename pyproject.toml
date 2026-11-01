@@ -1,8 +1,8 @@
 [project]
 name = "catalyst"
 license = { text = "GPL-3.0-or-later" }
-version = "0.1.37"
-description = "High-performance workflow engine for complex pipelines. Parallel DAG execution, <1s sorts, zero bloat."
+version = "1.0.0"
+description = "High-performance parallel DAG workflow platform: microsecond scheduler, real-time telemetry, visual command center, and CLI."
 authors = [    { name = "shenald-dev", email = "bot@shenald.dev" }
 ]
 requires-python = ">=3.10"
@@ -11,6 +11,9 @@ dependencies = [
     "uvicorn>=0.27.1",
     "pydantic>=2.6.3",
 ]
+
+[project.scripts]
+catalyst = "catalyst.cli:main"
 
 [project.optional-dependencies]
 dev = [
