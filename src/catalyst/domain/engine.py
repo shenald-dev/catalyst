@@ -58,11 +58,11 @@ class WorkflowEngine:
             ValueError: If a dependency references a task not yet registered.
         """
         if dependencies is not None:
-            # Convert dependencies to a list to prevent exhausting iterators/generators
+            # Convert dependencies to a list and deduplicate preserving order
             if isinstance(dependencies, str):
                 dependencies = [dependencies]
             else:
-                dependencies = list(dependencies)
+                dependencies = list(dict.fromkeys(dependencies))
 
         # Validate dependencies exist before adding
         if dependencies:
@@ -93,7 +93,7 @@ class WorkflowEngine:
 
         self._is_async[name] = is_async
         self._predecessors[name] = (
-            list(dependencies) if dependencies is not None else []
+            dependencies if dependencies is not None else []
         )
         self._cached_topo_order = None
 

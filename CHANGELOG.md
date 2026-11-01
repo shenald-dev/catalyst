@@ -1,5 +1,8 @@
 # Changelog
 ## [Unreleased]
+- **[Fixed]:** Fixed undefined `Any` type annotation in `test_fast_fail_does_not_cancel_shared_upstream_dependency` preventing linter and typechecker regressions.
+- **[Optimized]:** Deduplicated task dependencies in `add_task` preserving insertion order, enabling single-dependency fast paths and eliminating redundant done-callbacks when duplicate dependencies are passed.
+
 
 ## [0.1.39] - 2026-11-30
 - **[Added]:** Unit test checking that having duplicate string dependencies on a node does not stall execution.
