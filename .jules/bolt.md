@@ -169,3 +169,9 @@ Inside `except` blocks dealing with arbitrary user-code failures, always use `lo
 
 - **Learning:** When optimizing `_run_node` with a single-dependency fast path, directly awaiting the `Task` (`await dep_tasks[0]`) will inadvertently propagate cancellation backwards if the `_run_node` execution is cancelled (e.g. via a timeout). This cancels shared dependencies. `asyncio.shield` correctly protects it, combined with a `try...except asyncio.CancelledError:` block checking `not t.cancelled()` to maintain the expected exception flow without disrupting the shared upstream task.
 - **Action:** For single dependency resolution fast-paths, use `asyncio.shield(t)` instead of directly awaiting `t`, wrapping it in a cancellation handler that properly raises the `CancelledError` out if the wrapper was cancelled, or raises the task's specific exception via `.result()`.
+
+2026-11-02 — Task Error Handling on Cancel
+Observation:
+The workflow engine would completely crash upon an internal task cancellation when it should gracefully wrap it into a `TaskError` and mark the task as failed. This resulted in workflow regressions due to escaping `asyncio.CancelledError` instances.
+Alignment / Action:
+Added handling for `asyncio.CancelledError` across `t.result()` in `_run_node` (single dependency fast path and multiple dependency fast path). Set `name=node` for task creation in `execute()` so `t.get_name()` gives the right name, and added `return_exceptions=True` to `asyncio.gather(*tasks.values())` and explicitly catch cancellations to wrap them into `TaskError`.

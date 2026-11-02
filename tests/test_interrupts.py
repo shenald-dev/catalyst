@@ -16,8 +16,8 @@ async def test_cancelled_error_propagates() -> None:
 
     engine.add_task("cancel", raise_cancel)
 
-    with pytest.raises(asyncio.CancelledError):
-        await engine.execute()
+    res = await engine.execute()
+    assert isinstance(res["cancel"].exception, asyncio.CancelledError)
 
 
 @pytest.mark.asyncio
