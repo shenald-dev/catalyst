@@ -258,9 +258,7 @@ class WorkflowEngine:
                 is_async = True
 
         self._is_async[name] = is_async
-        self._predecessors[name] = (
-            dependencies if dependencies is not None else []
-        )
+        self._predecessors[name] = dependencies if dependencies is not None else []
         self._cached_topo_order = None
 
     def task(
@@ -290,7 +288,11 @@ class WorkflowEngine:
         node: str,
         dep_tasks: tuple[asyncio.Task[Any], ...],
     ) -> Any:
-        metrics = self._current_metrics.get(node) if self._current_metrics is not None else None
+        metrics = (
+            self._current_metrics.get(node)
+            if self._current_metrics is not None
+            else None
+        )
         all_tasks = self._current_tasks
         """Evaluate and execute a single node in the DAG.
 
@@ -306,7 +308,10 @@ class WorkflowEngine:
                 except asyncio.CancelledError:
                     if not t.cancelled():
                         raise
-                    res = t.result()  # pragma: no cover
+                    try:
+                        res = t.result()  # pragma: no cover
+                    except asyncio.CancelledError as e:
+                        res = TaskError(t.get_name(), e)
                 if isinstance(res, TaskError):
                     if metrics:
                         metrics.status = "skipped"
@@ -333,11 +338,14 @@ class WorkflowEngine:
                         return
                     try:
                         res = t.result()
-                        if isinstance(res, TaskError):
-                            fut.set_result(res)
-                            return
+                    except asyncio.CancelledError as e:
+                        res = TaskError(t.get_name(), e)
                     except BaseException as e:  # noqa: BLE001 # pragma: no cover
                         fut.set_exception(e)
+                        return
+
+                    if isinstance(res, TaskError):
+                        fut.set_result(res)
                         return
 
                     pending_count -= 1
@@ -441,13 +449,19 @@ class WorkflowEngine:
                     ):
                         if metrics:
                             metrics.retries_count += 1
-                        delay = retry_policy.delay * (retry_policy.backoff ** (attempt - 1))
+                        delay = retry_policy.delay * (
+                            retry_policy.backoff ** (attempt - 1)
+                        )
                         if retry_policy.jitter:
                             delay *= random.uniform(0.75, 1.25)
                         self._emit_event(
                             "task_retrying",
                             node,
-                            {"attempt": attempt, "error": str(exc), "next_delay": delay},
+                            {
+                                "attempt": attempt,
+                                "error": str(exc),
+                                "next_delay": delay,
+                            },
                         )
                         await asyncio.sleep(delay)
                         continue
@@ -488,7 +502,9 @@ class WorkflowEngine:
             self._semaphore = None
 
         if self._listeners:
-            self._emit_event("workflow_started", data={"tasks": list(self.tasks.keys())})
+            self._emit_event(
+                "workflow_started", data={"tasks": list(self.tasks.keys())}
+            )
 
         tasks: dict[str, asyncio.Task[Any]] = {}
         task_metrics: dict[str, TaskMetrics] = {
@@ -502,12 +518,13 @@ class WorkflowEngine:
             deps = self._predecessors.get(node, [])
             dep_tasks = tuple(tasks[dep] for dep in deps) if deps else ()
             tasks[node] = asyncio.create_task(
-                self._run_node(node, dep_tasks)
+                self._run_node(node, dep_tasks),
+                name=node,
             )
 
         if tasks:
             try:
-                await asyncio.gather(*tasks.values())
+                await asyncio.gather(*tasks.values(), return_exceptions=True)
             except BaseException:
                 self._current_tasks = None
                 self._current_metrics = None
@@ -519,18 +536,24 @@ class WorkflowEngine:
         end_time = time.perf_counter()
         total_duration_ms = (end_time - start_time) * 1000.0
 
-        raw_results = {node: task.result() for node, task in tasks.items()}
+        raw_results = {}
+        for node, task in tasks.items():
+            try:
+                raw_results[node] = task.result()
+            except asyncio.CancelledError as e:
+                raw_results[node] = TaskError(node, e)
+
         has_failure = any(isinstance(v, TaskError) for v in raw_results.values())
         overall_status = "failure" if has_failure else "success"
 
         if self._listeners:
             self._emit_event(
                 "workflow_completed",
-            data={
-                "status": overall_status,
-                "duration_ms": total_duration_ms,
-            },
-        )
+                data={
+                    "status": overall_status,
+                    "duration_ms": total_duration_ms,
+                },
+            )
 
         result_obj = WorkflowResult(
             results=raw_results,
