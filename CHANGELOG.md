@@ -13,12 +13,6 @@
 * **Declarative Workflow REST API:** Added `/api/v1/workflows/run`, `/runs`, `/runs/{id}`, and `/health` for running dynamic DAG definitions over HTTP and inspecting telemetry.
 * **Developer CLI (`catalyst`):** Added a dedicated terminal CLI with `benchmark`, `run`, `validate`, `serve`, and `version` subcommands.
 
-## [Unreleased]
-- **[Fixed]:** Fixed undefined `Any` type annotation in `test_fast_fail_does_not_cancel_shared_upstream_dependency` preventing linter and typechecker regressions.
-- **[Optimized]:** Deduplicated task dependencies in `add_task` preserving insertion order, enabling single-dependency fast paths and eliminating redundant done-callbacks when duplicate dependencies are passed.
-
-
-## [0.1.39] - 2026-11-30
 - **[Added]:** Unit test checking that having duplicate string dependencies on a node does not stall execution.
 - **[Optimized]:** Safely bumped patch dependencies using `uv lock --upgrade`.
 - **[Pruned]:** Validated zero structural codebase bloat; Vulture flags inside `main.py` and `engine.py` are framework false positives and backwards-compatible aliases.
@@ -26,6 +20,11 @@
 - **[Optimized]:** Short-circuit dependency callback registration loop in `_run_node` when fail-fast future is already resolved.
 - **[Added]:** Unit tests covering multi-dependency diamond DAG execution, mixed sync/async dependencies, and pre-completed fail-fast task handling.
 - **[Fixed]:** Safely upgraded direct patch dependencies (`pydantic`, `pydantic-core`, `opentelemetry-api`) via `uv lock --upgrade`.
+
+## [Unreleased]
+
+**[Pruned]:** Verified zero dead code with Vulture; remaining flags are false positives.
+**[Optimized]:** Safely patched dependencies via uv lock --upgrade.
 
 ## [0.1.38] - 2026-11-29
 
