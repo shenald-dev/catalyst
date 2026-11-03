@@ -423,6 +423,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **Optimized**: Resolved `ruff` warnings in `src/catalyst/domain/engine.py` (SIM102 and B004) by flattening nested `if` statements and replacing `hasattr(x, "__call__")` with `callable()`.
 - **Docs**: Updated `README.md` code examples to correctly reference `WorkflowEngine` and `add_task`.
+- **[Fixed]**: QA verified fast path cancellation fix to prevent propagation to shared upstream dependencies, and safely updated `uv` dependencies.
 
 ## [0.1.31] - 2026-05-31
 * **Bugfix:** Auto-resolved git merge conflict syntax errors, ensuring safe dependency fetching logic and proper code indentations.

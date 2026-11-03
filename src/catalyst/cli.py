@@ -126,7 +126,9 @@ def run_workflow_file(args: argparse.Namespace) -> None:
                         if isinstance(item, (int, float)):
                             nums.append(float(item))
                         elif isinstance(item, (list, tuple, set)):
-                            nums.extend(float(x) for x in item if isinstance(x, (int, float)))
+                            nums.extend(
+                                float(x) for x in item if isinstance(x, (int, float))
+                            )
                     return sum(nums) if nums else (p or 0)
                 return p
 
@@ -140,7 +142,9 @@ def run_workflow_file(args: argparse.Namespace) -> None:
             retry_policy=retry_policy,
         )
 
-    print(f"🚀 Running workflow '{data.get('name', 'custom_dag')}' ({len(tasks_data)} tasks)...")
+    print(
+        f"🚀 Running workflow '{data.get('name', 'custom_dag')}' ({len(tasks_data)} tasks)..."
+    )
     results = asyncio.run(engine.execute())
 
     if args.json:
@@ -185,9 +189,12 @@ def validate_workflow_file(args: argparse.Namespace) -> None:
     try:
         # Check for cycles
         import graphlib
+
         ts = graphlib.TopologicalSorter(engine._predecessors)
         order = list(ts.static_order())
-        print(f"✅ Workflow is a valid Directed Acyclic Graph (DAG) with {len(order)} tasks.")
+        print(
+            f"✅ Workflow is a valid Directed Acyclic Graph (DAG) with {len(order)} tasks."
+        )
         print(f"   Topological Order: {' -> '.join(order)}")
     except graphlib.CycleError as ce:
         print(f"❌ Cycle Detected in Workflow: {ce}", file=sys.stderr)
@@ -197,6 +204,7 @@ def validate_workflow_file(args: argparse.Namespace) -> None:
 def serve_dashboard(args: argparse.Namespace) -> None:
     """Boots the FastAPI server hosting API endpoints and the real-time visual dashboard."""
     import uvicorn
+
     print(f"✨ Starting Catalyst Server on {args.host}:{args.port}")
     print(f"👉 Visual Dashboard: http://{args.host}:{args.port}/dashboard")
     print(f"👉 OpenAPI Docs:     http://{args.host}:{args.port}/docs")
@@ -211,6 +219,7 @@ def serve_dashboard(args: argparse.Namespace) -> None:
 def print_version(_args: argparse.Namespace) -> None:
     """Prints the Catalyst Engine version."""
     from importlib.metadata import PackageNotFoundError, version
+
     try:
         ver = version("catalyst")
     except PackageNotFoundError:
@@ -227,27 +236,45 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
     # benchmark
-    bench_parser = subparsers.add_parser("benchmark", help="Run synthetic DAG execution benchmark")
-    bench_parser.add_argument("--nodes", type=int, default=100, help="Number of nodes (default: 100)")
-    bench_parser.add_argument("--concurrency", type=int, default=None, help="Max concurrency limit")
+    bench_parser = subparsers.add_parser(
+        "benchmark", help="Run synthetic DAG execution benchmark"
+    )
+    bench_parser.add_argument(
+        "--nodes", type=int, default=100, help="Number of nodes (default: 100)"
+    )
+    bench_parser.add_argument(
+        "--concurrency", type=int, default=None, help="Max concurrency limit"
+    )
     bench_parser.set_defaults(func=run_benchmark)
 
     # run
     run_parser = subparsers.add_parser("run", help="Execute a JSON workflow definition")
     run_parser.add_argument("file", help="Path to workflow JSON file")
-    run_parser.add_argument("--json", action="store_true", help="Output full JSON telemetry")
+    run_parser.add_argument(
+        "--json", action="store_true", help="Output full JSON telemetry"
+    )
     run_parser.set_defaults(func=run_workflow_file)
 
     # validate
-    val_parser = subparsers.add_parser("validate", help="Validate a workflow DAG for cycles")
+    val_parser = subparsers.add_parser(
+        "validate", help="Validate a workflow DAG for cycles"
+    )
     val_parser.add_argument("file", help="Path to workflow JSON file")
     val_parser.set_defaults(func=validate_workflow_file)
 
     # serve
-    serve_parser = subparsers.add_parser("serve", help="Launch the API & real-time dashboard")
-    serve_parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
-    serve_parser.add_argument("--port", type=int, default=8080, help="Bind port (default: 8080)")
-    serve_parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
+    serve_parser = subparsers.add_parser(
+        "serve", help="Launch the API & real-time dashboard"
+    )
+    serve_parser.add_argument(
+        "--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)"
+    )
+    serve_parser.add_argument(
+        "--port", type=int, default=8080, help="Bind port (default: 8080)"
+    )
+    serve_parser.add_argument(
+        "--reload", action="store_true", help="Enable auto-reload"
+    )
     serve_parser.set_defaults(func=serve_dashboard)
 
     # version
