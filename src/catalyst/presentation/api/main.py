@@ -35,16 +35,22 @@ class StatusResponse(BaseModel):
 
 class TaskDefinition(BaseModel):
     name: str = Field(..., description="Unique task name in the DAG")
-    operation: str = Field("echo", description="Operation: echo, transform, sleep, fail, compute")
+    operation: str = Field(
+        "echo", description="Operation: echo, transform, sleep, fail, compute"
+    )
     payload: Any = Field(None, description="Static payload, value, or configuration")
-    dependencies: list[str] = Field(default_factory=list, description="List of dependency task names")
+    dependencies: list[str] = Field(
+        default_factory=list, description="List of dependency task names"
+    )
     timeout: float | None = Field(None, description="Timeout in seconds")
     retries: int = Field(0, ge=0, le=10, description="Max retries on failure")
 
 
 class WorkflowDefinition(BaseModel):
     name: str = Field("custom_dag", description="Workflow name")
-    tasks: list[TaskDefinition] = Field(..., min_length=1, description="List of tasks in workflow")
+    tasks: list[TaskDefinition] = Field(
+        ..., min_length=1, description="List of tasks in workflow"
+    )
     max_concurrency: int | None = Field(None, ge=1, description="Max parallel tasks")
 
 
@@ -57,6 +63,7 @@ class SystemHealthResponse(BaseModel):
 
 
 # --- In-Memory Run Registry & Event Bus ---
+
 
 class RunRegistry:
     def __init__(self, maxlen: int = 100) -> None:
@@ -103,6 +110,7 @@ event_bus = GlobalEventBus()
 
 
 # --- Core Compatibility Endpoints ---
+
 
 @app.get("/", response_model=StatusResponse)
 async def health_check() -> StatusResponse:
@@ -154,6 +162,7 @@ async def execute_workflow() -> dict[str, Any]:
 
 # --- Next-Gen Declarative Workflow API ---
 
+
 def _build_task_callable(operation: str, payload: Any) -> Callable[..., Any]:
     async def callable_impl(*args: Any, **kwargs: Any) -> Any:
         if operation == "echo":
@@ -187,13 +196,15 @@ async def run_declarative_workflow(definition: WorkflowDefinition) -> dict[str, 
     run_id = f"run_{uuid.uuid4().hex[:8]}"
 
     def sse_event_relay(evt: WorkflowEvent) -> None:
-        event_bus.publish({
-            "run_id": run_id,
-            "event_type": evt.event_type,
-            "task_name": evt.task_name,
-            "data": evt.data,
-            "timestamp": evt.timestamp,
-        })
+        event_bus.publish(
+            {
+                "run_id": run_id,
+                "event_type": evt.event_type,
+                "task_name": evt.task_name,
+                "data": evt.data,
+                "timestamp": evt.timestamp,
+            }
+        )
 
     engine.add_listener(sse_event_relay)
 
@@ -259,6 +270,7 @@ async def system_health() -> SystemHealthResponse:
 
 
 # --- Real-Time Server-Sent Events (SSE) Stream ---
+
 
 @app.get("/api/v1/stream")
 async def global_event_stream() -> StreamingResponse:

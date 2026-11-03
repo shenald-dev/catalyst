@@ -515,6 +515,11 @@ AI Summary: QA Verified the recent engine fast-fail polling optimization regress
 - **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives inside `main.py` and `engine.py`.
 - **Deferred / Blocked:** Safely patched dependencies via uv lock --upgrade.
 
+## 2026-11-03 — Lifecycle & Assurance Ledger
+- **QA & Veto Actions:** QA verified `APEX-BOLT`'s recent fix in `_run_node` single-dependency fast path, ensuring `asyncio.shield(t)` prevents cancellation propagation to shared dependencies. No veto action necessary.
+- **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives inside `main.py` and `engine.py`.
+- **Deferred / Blocked:** Safely patched dependencies via `uv lock --upgrade` and `uv sync --all-extras`.
+
 ## 2026-11-02 — Lifecycle & Assurance Ledger
 - **QA & Veto Actions:** None required. System checks passed with clean execution path, no memory leaks or deadlocks observed.
 - **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives inside `main.py` and `engine.py`.
