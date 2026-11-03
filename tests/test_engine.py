@@ -672,7 +672,9 @@ async def test_fast_fail_does_not_cancel_shared_upstream_dependency() -> None:
     tasks["shared"] = asyncio.create_task(engine._run_node("shared", ()))
 
     # downstream relies on shared
-    tasks["downstream"] = asyncio.create_task(engine._run_node("downstream", (tasks["shared"],)))
+    tasks["downstream"] = asyncio.create_task(
+        engine._run_node("downstream", (tasks["shared"],))
+    )
 
     # Yield to event loop to let them start
     await asyncio.sleep(0.05)
@@ -686,4 +688,3 @@ async def test_fast_fail_does_not_cancel_shared_upstream_dependency() -> None:
     assert res == "shared ok"
     assert shared_completed is True
     assert tasks["shared"].cancelled() is False
-

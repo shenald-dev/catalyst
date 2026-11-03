@@ -175,3 +175,8 @@ Observation:
 The workflow engine would completely crash upon an internal task cancellation when it should gracefully wrap it into a `TaskError` and mark the task as failed. This resulted in workflow regressions due to escaping `asyncio.CancelledError` instances.
 Alignment / Action:
 Added handling for `asyncio.CancelledError` across `t.result()` in `_run_node` (single dependency fast path and multiple dependency fast path). Set `name=node` for task creation in `execute()` so `t.get_name()` gives the right name, and added `return_exceptions=True` to `asyncio.gather(*tasks.values())` and explicitly catch cancellations to wrap them into `TaskError`.
+
+## 2026-11-03 — Argument Resolution Bug with Positional Only and Var Positional
+
+- **Learning:** `_resolve_call_args` used to append `POSITIONAL_ONLY` and `POSITIONAL_OR_KEYWORD` parameter dependencies to `kwargs` instead of `args` when iterating over `params.items()`. When a function specifies `*args`, supplying dependencies as `kwargs` instead of `args` when we know they should be positional causes a `TypeError` for positional-only arguments passed as keyword arguments.
+- **Action:** For functions that use `*args`, always append parameters defined as `POSITIONAL_OR_KEYWORD` or `POSITIONAL_ONLY` to the `args` array during dependency resolution, while making sure we don't accidentally append the same dependency twice by keeping track of `mapped_deps`.
