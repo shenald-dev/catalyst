@@ -524,3 +524,8 @@ AI Summary: QA Verified the recent engine fast-fail polling optimization regress
 - **QA & Veto Actions:** None required. System checks passed with clean execution path, no memory leaks or deadlocks observed.
 - **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives inside `main.py` and `engine.py`.
 - **Deferred / Blocked:** Safely patched dependencies via uv lock --upgrade.
+
+## 2026-11-04 — Lifecycle & Assurance Ledger
+- **QA & Veto Actions:** QA Verified `APEX-BOLT`'s recent fix to resolve the `VAR_POSITIONAL` override bug (`*args` with `POSITIONAL_ONLY` and `POSITIONAL_OR_KEYWORD`). The fix ensures parameter matching and dynamic dependency injection in DAG tasks work correctly when `*args` are present. Test suites, linting, and typing all pass.
+- **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives on FastAPI routers and Pydantic models in `main.py`.
+- **Deferred / Blocked:** None.
