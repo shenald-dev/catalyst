@@ -432,21 +432,21 @@ class WorkflowEngine:
             while attempt < max_attempts:
                 attempt += 1
                 try:
-                    if is_async:
-                        coro = func(*call_args, **call_kwargs)
-                    else:
-                        coro = asyncio.to_thread(func, *call_args, **call_kwargs)
+                    async def _execute_task() -> Any:
+                        if is_async:
+                            coro = func(*call_args, **call_kwargs)
+                        else:
+                            coro = asyncio.to_thread(func, *call_args, **call_kwargs)
 
-                    if timeout is not None:
-                        invocation = asyncio.wait_for(coro, timeout=timeout)
-                    else:
-                        invocation = coro
+                        if timeout is not None:
+                            return await asyncio.wait_for(coro, timeout=timeout)
+                        return await coro
 
                     if self._semaphore is not None:
                         async with self._semaphore:
-                            result = await invocation
+                            result = await _execute_task()
                     else:
-                        result = await invocation
+                        result = await _execute_task()
 
                     end_time = time.perf_counter()
                     if metrics:

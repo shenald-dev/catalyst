@@ -180,3 +180,7 @@ Added handling for `asyncio.CancelledError` across `t.result()` in `_run_node` (
 
 - **Learning:** `_resolve_call_args` used to append `POSITIONAL_ONLY` and `POSITIONAL_OR_KEYWORD` parameter dependencies to `kwargs` instead of `args` when iterating over `params.items()`. When a function specifies `*args`, supplying dependencies as `kwargs` instead of `args` when we know they should be positional causes a `TypeError` for positional-only arguments passed as keyword arguments.
 - **Action:** For functions that use `*args`, always append parameters defined as `POSITIONAL_OR_KEYWORD` or `POSITIONAL_ONLY` to the `args` array during dependency resolution, while making sure we don't accidentally append the same dependency twice by keeping track of `mapped_deps`.
+## 2026-11-04 — Fix Memory Leak (Un-awaited Coroutines) due to Timeout + Semaphore
+
+- **Learning:** `asyncio.wait_for` wraps the coroutine into a new coroutine immediately. When `max_concurrency` is set and the task needs to wait to acquire the semaphore, the timeout inside `wait_for` is already ticking. Worse, if the task times out or fails *while waiting for the semaphore*, the un-awaited coroutine (`invocation`) and original `coro` will be garbage collected, raising `RuntimeWarning: coroutine was never awaited`.
+- **Action:** For tasks executed using a semaphore and timeout, acquire the semaphore *before* creating the coroutine and wrapping it in `wait_for`, so that the timeout only applies to the actual task execution time and un-awaited wrapped coroutine memory leaks are avoided.
