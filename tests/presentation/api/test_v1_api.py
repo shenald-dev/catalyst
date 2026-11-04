@@ -10,7 +10,12 @@ def test_declarative_workflow_run() -> None:
         "name": "etl_pipeline",
         "tasks": [
             {"name": "extract", "operation": "echo", "payload": [10, 20, 30]},
-            {"name": "sleep_step", "operation": "sleep", "payload": 0.01, "dependencies": ["extract"]},
+            {
+                "name": "sleep_step",
+                "operation": "sleep",
+                "payload": 0.01,
+                "dependencies": ["extract"],
+            },
             {"name": "aggregate", "operation": "compute", "dependencies": ["extract"]},
         ],
         "max_concurrency": 2,
@@ -39,8 +44,18 @@ def test_declarative_workflow_with_failure_and_retries() -> None:
     payload = {
         "name": "faulty_pipeline",
         "tasks": [
-            {"name": "bad_task", "operation": "fail", "payload": "Database down", "retries": 1},
-            {"name": "dependent_task", "operation": "echo", "payload": "ok", "dependencies": ["bad_task"]},
+            {
+                "name": "bad_task",
+                "operation": "fail",
+                "payload": "Database down",
+                "retries": 1,
+            },
+            {
+                "name": "dependent_task",
+                "operation": "echo",
+                "payload": "ok",
+                "dependencies": ["bad_task"],
+            },
         ],
     }
 
@@ -50,7 +65,10 @@ def test_declarative_workflow_with_failure_and_retries() -> None:
 
     assert data["status"] == "failure"
     assert data["results"]["bad_task"]["error"] == "Database down"
-    assert "Skipped: upstream task 'bad_task' failed" in data["results"]["dependent_task"]["error"]
+    assert (
+        "Skipped: upstream task 'bad_task' failed"
+        in data["results"]["dependent_task"]["error"]
+    )
     assert data["task_metrics"]["bad_task"]["retries_count"] == 1
 
 

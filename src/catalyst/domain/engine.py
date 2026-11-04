@@ -123,6 +123,8 @@ def _resolve_call_args(
         p.kind == inspect.Parameter.VAR_POSITIONAL for p in params.values()
     )
 
+    mapped_deps = set()
+
     for p_name, p in params.items():
         if p.kind in (
             inspect.Parameter.POSITIONAL_ONLY,
@@ -130,19 +132,34 @@ def _resolve_call_args(
             inspect.Parameter.KEYWORD_ONLY,
         ):
             if p_name in upstream_results:
-                kwargs[p_name] = upstream_results[p_name]
+                if p.kind == inspect.Parameter.POSITIONAL_ONLY or (
+                    has_var_positional
+                    and p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+                ):
+                    args.append(upstream_results[p_name])
+                else:
+                    kwargs[p_name] = upstream_results[p_name]
+                mapped_deps.add(p_name)
             elif p_name in ("context", "inputs", "upstream"):
-                kwargs[p_name] = {
+                val = {
                     dep: upstream_results[dep]
                     for dep in dependencies
                     if dep in upstream_results
                 }
+                if p.kind == inspect.Parameter.POSITIONAL_ONLY or (
+                    has_var_positional
+                    and p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+                ):
+                    args.append(val)
+                else:
+                    kwargs[p_name] = val
 
     # If func accepts a single positional argument and wasn't matched by name
     if (
         len(params) == 1
         and len(dependencies) == 1
         and not kwargs
+        and not args
         and not has_var_positional
     ):
         dep_name = dependencies[0]
@@ -150,7 +167,7 @@ def _resolve_call_args(
             args.append(upstream_results[dep_name])
     elif has_var_positional:
         for dep in dependencies:
-            if dep in upstream_results:
+            if dep in upstream_results and dep not in mapped_deps:
                 args.append(upstream_results[dep])
 
     return tuple(args), kwargs
