@@ -101,15 +101,21 @@ class WorkflowResult(dict[str, Any]):
         }
 
 
+@functools.lru_cache(maxsize=1024)
+def _get_signature(func: Callable[..., Any]) -> inspect.Signature | None:
+    try:
+        return inspect.signature(func)
+    except (ValueError, TypeError):
+        return None
+
 def _resolve_call_args(
     func: Callable[..., Any],
     dependencies: list[str],
     upstream_results: dict[str, Any],
 ) -> tuple[tuple[Any, ...], dict[str, Any]]:
     """Determine args and kwargs to inject into func based on signature and upstream results."""
-    try:
-        sig = inspect.signature(func)
-    except (ValueError, TypeError):
+    sig = _get_signature(func)
+    if sig is None:
         return (), {}
 
     params = sig.parameters
