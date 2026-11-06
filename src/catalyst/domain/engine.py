@@ -102,11 +102,21 @@ class WorkflowResult(dict[str, Any]):
 
 
 @functools.lru_cache(maxsize=1024)
-def _get_signature(func: Callable[..., Any]) -> inspect.Signature | None:
+def _get_signature_cached(func: Callable[..., Any]) -> inspect.Signature | None:
     try:
         return inspect.signature(func)
     except (ValueError, TypeError):
         return None
+
+def _get_signature(func: Callable[..., Any]) -> inspect.Signature | None:
+    try:
+        return _get_signature_cached(func)
+    except TypeError:
+        # Fallback for unhashable types (e.g., dynamically generated instances missing __hash__)
+        try:
+            return inspect.signature(func)
+        except (ValueError, TypeError):
+            return None
 
 def _resolve_call_args(
     func: Callable[..., Any],

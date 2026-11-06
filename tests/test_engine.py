@@ -731,3 +731,17 @@ async def test_timeout_with_semaphore_memory_leak() -> None:
         # We verify that no RuntimeWarning was emitted.
         unawaited_warnings = [warn for warn in w if issubclass(warn.category, RuntimeWarning) and "was never awaited" in str(warn.message)]
         assert len(unawaited_warnings) == 0, f"Memory leak: Coroutine was not awaited: {unawaited_warnings}"
+
+def test_unhashable_task_signature() -> None:
+    """Ensure that dynamically created unhashable callables do not fail the engine signature caching."""
+    class UnhashableCallable:
+        __hash__ = None  # type: ignore[assignment]
+
+        def __call__(self, arg1: int) -> int:
+            return arg1 * 2
+
+    engine = WorkflowEngine()
+    engine.add_task("test", UnhashableCallable())
+
+    # Just asserting that adding the task and resolving dependencies works.
+    assert "test" in engine.tasks

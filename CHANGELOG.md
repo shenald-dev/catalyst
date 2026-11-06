@@ -434,3 +434,5 @@ All notable changes to this project will be documented in this file.
 * **Maintainability:** Exported core engine primitives at package root for better DX, and dynamically resolved FastAPI app version to prevent drift.
 
 * **Lifecycle:** Cleaned up root project scratchpads, upgraded minor dependencies, and verified core logic.
+
+**[Fixed]:** Fixed engine signature cache throwing TypeError for unhashable callable tasks.
