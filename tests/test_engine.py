@@ -688,3 +688,46 @@ async def test_fast_fail_does_not_cancel_shared_upstream_dependency() -> None:
     assert res == "shared ok"
     assert shared_completed is True
     assert tasks["shared"].cancelled() is False
+
+@pytest.mark.asyncio
+async def test_timeout_with_semaphore_memory_leak() -> None:
+    """Ensure that combining max_concurrency (semaphore) and timeout doesn't leak coroutines."""
+    import gc
+    import warnings
+
+    engine = WorkflowEngine(max_concurrency=1)
+
+    async def blocking_task() -> str:
+        await asyncio.sleep(0.3)
+        return "done"
+
+    async def timeout_task() -> str:
+        await asyncio.sleep(1.0)
+        return "done"
+
+    engine.add_task("blocker", blocking_task)
+    engine.add_task("waiter", timeout_task, timeout=0.1)
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        results = await engine.execute()
+
+        assert results["blocker"] == "done"
+        assert isinstance(results["waiter"], TaskError)
+        assert isinstance(results["waiter"].exception, TimeoutError)
+
+        results["waiter"].exception.__traceback__ = None
+        results.clear()
+
+        # We yield to the event loop so that any pending cleanup tasks can run
+        await asyncio.sleep(0)
+
+        # Force garbage collection
+        gc.collect()
+
+        # If a coroutine was actually un-awaited (which indicates a true leak),
+        # the gc.collect() call will trigger a RuntimeWarning from asyncio.
+        # We verify that no RuntimeWarning was emitted.
+        unawaited_warnings = [warn for warn in w if issubclass(warn.category, RuntimeWarning) and "was never awaited" in str(warn.message)]
+        assert len(unawaited_warnings) == 0, f"Memory leak: Coroutine was not awaited: {unawaited_warnings}"
