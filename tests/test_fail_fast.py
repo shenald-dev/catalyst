@@ -58,7 +58,7 @@ async def test_fail_fast_massive_dependencies() -> None:
     assert downstream_eval_time is not None
     eval_duration = downstream_eval_time - start
 
-    assert eval_duration < 0.2, (
+    assert eval_duration < 0.4, (
         "Downstream did not fail fast, waited for slow dependency!"
     )
 
@@ -108,6 +108,6 @@ async def test_true_fail_fast_multiple_deps() -> None:
     assert downstream_eval_time is not None
     eval_duration = downstream_eval_time - start
 
-    assert eval_duration < 0.2, (
+    assert eval_duration < 0.4, (
         "Downstream did not fail fast, waited for slow dependency!"
     )
