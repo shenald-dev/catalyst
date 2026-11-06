@@ -529,3 +529,8 @@ AI Summary: QA Verified the recent engine fast-fail polling optimization regress
 - **QA & Veto Actions:** QA Verified `APEX-BOLT`'s recent fix to resolve the `VAR_POSITIONAL` override bug (`*args` with `POSITIONAL_ONLY` and `POSITIONAL_OR_KEYWORD`). The fix ensures parameter matching and dynamic dependency injection in DAG tasks work correctly when `*args` are present. Test suites, linting, and typing all pass.
 - **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives on FastAPI routers and Pydantic models in `main.py`.
 - **Deferred / Blocked:** None.
+
+## 2026-11-06 — Lifecycle & Assurance Ledger
+- **QA & Veto Actions:** QA Verified `APEX-BOLT`'s recent fix to cache `inspect.signature` in `_get_signature`. However, the `lru_cache` decorator threw a `TypeError` for unhashable callables before the function's internal `try...except TypeError` could catch it. Applied an under-15-line fix wrapping the cached function with an explicit `try...except` fallback to restore robustness against dynamically created missing-`__hash__` callables. Appended `test_unhashable_task_signature` test to `test_engine.py`. Deleted scratchpad artifact from the repo.
+- **Entropy Pruned:** 0 lines. Evaluated repository with `vulture`; remaining flags are false positives inside `main.py`.
+- **Deferred / Blocked:** None.
