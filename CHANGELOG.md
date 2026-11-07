@@ -420,6 +420,7 @@ All notable changes to this project will be documented in this file.
 **[Fixed]:** Prevented cancellation propagation to shared upstream dependencies in fast path execution.
 **[Fixed]:** Upgraded minor/patch dependencies securely.
 **[Fixed]:** Repaired memory leak in workflow engine fail-fast polling by cleanly unregistering callbacks from unresolved dependency tasks.
+**[Fixed]:** WARDEN verified the engine signature cache TypeError fix for unhashable callable tasks, and added missing edge-case unit tests to achieve 100% test coverage.
 
 ### Changed
 - **Optimized**: Resolved `ruff` warnings in `src/catalyst/domain/engine.py` (SIM102 and B004) by flattening nested `if` statements and replacing `hasattr(x, "__call__")` with `callable()`.
