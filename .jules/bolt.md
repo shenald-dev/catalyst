@@ -184,3 +184,8 @@ Added handling for `asyncio.CancelledError` across `t.result()` in `_run_node` (
 
 - **Learning:** `asyncio.wait_for` wraps the coroutine into a new coroutine immediately. When `max_concurrency` is set and the task needs to wait to acquire the semaphore, the timeout inside `wait_for` is already ticking. Worse, if the task times out or fails *while waiting for the semaphore*, the un-awaited coroutine (`invocation`) and original `coro` will be garbage collected, raising `RuntimeWarning: coroutine was never awaited`.
 - **Action:** For tasks executed using a semaphore and timeout, acquire the semaphore *before* creating the coroutine and wrapping it in `wait_for`, so that the timeout only applies to the actual task execution time and un-awaited wrapped coroutine memory leaks are avoided.
+
+## 2026-11-07 — Complete Cyclic Task Reference Removal in `_run_node`
+
+- **Learning:** Although passing `dep_tasks` rather than the entire `tasks` state dictionary into `_run_node` broke the majority of the circular reference, a leftover assignment `all_tasks = self._current_tasks` was inadvertently keeping the cycle alive since `all_tasks` was being captured by the nested task execution closures. This caused the Garbage Collector to work harder, and it is also slower to look up `self._current_tasks` at the node execution level.
+- **Action:** Instead of looking up tasks from `self._current_tasks` to build `upstream_results`, iterate over `zip(deps, dep_tasks)` directly since `dep_tasks` is pre-resolved before the coroutine is spawned. This entirely breaks the circular reference in `_run_node` closures.
