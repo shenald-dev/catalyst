@@ -689,6 +689,7 @@ async def test_fast_fail_does_not_cancel_shared_upstream_dependency() -> None:
     assert shared_completed is True
     assert tasks["shared"].cancelled() is False
 
+
 @pytest.mark.asyncio
 async def test_timeout_with_semaphore_memory_leak() -> None:
     """Ensure that combining max_concurrency (semaphore) and timeout doesn't leak coroutines."""
@@ -729,11 +730,20 @@ async def test_timeout_with_semaphore_memory_leak() -> None:
         # If a coroutine was actually un-awaited (which indicates a true leak),
         # the gc.collect() call will trigger a RuntimeWarning from asyncio.
         # We verify that no RuntimeWarning was emitted.
-        unawaited_warnings = [warn for warn in w if issubclass(warn.category, RuntimeWarning) and "was never awaited" in str(warn.message)]
-        assert len(unawaited_warnings) == 0, f"Memory leak: Coroutine was not awaited: {unawaited_warnings}"
+        unawaited_warnings = [
+            warn
+            for warn in w
+            if issubclass(warn.category, RuntimeWarning)
+            and "was never awaited" in str(warn.message)
+        ]
+        assert len(unawaited_warnings) == 0, (
+            f"Memory leak: Coroutine was not awaited: {unawaited_warnings}"
+        )
+
 
 def test_unhashable_task_signature() -> None:
     """Ensure that dynamically created unhashable callables do not fail the engine signature caching."""
+
     class UnhashableCallable:
         __hash__ = None  # type: ignore[assignment]
 
@@ -745,3 +755,38 @@ def test_unhashable_task_signature() -> None:
 
     # Just asserting that adding the task and resolving dependencies works.
     assert "test" in engine.tasks
+
+
+def test_get_signature_cached_value_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    import builtins
+    import inspect
+
+    from catalyst.domain.engine import _get_signature_cached
+
+    def mock_sig(*args: typing.Any, **kwargs: typing.Any) -> inspect.Signature:
+        raise ValueError("mock error")
+
+    monkeypatch.setattr(inspect, "signature", mock_sig)
+
+    assert _get_signature_cached.__wrapped__(builtins.print) is None
+
+
+def test_get_signature_value_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    import inspect
+
+    from catalyst.domain.engine import _get_signature
+
+    class UnhashableNoSig:
+        __hash__ = None  # type: ignore[assignment]
+
+        def __call__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
+            pass
+
+    unhashable = UnhashableNoSig()
+
+    def mock_sig(*args: typing.Any, **kwargs: typing.Any) -> inspect.Signature:
+        raise ValueError("mock error")
+
+    monkeypatch.setattr(inspect, "signature", mock_sig)
+
+    assert _get_signature(unhashable) is None
