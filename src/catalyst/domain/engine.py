@@ -321,18 +321,17 @@ class WorkflowEngine:
         node: str,
         dep_tasks: tuple[asyncio.Task[Any], ...],
     ) -> Any:
-        metrics = (
-            self._current_metrics.get(node)
-            if self._current_metrics is not None
-            else None
-        )
-        all_tasks = self._current_tasks
         """Evaluate and execute a single node in the DAG.
 
         Uses a fast-path for single dependencies. For multiple dependencies,
         evaluates them safely using event-driven dependency resolution to implement
         clean fail-fast behavior without leaving un-awaited wrapper coroutines.
         """
+        metrics = (
+            self._current_metrics.get(node)
+            if self._current_metrics is not None
+            else None
+        )
         if dep_tasks:
             if len(dep_tasks) == 1:
                 t = dep_tasks[0]
@@ -432,10 +431,10 @@ class WorkflowEngine:
             # Build upstream results dictionary for data injection
             deps = self._predecessors.get(node, [])
             upstream_results: dict[str, Any] = {}
-            if all_tasks and deps:
-                for dep in deps:
-                    if dep in all_tasks and all_tasks[dep].done():
-                        dep_res = all_tasks[dep].result()
+            if deps:
+                for dep, dep_task in zip(deps, dep_tasks):
+                    if dep_task.done():
+                        dep_res = dep_task.result()
                         if not isinstance(dep_res, TaskError):
                             upstream_results[dep] = dep_res
 
