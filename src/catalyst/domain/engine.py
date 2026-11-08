@@ -108,6 +108,7 @@ def _get_signature_cached(func: Callable[..., Any]) -> inspect.Signature | None:
     except (ValueError, TypeError):
         return None
 
+
 def _get_signature(func: Callable[..., Any]) -> inspect.Signature | None:
     try:
         return _get_signature_cached(func)
@@ -117,6 +118,7 @@ def _get_signature(func: Callable[..., Any]) -> inspect.Signature | None:
             return inspect.signature(func)
         except (ValueError, TypeError):
             return None
+
 
 def _resolve_call_args(
     func: Callable[..., Any],
@@ -447,6 +449,7 @@ class WorkflowEngine:
             while attempt < max_attempts:
                 attempt += 1
                 try:
+
                     async def _execute_task() -> Any:
                         if is_async:
                             coro = func(*call_args, **call_kwargs)

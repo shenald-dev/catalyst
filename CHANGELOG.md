@@ -22,6 +22,8 @@
 - **[Fixed]:** Safely upgraded direct patch dependencies (`pydantic`, `pydantic-core`, `opentelemetry-api`) via `uv lock --upgrade`.
 
 ## [Unreleased]
+- **[CI/CD]:** Added missing `pytest` test suite execution to GitHub Actions CI workflow (`ci.yml`) across Python 3.10, 3.11, and 3.12 matrices.
+- **[Hygiene]:** Formatted `src/catalyst/domain/engine.py` to achieve 100% compliance with `ruff format --check src/` and enforced strict CI error status.
 - **[QA Verified]:** Verified the engine parameter resolution bug fix (`VAR_POSITIONAL` logic). Checked fast paths, memory safety, and dependency injections. Ensured codebase remains zero-bloat.
 
 **[Pruned]:** Verified zero dead code with Vulture; remaining flags are false positives.

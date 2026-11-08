@@ -25,8 +25,10 @@ jobs:
     - name: Format with Ruff ✨
       run: |
         ruff format --check src/
-      continue-on-error: true
     - name: Type check with mypy
       run: |
         mypy src/
-      continue-on-error: true
+    - name: Run test suite with pytest 🧪
+      run: |
+        pytest
+
